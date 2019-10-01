@@ -1,13 +1,13 @@
 #!/usr/bin/env nextflow
 
 /*
-* NANOZOO WORKFLOW -- RNA-Seq-based detection of differentially expressed genes
+* RNA-Seq-based detection of differentially expressed genes
 *
-* Author: martin@nanozoo.org
+* Author: martin.hoelzer@uni-jena.de
+* Author: marie.lataretu@uni-jena.de
 */
 
 // nextflow run main.nf --threads 8 --reads input.se.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf --mode single --index data/db/index
-// nextflow run main.nf --threads 8 --reads input.pe.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf --mode paired --index data/db/index
 
 def helpMSG() {
     log.info """
@@ -112,7 +112,6 @@ if (!params.index) {
   }
 }
 
-// TODO: checkout graph-based human mapping w/ HISAT2
 process mapping {
   publishDir "${params.output}/${params.mapping_dir}", mode: 'copy', pattern: "${name}.sorted.bam"
 
@@ -169,6 +168,7 @@ process counting {
 * DIFFERENTIAL EXPRESSION 
 ************************************************************************/
 
+// maybe translate this ruby script into python
 process prepare_annotation {
   input: 
   file(annotation) from file(params.annotation)
