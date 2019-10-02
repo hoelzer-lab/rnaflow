@@ -73,6 +73,7 @@ if (params.index) {
 * TODO: pimp the trimming command for adapters, sliding-window QC, ...
 ************************************************************************/
 process trimming {
+  conda 'envs/fastp.yaml'
   publishDir "${params.output}/${params.trimming_dir}", mode: 'copy', pattern: "${name}*.trimmed.fastq"
 
   input:
@@ -99,6 +100,8 @@ process trimming {
 ************************************************************************/
 if (!params.index) {
   process index {
+    conda 'envs/hisat2.yaml'
+
     input:
     file reference_file
 
@@ -113,6 +116,7 @@ if (!params.index) {
 }
 
 process mapping {
+  conda 'envs/hisat2.yaml'
   publishDir "${params.output}/${params.mapping_dir}", mode: 'copy', pattern: "${name}.sorted.bam"
 
   input:
@@ -140,6 +144,7 @@ process mapping {
 * TODO: check that we do not miss a gene due to the 'sed 1d' remove of the first two lines
 ************************************************************************/
 process counting {
+  conda 'envs/subread.yaml'
   publishDir "${params.output}/${params.counting_dir}", mode: 'copy', pattern: "${name}.counts*"
 
   input:
