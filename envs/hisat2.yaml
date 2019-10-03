@@ -1,0 +1,5 @@
+name: hisat2
+channels:
+  - bioconda
+dependencies:
+  - hisat2
