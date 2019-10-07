@@ -2,4 +2,5 @@ name: hisat2
 channels:
   - bioconda
 dependencies:
-  - hisat2
+  - hisat2=2.1.0
+  - samtools=1.9
