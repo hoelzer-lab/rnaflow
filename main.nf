@@ -197,7 +197,7 @@ with open("!{annotation}", 'r') as gtf, open("!{annotation}.id2ensembl", 'a') as
         else:
           gene_name = gene_id
         gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
-        out.write(f'{gene_id}\t{gene_name}\t{gene_biotype}\n')
+        out.write('\t'.join([gene_id, gene_name, gene_biotype] + "\n")
 '''
 }
 
