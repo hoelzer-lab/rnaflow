@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+nextflow.preview.dsl=2
+
 /*
 * RNA-Seq-based detection of differentially expressed genes
 *
@@ -51,14 +53,13 @@ println "SortMeRNA database:   $params.sortmerna_db"
 println "Output path:          $params.output\n"
 println "mode:                 $params.mode\n"
 
-// file channel from CSV
+// illumina reads input via CSV
 if (params.reads) { 
-readFileList_ch = Channel
-        .fromPath( params.reads , checkIfExists: true )
-        .splitCsv()
-        .map { row -> ["${row[0]}", [file("${row[1]}"), file("${row[2]}")]] }
-        .into { reads_ch; reads_report_ch}
-        reads_report_ch.subscribe { println "Got short reads: ${it}" }
+  illumina_input_ch = Channel
+                .fromPath( params.reads, checkIfExists: true )
+                .splitCsv()
+                .map { row -> ["${row[0]}", [file("${row[1]}"), file("${row[2]}")]] }
+                .view() 
 }
 
 reference_file = file(params.reference)
@@ -67,33 +68,12 @@ if (params.index) {
   index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
 }
 
-/************************************************************************
-* TRIMMING
-*
-* TODO: pimp the trimming command for adapters, sliding-window QC, ...
-************************************************************************/
-process trimming {
-  conda 'envs/fastp.yaml'
-  publishDir "${params.output}/${params.trimming_dir}", mode: 'copy', pattern: "${name}*.trimmed.fastq"
+// This is the new DSL2 syntax that uses modules, exemplarily implemented for the trimming process
+include 'modules/fastp' params(output: params.output, trimming_dir: params.trimming_dir, mode: params.mode, threads: params.threads)
 
-  input:
-  set val(name), file(reads) from reads_ch
-
-  output:
-  set val(name), file("${name}*.trimmed.fastq") into trimming_ch
-
-  shell:
-  if (params.mode == 'single') {
-  """
-  fastp -i !{reads[0]} -o !{name}.trimmed.fastq -n 5 --thread !{params.threads}  
-  """
-  }
-  else {
-  """
-  fastp -i !{reads[0]} -I !{reads[1]} -o !{name}.R1.trimmed.fastq -O !{name}.R2.trimmed.fastq -n 5 --thread !{params.threads}  
-  """         
-  }
-}
+fastp(illumina_input_ch)
+//the next module would then directly become the output: 
+//hisat2(fastp.out)
 
 /************************************************************************
 * INDEX & MAPPING

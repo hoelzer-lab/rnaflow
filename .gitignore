@@ -6,7 +6,6 @@
 # don't commit unfinished work and test data
 wip/
 supplement/
-data/
 work/
 results/
 .nextflow/
