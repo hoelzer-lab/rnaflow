@@ -2,7 +2,7 @@
 * DOWNLOAD ANNOTATION
 ********************************************/
 process annotationGet {
-    conda 'envs/hisat2.yaml'
+    //conda 'envs/hisat2.yaml'
     if (params.cloudProcess) { publishDir "${params.cloudDatabase}/annotations/${params.annotation}", mode: 'copy', pattern: "${params.annotation}.gtf" }
     else { storeDir "nextflow-autodownload-databases/annotations/${params.annotation}" }  
     output:
