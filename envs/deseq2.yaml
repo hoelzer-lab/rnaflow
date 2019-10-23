@@ -2,5 +2,5 @@ name: deseq2
 channels:
   - bioconda
 dependencies:
-  - bioconductor-reportingtools=2.24.0
-#  - bioconductor-deseq2=1.24.0
+  - bioconductor-deseq2=1.24.0
+#  - bioconductor-reportingtools=2.24.0
