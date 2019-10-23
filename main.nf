@@ -9,49 +9,39 @@ nextflow.preview.dsl=2
 * Author: marie.lataretu@uni-jena.de
 */
 
-// nextflow run main.nf --threads 8 --reads input.se.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf --mode single --index data/db/index
-
-def helpMSG() {
-    log.info """
-
-    Usage:
-    nextflow run main.nf --threads 4 --reads input.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf
-
-    Mandatory:
-    --reads         a CSV file following the pattern: mock_rep1,fastq1,fastq2 with fastq2 beeing optional 
-                    (check terminal output if correctly assigned)
-    --reference     a reference genome with HISAT2 index for mapping
-    --annotation    a annotation file in gtf format corresponding to the reference file
-
-    Options
-    --sortmerna              the database used for SortMeRNA
-    --index                  the path to the hisat2 index prefix matching the genome provided via --reference. 
-                             If provided, no new index will be build. Must be named 'index.*.ht2'. 
-                             Simply provide the path like 'data/db/index'
-    --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
-    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
-    --threads                max cores for local use [default $params.threads]
-    --mem                    max memory in GB for local use [default $params.mem]
-    --output                 name of the result folder [default $params.output]
-
-    Profile:
-    -profile                standard, gcloud (wip) [default: standard]
-
-    """.stripIndent()
-}
-
+// terminal prints
 if (params.help) { exit 0, helpMSG() }
+
+println " "
+println "\u001B[32mProfile: $workflow.profile\033[0m"
+println " "
+println "\033[2mCurrent User: $workflow.userName"
+println "Nextflow-version: $nextflow.version"
+println "Starting time: $nextflow.timestamp"
+println "Workdir location:"
+println "  $workflow.workDir\u001B[0m"
+println " "
+if (workflow.profile == 'standard') {
+println "\033[2mCPUs to use: $params.cores"
+println "Output dir name: $params.output\u001B[0m"
+println " "}
+
+if (params.profile) { exit 1, "--profile is WRONG use -profile" }
 if (params.reads == '') {exit 1, "--reads is a required parameter"}
-if (params.reference == '') {exit 1, "--reference is a required parameter"}
-if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
+//if (params.reference == '') {exit 1, "--reference is a required parameter"}
+//if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
 println "\nD I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S"
 println "= = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = ="
-println "Reference genome:     $params.reference"
-println "Reference annotation: $params.annotation"
+println "Reference species:    $params.species"
 println "SortMeRNA database:   $params.sortmerna_db"
-println "Output path:          $params.output\n"
-println "mode:                 $params.mode\n"
+println "Output path:          $params.output"
+println "mode:                 $params.mode"
+println "strandness:           $params.strand"
+
+/************************** 
+* INPUT CHANNELS 
+**************************/
 
 // illumina reads input via CSV
 if (params.reads) { 
@@ -59,152 +49,171 @@ if (params.reads) {
                 .fromPath( params.reads, checkIfExists: true )
                 .splitCsv()
                 .map { row -> ["${row[0]}", [file("${row[1]}"), file("${row[2]}")]] }
-                .view() 
+                //.view() 
 }
 
-reference_file = file(params.reference)
+//if (params.index) {
+//  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
+//}
 
-if (params.index) {
-  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
-}
 
+/************************** 
+* MODULES
+**************************/
+
+/* Comment section: */
 // This is the new DSL2 syntax that uses modules, exemplarily implemented for the trimming process
-include 'modules/fastp' params(output: params.output, trimming_dir: params.trimming_dir, mode: params.mode, threads: params.threads)
+include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.trimming_dir, mode: params.mode)
+include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.mapping_dir, mode: params.mode)
+include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.counting_dir, mode: params.mode, strand: params.strand)
+include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
 
-fastp(illumina_input_ch)
-//the next module would then directly become the output: 
-//hisat2(fastp.out)
+/************************** 
+* DATABASES
+**************************/
 
-/************************************************************************
-* INDEX & MAPPING
-************************************************************************/
-if (!params.index) {
-  process index {
-    conda 'envs/hisat2.yaml'
-
-    input:
-    file reference_file
-
-    output:
-    file("index.*") into index_ch
-
-    shell:
-    """
-    hisat2-build -p !{params.threads} !{reference_file} index
-    """
-  }
-}
-
-process mapping {
-  conda 'envs/hisat2.yaml'
-  publishDir "${params.output}/${params.mapping_dir}", mode: 'copy', pattern: "${name}.sorted.bam"
-
-  input:
-  set val(name), file(reads) from trimming_ch
-  file(database) from index_ch.collect()
-
-  output:
-  set val(name), file("${name}.sorted.bam") into mapping_ch
-
-  shell:
-  if (params.mode == 'single') {
-  """
-  hisat2 -x index -U !{reads[0]} -p !{params.threads} | samtools view -bS | samtools sort -o !{name}.sorted.bam -T tmp --threads !{params.threads}
-  """
-  }
-  else {
-  """
-  hisat2 -x index -1 !{reads[0]} -2 !{reads[1]} -p !{params.threads} | samtools view -bS | samtools sort -o !{name}.sorted.bam -T tmp --threads !{params.threads}
-  """
-  } 
-}
-
-/************************************************************************
-* COUNTING 
-* TODO: check that we do not miss a gene due to the 'sed 1d' remove of the first two lines
-************************************************************************/
-process counting {
-  conda 'envs/subread.yaml'
-  publishDir "${params.output}/${params.counting_dir}", mode: 'copy', pattern: "${name}.counts*"
-
-  input:
-  set val(name), file(bam) from mapping_ch
-  file(annotation) from file(params.annotation)
-
-  output:
-  set val(name), file("${name}.counts*") into counting_ch // [mock_rep1, [/home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts.formated, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts.summary]]
-
-  shell:
-  if (params.mode == 'single') {
-  '''
-  featureCounts -T !{params.threads} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
-  awk '{print $1"\t"$7}' !{name}.counts | sed 1d | sed 1d > !{name}.counts.formated
-  '''
-  }
-  else {
-  '''
-  featureCounts -pBP -T !{params.threads} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
-  awk '{print $1"\t"$7}' !{name}.counts | sed 1d | sed 1d > !{name}.counts.formated
-  '''
-  }
-}
-
-/************************************************************************
-* DIFFERENTIAL EXPRESSION 
-************************************************************************/
-
-// maybe translate this ruby script into python
-process prepare_annotation {
-input: 
-file(annotation) from file(params.annotation)
-
-output:
-file("${annotation}.id2ensembl") into prepare_annotation_ch
-
-shell:
-'''
-#!/usr/bin/env python3
-with open("!{annotation}", 'r') as gtf, open("!{annotation}.id2ensembl", 'a') as out:
-  for line in gtf:
-    if not line.startswith('#'):
-      split_line = line.split('\\t')
-      if split_line[2] == 'gene':
-        desc = split_line[8]
-        gene_id = line.split('gene_id')[1].split(';')[0].replace('"', '').strip()
-        if 'gene_name' in line:
-          gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
-        else:
-          gene_name = gene_id
-        gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
-        out.write('\\t'.join([gene_id, gene_name, gene_biotype]) + '\\n')
-'''
-}
-
-process diff {
-  publishDir "${params.output}/${params.diff_dir}", mode: 'copy', pattern: "*"
-
-  input:
-  set val(name), file(counts) from counting_ch
-  file(annotation) from file(params.annotation)
-  file(ensembl2id) from prepare_annotation_ch
-
-  output:
-  set val(name), file(counts) into final_ch 
-
-  shell:
-  '''
-  echo !{name}.counts.formated
-  '''
-}
-
-/*
-project_dir <- "/home/hoelzer/git/nanozoo/wf_gene_expression/results/" 
-samples <- c("/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/mock_rep1.counts.formated","/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/mock_rep2.counts.formated","/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/mock_rep3.counts.formated","/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/treated_rep1.counts.formated","/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/treated_rep2.counts.formated","/home/hoelzer/git/nanozoo/wf_gene_expression/results/03-Counting/treated_rep3.counts.formated") 
-conditions <- c("mock","mock","mock","treated","treated","treated") 
-col.labels <- c("mock_rep1","mock_rep2","mock_rep3","treated_rep1","treated_rep2","treated_rep3") 
-levels <- c("mock","treated") 
-comparisons <- c("mock:treated")
-ensembl2genes <- "data/db/Rattus_norvegicus.Rnor_6.0.91.chr.id2name"
-species <- "rno"
-patients <- c()
+/* Comment section:
+The Database Section is designed to "auto-get" pre prepared databases.
+It is written for local use and cloud use via params.cloudProcess.
 */
+
+workflow download_reference {
+  main:
+    // local storage via storeDir
+    if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
+    // cloud storage file.exists()?
+    if (params.cloudProcess) {
+      reference_preload = file("${params.cloudDatabase}/genomes/${params.reference}/${params.reference}.fa.gz")
+      if (reference_preload.exists()) { reference = reference_preload }
+      else  { referenceGet(); reference = referenceGet.out } 
+    }
+  emit: reference
+}
+
+workflow download_annotation {
+  main:
+    // local storage via storeDir
+    if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
+    // cloud storage file.exists()?
+    if (params.cloudProcess) {
+      annotation_preload = file("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
+      if (annotation_preload.exists()) { annotation = annotation_preload }
+      else  { annotationGet(); annotation = annotationGet.out } 
+    }
+  emit: annotation
+}
+
+workflow hisat2_index_reference {
+  get: reference
+  main:
+    // local storage via storeDir
+    if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
+    // cloud storage file.exists()?
+    if (params.cloudProcess) {
+      index_preload = file("${params.cloudDatabase}/genomes/${params.reference}/${params.reference}*.ht2")
+      if (index_preload.exists()) { index = index_preload }
+      else  { hisat2index(reference); index = hisat2index.out } 
+    }
+  emit: index
+}
+
+
+/************************** 
+* SUB WORKFLOWS
+**************************/
+
+/* Comment section: */
+
+
+workflow analysis_reference_based {
+  get:  illumina_input_ch
+        index
+        annotation
+
+  main:
+    //trim
+    fastp(illumina_input_ch)
+
+    //map
+    hisat2(fastp.out, index)
+
+    //count
+    featurecounts(hisat2.out, annotation)
+
+    //prepare annotation for R input
+    prepare_annotation(annotation)
+
+    //defs
+    //deseq2(featurecounts.out, annotation, prepare_annotation.out)
+} 
+
+workflow analysis_de_novo {
+/*WIP. maybe later...*/
+} 
+
+
+/************************** 
+* WORKFLOW ENTRY POINT
+**************************/
+
+/* Comment section: */
+
+workflow {
+      // get the reference genome and index it for hisat2
+      hisat2_index_reference(download_reference())
+      index = hisat2_index_reference.out
+
+      // get the annotation
+      download_annotation()
+      annotation = download_annotation.out
+
+      // start reference-based analysis
+      analysis_reference_based(illumina_input_ch, index, annotation)
+}
+
+
+// nextflow run main.nf --threads 8 --reads input.se.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf --mode single --index data/db/index
+def helpMSG() {
+    c_green = "\033[0;32m";
+    c_reset = "\033[0m";
+    c_yellow = "\033[0;33m";
+    c_blue = "\033[0;34m";
+    c_dim = "\033[2m";
+    log.info """
+    ____________________________________________________________________________________________
+
+    ${c_yellow}Usage example:${c_reset}
+    nextflow run main.nf --threads 4 --reads input.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf
+
+    ${c_yellow}Input:${c_reset}
+    ${c_green}--reads${c_reset}         a CSV file following the pattern: mock_rep1,fastq1,fastq2 with fastq2 beeing optional 
+                                        ${c_dim}(check terminal output if correctly assigned)${c_reset}
+    ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.reference]
+                                        ${c_dim}Currently supported are:
+                                        - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
+                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
+
+    ${c_yellow}Options${c_reset}
+    --sortmerna              the database used for SortMeRNA
+    --index                  the path to the hisat2 index prefix matching the genome provided via --reference. 
+                             If provided, no new index will be build. Must be named 'index.*.ht2'. 
+                             Simply provide the path like 'data/db/index'
+    --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
+    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
+    --cores                  max cores for local use [default $params.cores]
+    --memory                 max memory in GB for local use [default $params.memory]
+    --output                 name of the result folder [default $params.output]
+
+    ${c_dim}Nextflow options:
+    -with-report rep.html    cpu / ram usage (may cause errors)
+    -with-dag chart.html     generates a flowchart for the process tree
+    -with-timeline time.html timeline (may cause errors)
+
+    Profile:
+    -profile                 standard (local, conda) [default]
+                             ${c_reset}
+    """.stripIndent()
+}

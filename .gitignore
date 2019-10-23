@@ -9,6 +9,8 @@ supplement/
 work/
 results/
 .nextflow/
+nextflow-autodownload-databases/
+
 
 # large file extensions
 *.pdf
