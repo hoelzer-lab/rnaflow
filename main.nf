@@ -66,10 +66,11 @@ if (params.reads) {
 include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.trimming_dir, mode: params.mode)
-include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.mapping_dir, mode: params.mode)
-include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.counting_dir, mode: params.mode, strand: params.strand)
+include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.fastp_dir, mode: params.mode)
+include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
+include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
 include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
+include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir)
 
 /************************** 
 * DATABASES
@@ -147,7 +148,7 @@ workflow analysis_reference_based {
     prepare_annotation(annotation)
 
     //defs
-    //deseq2(featurecounts.out, annotation, prepare_annotation.out)
+    deseq2(featurecounts.out, prepare_annotation.out)
 } 
 
 workflow analysis_de_novo {
