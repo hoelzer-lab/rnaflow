@@ -176,7 +176,6 @@ workflow {
 }
 
 
-// nextflow run main.nf --threads 8 --reads input.se.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf --mode single --index data/db/index
 def helpMSG() {
     c_green = "\033[0;32m";
     c_reset = "\033[0m";
@@ -187,21 +186,21 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --threads 4 --reads input.csv --reference data/db/Rattus_norvegicus.Rnor_6.0.dna.toplevel.chr.fa --annotation data/db/Rattus_norvegicus.Rnor_6.0.91.chr.gtf
+    nextflow run main.nf --cores 4 --reads input.csv
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}         a CSV file following the pattern: mock_rep1,fastq1,fastq2 with fastq2 beeing optional 
                                         ${c_dim}(check terminal output if correctly assigned)${c_reset}
-    ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.reference]
+    ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
 
     ${c_yellow}Options${c_reset}
     --sortmerna              the database used for SortMeRNA
-    --index                  the path to the hisat2 index prefix matching the genome provided via --reference. 
-                             If provided, no new index will be build. Must be named 'index.*.ht2'. 
-                             Simply provide the path like 'data/db/index'
+    --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
+                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
+                             Simply provide the path like 'data/db/index'. DEPRECATED
     --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --cores                  max cores for local use [default $params.cores]
