@@ -1,7 +1,5 @@
 /**************************************************
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
-*
-* ToDo: should we also have a python3 conda environment for such processes? Thus we would not rely on the system python install I think
 ***************************************************/
 process prepare_annotation {
     conda 'envs/python3.yaml'
