@@ -70,7 +70,7 @@ include './modules/fastp' params(cores: params.cores, output: params.output, dir
 include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
 include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
 include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
-include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir)
+include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
 
 /************************** 
 * DATABASES
@@ -148,7 +148,13 @@ workflow analysis_reference_based {
     prepare_annotation(annotation)
 
     //defs
-    deseq2(featurecounts.out, prepare_annotation.out)
+    featurecounts.out
+      .fork{tuple -> 
+      sample: tuple[0]
+      fc_formated: tuple[1][1]
+      }
+      .set { fc_out }
+    deseq2(fc_out.sample.collect(), fc_out.fc_formated.collect(), prepare_annotation.out)
 } 
 
 workflow analysis_de_novo {
