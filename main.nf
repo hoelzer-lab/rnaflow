@@ -150,11 +150,21 @@ workflow analysis_reference_based {
     //defs
     featurecounts.out
       .fork{tuple -> 
-      sample: tuple[0]
+      name: tuple[0]
       fc_formated: tuple[1][1]
       }
       .set { fc_out }
-    deseq2(fc_out.sample.collect(), fc_out.fc_formated.collect(), prepare_annotation.out)
+    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R" )
+
+    fc_out.name
+      .collect()
+      .set { name }
+
+    fc_out.fc_formated
+      .collect()
+      .set { fc_formated }
+
+    deseq2(name, fc_formated, prepare_annotation.out, script)
 } 
 
 workflow analysis_de_novo {
