@@ -389,7 +389,8 @@ conditions <- eval( parse(text=args[3]) )
 col.labels <- eval( parse(text=args[4]) )
 levels <- eval( parse(text=args[5]) )
 comparisons <- eval( parse(text=args[6]) )
-out <- paste(project_dir,'deseq2/',sep='/')
+# out <- paste(project_dir,'deseq2/',sep='/')
+out <- paste(project_dir,'/',sep='') # deseq2 dir is created by nextflow in the results dir ()
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 species <- eval( parse(text=args[8]) )[1]
 
@@ -424,10 +425,12 @@ write.csv(as.data.frame(df), file=input.csv)
 
 if (length(patients) > 0) {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients)
-    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition)
+    # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition) # doesn"t work with nextflow
+    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
 } else {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels)
-    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ condition)
+    # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ condition) # doesn"t work with nextflow
+    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
 }
 
 ### IMPORTANT STEP< OTHERWIESE DESEQ WILL DO THE COMPARISON IN ALPHABETICAL ORDER!!!!
