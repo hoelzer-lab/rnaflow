@@ -1,0 +1,5 @@
+name: sortmerna
+channels:
+  - bioconda
+dependencies:
+  - sortmerna=2.1b

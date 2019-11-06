@@ -107,6 +107,19 @@ workflow download_annotation {
   emit: annotation
 }
 
+workflow download_sortmerna {
+  main:
+    // local storage via storeDir
+    if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
+    // cloud storage file.exists()?
+    if (params.cloudProcess) {
+      sortmerna_preload = file("${params.cloudDatabase}/databases/XXXXXXXXXXXXXXX")
+      if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
+      else  { sortmernaGet(); sortmerna = sortmernaGet.out } 
+    }
+  emit: sortmerna
+}
+
 workflow hisat2_index_reference {
   get: reference
   main:
@@ -186,6 +199,10 @@ workflow {
       // get the annotation
       download_annotation()
       annotation = download_annotation.out
+
+      // get sortmerna databases
+      //download_sortmerna()
+      //sortmerna = download_sortmerna.out
 
       // start reference-based analysis
       analysis_reference_based(illumina_input_ch, index, annotation)
