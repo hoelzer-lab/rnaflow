@@ -61,12 +61,15 @@ if (params.reads) {
 * MODULES
 **************************/
 
-/* Comment section: */
-// This is the new DSL2 syntax that uses modules, exemplarily implemented for the trimming process
+// databases
 include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/sortmernaGet' params(cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+
+// analysis
 include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.fastp_dir, mode: params.mode)
+include './modules/sortmerna' params(cores: params.cores, output: params.output, dir: params.sortmerna_dir, mode: params.mode)
 include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
 include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
 include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
@@ -113,7 +116,7 @@ workflow download_sortmerna {
     if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
     // cloud storage file.exists()?
     if (params.cloudProcess) {
-      sortmerna_preload = file("${params.cloudDatabase}/databases/XXXXXXXXXXXXXXX")
+      sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
       if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
       else  { sortmernaGet(); sortmerna = sortmernaGet.out } 
     }
@@ -146,13 +149,17 @@ workflow analysis_reference_based {
   get:  illumina_input_ch
         index
         annotation
+        sortmerna_db
 
   main:
     //trim
     fastp(illumina_input_ch)
 
+    //remove rRNA
+    sortmerna(fastp.out, sortmerna_db)
+
     //map
-    hisat2(fastp.out, index)
+    hisat2(sortmerna.out, index)
 
     //count
     featurecounts(hisat2.out, annotation)
@@ -201,11 +208,11 @@ workflow {
       annotation = download_annotation.out
 
       // get sortmerna databases
-      //download_sortmerna()
-      //sortmerna = download_sortmerna.out
+      download_sortmerna()
+      sortmerna_db = download_sortmerna.out
 
       // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, index, annotation)
+      analysis_reference_based(illumina_input_ch, index, annotation, sortmerna_db)
 }
 
 

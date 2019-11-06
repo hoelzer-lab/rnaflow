@@ -1,17 +1,16 @@
 /*******************************************
 * DOWNLOAD SORTMERNA DATABASES
 ********************************************/
-process sortmernaGET {
-    //conda 'envs/hisat2.yaml'
-    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/databases/XXXXXXXX", mode: 'copy', pattern: "XXXXXXXX" }
-    else { storeDir "nextflow-autodownload-databases/databases/XXXXXXXX" }  
+process sortmernaGet {
+    conda 'envs/sortmerna.yaml'
+    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/databases/", mode: 'copy', pattern: "sortmerna/rRNA_databases" }
+    else { storeDir "nextflow-autodownload-databases/databases/" }  
     output:
-        file("XXXXXXXX")
+        file("sortmerna/rRNA_databases")
     script:
         """
-        wget ftp://ftp.ensembl.org/pub/release-98/gtf/homo_sapiens/Homo_sapiens.GRCh38.98.gtf.gz
-        gunzip -f Homo_sapiens.GRCh38.98.gtf.gz
-        mv Homo_sapiens.GRCh38.98.gtf ${params.annotation}.gtf
+        git clone https://github.com/biocore/sortmerna.git
+        indexdb_rna --ref ./sortmerna/rRNA_databases/silva-bac-16s-id90.fasta,./sortmerna/rRNA_databases/silva-bac-16s-id90:./sortmerna/rRNA_databases/silva-bac-23s-id98.fasta,./sortmerna/rRNA_databases/silva-bac-23s-id98:./sortmerna/rRNA_databases/silva-arc-16s-id95.fasta,./sortmerna/rRNA_databases/silva-arc-16s-id95:./sortmerna/rRNA_databases/silva-arc-23s-id98.fasta,./sortmerna/rRNA_databases/silva-arc-23s-id98:./sortmerna/rRNA_databases/silva-euk-18s-id95.fasta,./sortmerna/rRNA_databases/silva-euk-18s-id95:./sortmerna/rRNA_databases/silva-euk-28s-id98.fasta,./sortmerna/rRNA_databases/silva-euk-28s-id98:./sortmerna/rRNA_databases/rfam-5s-database-id98.fasta,./sortmerna/rRNA_databases/rfam-5s-database-id98:./sortmerna/rRNA_databases/rfam-5.8s-database-id98.fasta,./sortmerna/rRNA_databases/rfam-5.8s-database-id98 -v
         """
 }
 
