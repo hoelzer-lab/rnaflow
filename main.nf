@@ -229,7 +229,7 @@ def helpMSG() {
     -with-timeline time.html timeline (may cause errors)
 
     Profile:
-    -profile                 standard (local, conda) [default]
+    -profile                 standard (local, including conda) [default standard]
                              ${c_reset}
     """.stripIndent()
 }
