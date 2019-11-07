@@ -6,7 +6,7 @@
 process sortmerna {
   conda 'envs/sortmerna.yaml'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.other.fastq"
-  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "*.log"
+  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.aligned.log"
 
   input:
   tuple val(name), file(reads)
@@ -20,8 +20,8 @@ process sortmerna {
   """
   sortmerna --ref ./rRNA_databases/silva-bac-16s-id90.fasta,./rRNA_databases/silva-bac-16s-id90:./rRNA_databases/silva-bac-23s-id98.fasta,./rRNA_databases/silva-bac-23s-id98:./rRNA_databases/silva-arc-16s-id95.fasta,./rRNA_databases/silva-arc-16s-id95:./rRNA_databases/silva-arc-23s-id98.fasta,./rRNA_databases/silva-arc-23s-id98:./rRNA_databases/silva-euk-18s-id95.fasta,./rRNA_databases/silva-euk-18s-id95:./rRNA_databases/silva-euk-28s-id98.fasta,./rRNA_databases/silva-euk-28s-id98:./rRNA_databases/rfam-5s-database-id98.fasta,./rRNA_databases/rfam-5s-database-id98:./rRNA_databases/rfam-5.8s-database-id98.fasta,./rRNA_databases/rfam-5.8s-database-id98 \
 --reads ${reads[0]} \
---aligned ${name}.aligned.fastq \
---other ${name}.other.fastq \
+--aligned ${name}.aligned \
+--other ${name}.other \
 --sam --fastx --log --blast 1 --num_alignments 1 -v 
   """
   }
