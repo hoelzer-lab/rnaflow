@@ -516,8 +516,6 @@ pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
          labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA, 
          height = 12, width = 8, file = file)
 
-
-
 ## REPORT TO HTML
 db <- NULL
 

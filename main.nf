@@ -34,7 +34,6 @@ if (params.reads == '') {exit 1, "--reads is a required parameter"}
 println "\nD I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S"
 println "= = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = ="
 println "Reference species:    $params.species"
-println "SortMeRNA database:   $params.sortmerna_db"
 println "Output path:          $params.output"
 println "mode:                 $params.mode"
 println "strandness:           $params.strand"
@@ -65,15 +64,17 @@ if (params.reads) {
 include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/sortmernaGet' params(cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 
 // analysis
-include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.fastp_dir, mode: params.mode)
 include './modules/sortmerna' params(cores: params.cores, output: params.output, dir: params.sortmerna_dir, mode: params.mode)
 include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
 include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
-include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
 include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
+
+// helpers
+include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
 
 /************************** 
 * DATABASES
@@ -147,7 +148,7 @@ workflow hisat2_index_reference {
 
 workflow analysis_reference_based {
   get:  illumina_input_ch
-        index
+        hisat2_index
         annotation
         sortmerna_db
 
@@ -159,7 +160,7 @@ workflow analysis_reference_based {
     sortmerna(fastp.out, sortmerna_db)
 
     //map
-    hisat2(sortmerna.out, index)
+    hisat2(sortmerna.out, hisat2_index)
 
     //count
     featurecounts(hisat2.out, annotation)
@@ -175,6 +176,8 @@ workflow analysis_reference_based {
       }
       .set { fc_out }
     script = Channel.fromPath( "${params.scripts_dir}/deseq2.R" )
+
+    //fc_out.view()
 
     fc_out.name
       .collect()
@@ -201,7 +204,7 @@ workflow analysis_de_novo {
 workflow {
       // get the reference genome and index it for hisat2
       hisat2_index_reference(download_reference())
-      index = hisat2_index_reference.out
+      hisat2_index = hisat2_index_reference.out
 
       // get the annotation
       download_annotation()
@@ -212,7 +215,7 @@ workflow {
       sortmerna_db = download_sortmerna.out
 
       // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, index, annotation, sortmerna_db)
+      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db)
 }
 
 
@@ -237,7 +240,6 @@ def helpMSG() {
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
 
     ${c_yellow}Options${c_reset}
-    --sortmerna              the database used for SortMeRNA
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
                              If provided, no new index will be build. Must be named 'index.*.ht2'.  
                              Simply provide the path like 'data/db/index'. DEPRECATED
