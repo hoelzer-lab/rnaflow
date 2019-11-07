@@ -9,7 +9,10 @@ process deseq2 {
     val(name)
     file(counts)
     file(ensembl2id)
+    file(annotation_genes)
     file(script)
+    file(script_refactor_reportingtools_table)
+    file(script_improve_deseq_table)
 
     output:
     path("*")
@@ -23,7 +26,7 @@ process deseq2 {
     comparisons = "\"" + name.collect { "${it}".tokenize('_')[0] }.toSet().join(":") + "\""
     
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${count_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${params.species}") c()' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${count_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c()' ${script}
     """
 }
 /*

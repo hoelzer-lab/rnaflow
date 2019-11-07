@@ -75,6 +75,7 @@ include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir,
 
 // helpers
 include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
+include './modules/prepare_annotation_gene_rows' params(output: params.output, dir: params.annotation_dir)
 
 /************************** 
 * DATABASES
@@ -166,6 +167,7 @@ workflow analysis_reference_based {
     featurecounts(hisat2.out, annotation)
 
     //prepare annotation for R input
+    prepare_annotation_gene_rows(annotation)
     prepare_annotation(annotation)
 
     //defs
@@ -175,9 +177,10 @@ workflow analysis_reference_based {
       fc_formated: tuple[1][1]
       }
       .set { fc_out }
-    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R" )
 
-    //fc_out.view()
+    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R" )
+    script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb" )
+    script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_csv.rb" )
 
     fc_out.name
       .collect()
@@ -187,7 +190,7 @@ workflow analysis_reference_based {
       .collect()
       .set { fc_formated }
 
-    deseq2(name, fc_formated, prepare_annotation.out, script)
+    deseq2(name, fc_formated, prepare_annotation.out, prepare_annotation_gene_rows.out, script, script_refactor_reportingtools_table, script_improve_deseq_table)
 } 
 
 workflow analysis_de_novo {
