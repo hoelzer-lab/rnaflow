@@ -47,7 +47,7 @@ if (params.reads) {
   illumina_input_ch = Channel
                 .fromPath( params.reads, checkIfExists: true )
                 .splitCsv()
-                .map { row -> ["${row[0]}", [file("${row[1]}"), file("${row[2]}")]] }
+                .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true), file("${row[2]}", checkIfExists: true)]] }
                 //.view() 
 }
 
