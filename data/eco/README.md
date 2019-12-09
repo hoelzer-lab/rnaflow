@@ -10,3 +10,22 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/009/SRR2932639/SRR2932639.fastq.g
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/004/SRR2932644/SRR2932644.fastq.gz
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/005/SRR2932645/SRR2932645.fastq.gz
 wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/006/SRR2932646/SRR2932646.fastq.gz
+
+adding paired-end data
+
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/000/SRR2930960/SRR2930960_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/000/SRR2930960/SRR2930960_2.fastq.gz
+
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/000/SRR2931100/SRR2931100_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR293/000/SRR2931100/SRR2931100_2.fastq.gz
+
+seqtk sample -s100 data/eco/SRR2931100_1.fastq.gz 10000 > data/eco/SRR2931100_1_sub.fastq.gz
+seqtk sample -s100 data/eco/SRR2931100_2.fastq.gz 10000 > data/eco/SRR2931100_2_sub.fastq.gz
+
+seqtk sample -s100 data/eco/SRR2930960_1.fastq.gz 10000 > data/eco/SRR2930960_1_sub.fastq.gz
+seqtk sample -s100 data/eco/SRR2930960_2.fastq.gz 10000 > data/eco/SRR2930960_2_sub.fastq.gz
+
+rm data/eco/SRR2931100_1.fastq.gz
+rm data/eco/SRR2931100_2.fastq.gz
+rm data/eco/SRR2930960_1.fastq.gz
+rm data/eco/SRR2930960_2.fastq.gz
