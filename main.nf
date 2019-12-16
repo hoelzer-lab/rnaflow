@@ -44,12 +44,43 @@ println "strandness:           $params.strand"
 
 // illumina reads input via CSV
 if (params.reads) { 
-  illumina_input_ch = Channel
-                .fromPath( params.reads, checkIfExists: true )
-                .splitCsv()
-                .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true), file("${row[2]}", checkIfExists: true)]] }
-                //.view() 
+  if (params.mode == 'single') {
+    illumina_input_ch = Channel
+                  .fromPath( params.reads, checkIfExists: true )
+                  .splitCsv()
+                  .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true)]] }
+                  .view() 
+  } else {
+    illumina_input_ch = Channel
+                  .fromPath( params.reads, checkIfExists: true )
+                  .splitCsv()
+                  .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true), file("${row[2]}", checkIfExists: true)]] }
+                  .view() 
+  }
 }
+
+// TODO: adapt this:
+// params.samplesheet = "samples.analysis.tsv"
+
+// Channel.fromPath( params.reads )
+//         .splitCsv(header: true, sep: ',')
+//         .map{row ->
+//             def sample_ID = row['Sample']
+//             def reads1 = row['R1'].tokenize( ',' ).collect { file(it) } // comma-sep string into list of files
+//             def reads2 = row['R2'].tokenize( ',' ).collect { file(it) }
+//             return [ sample_ID, reads1, reads2 ]
+//         }
+//         .tap { samples_R1_R2; samples_R1_R2_2 } // set of all fastq R1 R2 per sample
+//         .map { sample_ID, reads1, reads2 ->
+//             return [ reads1, reads2 ]
+//         }
+//         .flatMap().flatMap()
+//         .into { samples_each_fastq; samples_each_fastq2 } // emit each fastq file individually, no sampleID
+
+
+// samples_R1_R2.subscribe { println "\n[samples_R1_R2] ${it}\n"}
+// samples_each_fastq.subscribe { println "[samples_each_fastq] ${it}"}
+
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
@@ -178,9 +209,9 @@ workflow analysis_reference_based {
       }
       .set { fc_out }
 
-    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R" )
-    script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb" )
-    script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_csv.rb" )
+    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
+    script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
+    script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
 
     fc_out.name
       .collect()
