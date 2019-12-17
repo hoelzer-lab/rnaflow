@@ -1,2 +1,4 @@
 mock_rep1,data/eco/SRR5043290_sub_1.fastq.gz,data/eco/SRR5043290_sub_2.fastq.gz
-treat_rep1,data/eco/SRR5043291_sub_1.fastq.gz,data/eco/SRR5043291_sub_2.fastq.gz
+mock_rep2,data/eco/SRR5043291_sub_1.fastq.gz,data/eco/SRR5043291_sub_2.fastq.gz
+treat_rep1,data/eco/ERR2686025_sub_1.fastq.gz,data/eco/ERR2686025_sub_2.fastq.gz
+treat_rep2,data/eco/ERR2686034_sub_1.fastq.gz,data/eco/ERR2686034_sub_2.fastq.gz

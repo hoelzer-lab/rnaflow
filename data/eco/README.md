@@ -21,3 +21,13 @@ seqtk sample -s100 SRR5043290_1.fastq.gz 0.04 > SRR5043290_sub_1.fastq.gz
 seqtk sample -s100 SRR5043290_2.fastq.gz 0.04 > SRR5043290_sub_2.fastq.gz
 seqtk sample -s100 SRR5043291_1.fastq.gz 0.04 > SRR5043291_sub_1.fastq.gz
 seqtk sample -s100 SRR5043291_2.fastq.gz 0.04 > SRR5043291_sub_2.fastq.gz
+
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR268/005/ERR2686025/ERR2686025_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR268/005/ERR2686025/ERR2686025_2.fastq.gz
+seqtk sample -s100 ERR2686025_1.fastq.gz 0.03 > ERR2686025_sub_1.fastq.gz
+seqtk sample -s100 ERR2686025_2.fastq.gz 0.03 > ERR2686025_sub_2.fastq.gz
+
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR268/004/ERR2686034/ERR2686034_1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR268/004/ERR2686034/ERR2686034_2.fastq.gz
+seqtk sample -s100 ERR2686034_1.fastq.gz 0.03 > ERR2686034_sub_1.fastq.gz
+seqtk sample -s100 ERR2686034_2.fastq.gz 0.03 > ERR2686034_sub_2.fastq.gz

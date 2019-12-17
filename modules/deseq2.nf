@@ -24,7 +24,7 @@ process deseq2 {
     conditions = name.collect { "${it}".tokenize('_')[0] }.collect { "\"${it}\"" }.join(",")
     levels = name.collect { "${it}".tokenize('_')[0] }.collect { "\"${it}\"" }.toSet().join(",")
     comparisons = "\"" + name.collect { "${it}".tokenize('_')[0] }.toSet().join(":") + "\""
-    
+
     """
     R CMD BATCH --no-save --no-restore '--args c(".") c(${count_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c()' ${script}
     """
