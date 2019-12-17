@@ -4,6 +4,8 @@
 *fai  # fasta indices
 data/eco/SRR5043290_*.fastq.gz
 data/eco/SRR5043291_*.fastq.gz
+data/eco/ERR2686025_*.fastq.gz
+data/eco/ERR2686034_*.fastq.gz
 
 # don't commit unfinished work and test data
 wip/
