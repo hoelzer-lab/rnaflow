@@ -13,7 +13,7 @@ nextflow run main.nf --help
 Dependencies will automatically be installed via conda, just execute:
 
 ```bash
-nextflow run main.nf --cores 2 --reads input.se.eco.csv --species eco 
+nextflow run main.nf --cores 2 --reads input.se.eco.csv --species eco --dge input.dge_comparison.csv
 ```
 
 # Flow chart

@@ -28,6 +28,7 @@ println " "}
 
 if (params.profile) { exit 1, "--profile is WRONG use -profile" }
 if (params.reads == '') {exit 1, "--reads is a required parameter"}
+if (params.dge == '') {exit 1, "--dge is a required parameter"}
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
@@ -42,27 +43,91 @@ println "strandness:           $params.strand"
 * INPUT CHANNELS 
 **************************/
 
-// illumina reads input via CSV
+/*
+* read in sample sheet
+*/
 if (params.reads) { 
   if (params.mode == 'single') {
-    illumina_input_ch = Channel
-                  .fromPath( params.reads, checkIfExists: true )
-                  .splitCsv()
-                  .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true)]] }
-                  // .view()
+    Channel
+      .fromPath( params.reads, checkIfExists: true)
+      .splitCsv(header: true, sep: ',')
+      .map{row ->
+          def sample = row['Sample']
+          def read = file(row['R'], checkIfExists: true)
+          def condition = row['Condition']
+          def patient = row['Patient']
+          return [ sample, read, condition, patient ]
+      }
+      .tap { annotated_reads }
+      .tap { illumina_input_ch }
+      .map { sample, read, condition, patient ->
+              return [ sample, [ read ] ] }
+      .set { illumina_input_ch }
+
   } else {
-    illumina_input_ch = Channel
-                  .fromPath( params.reads, checkIfExists: true )
-                  .splitCsv()
-                  .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true), file("${row[2]}", checkIfExists: true)]] }
-                  // .view()
+    Channel
+      .fromPath( params.reads, checkIfExists: true)
+      .splitCsv(header: true, sep: ',')
+      .map{row ->
+          def sample = row['Sample']
+          def read1 = file(row['R1'], checkIfExists: true)
+          def read2 = file(row['R2'], checkIfExists: true)
+          def condition = row['Condition']
+          def patient = row['Patient']
+          return [ sample, read1, read2, condition, patient ]
+      }
+      .tap { annotated_reads }
+      .tap { illumina_input_ch }
+      .map { sample, read1, read2, condition, patient ->
+              return [ sample, [ read1, read2 ] ] }
+      .set { illumina_input_ch }
   }
+}
+
+/*
+* read in comparisons
+*/
+if (params.dge) {
+  dge_comparisons_input_ch = Channel
+      .fromPath( params.dge, checkIfExists: true)
+      .splitCsv(header: true, sep: ',')
+      .map{row ->
+          def condition1 = row['Condition1']
+          def condition2 = row['Condition2']
+          return [ condition1, condition2 ]
+      }
+      // no further processing, in case other tools need this formatted in another way
 }
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
 //}
 
+/*
+* CHECK INPUT
+*/
+
+annotated_reads
+    .map{ row -> row[-2]}
+    .collect()
+    .subscribe onNext: { 
+      for ( i in it ){
+        assert 2 >= it.count(i)
+      }
+    }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
+
+
+sample_conditions = annotated_reads
+    .map{row -> row[-2]}
+    .toList()
+    .toSet()
+dge_comparisons_input_ch
+    .collect()
+    .flatten()
+    .combine(sample_conditions)
+    .subscribe onNext: {
+        assert it[1].contains(it[0])
+    }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conitions in ${params.reads}." }
 
 /************************** 
 * MODULES
@@ -160,6 +225,7 @@ workflow analysis_reference_based {
         hisat2_index
         annotation
         sortmerna_db
+        dge_comparisons_input_ch
 
   main:
     //trim
@@ -179,26 +245,55 @@ workflow analysis_reference_based {
     prepare_annotation(annotation)
 
     //defs
-    featurecounts.out
-      .fork{tuple -> 
-      name: tuple[0]
-      fc_formated: tuple[1][1]
-      }
-      .set { fc_out }
-
     script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
     script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
     script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
 
-    fc_out.name
-      .collect()
-      .set { name }
+    deseq2_comparisons = dge_comparisons_input_ch
+        .map { it.join(":") }
+        .map { "\"${it}\"" }
+        .collect()
+        .map { it.join(",") }
 
-    fc_out.fc_formated
-      .collect()
-      .set { fc_formated }
+    featurecounts.out
+        .fork{tuple -> 
+        sample: tuple[0]
+        fc_counts_formated: tuple[1][1]
+        }
+        .set { fc_out }
 
-    deseq2(name, fc_formated, prepare_annotation.out, prepare_annotation_gene_rows.out, script, script_refactor_reportingtools_table, script_improve_deseq_table)
+    fc_out.fc_counts_formated
+        .collect()
+        .set { fc_counts_formated }
+
+    fc_out.sample
+        .join( annotated_reads )
+        .fork{ it ->
+        col_label: it[0]
+        patient: it[-1]
+        condition: it[-2]
+        }
+        .set { annotated_sample }
+
+    annotated_sample.col_label
+        .collect()
+        .set { col_labels }
+
+    annotated_sample.condition
+        .collect()
+        .set { conditions }
+
+    annotated_sample.patient
+        .collect{ 
+          if (it) {
+            return it
+          } else {
+            return
+          }
+         }
+        .set { patients }
+
+    deseq2(fc_counts_formated, col_labels, conditions, patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, script, script_refactor_reportingtools_table, script_improve_deseq_table)
 } 
 
 workflow analysis_de_novo {
@@ -226,7 +321,7 @@ workflow {
       sortmerna_db = download_sortmerna.out
 
       // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db)
+      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch)
 }
 
 
@@ -240,11 +335,13 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --cores 4 --reads input.csv
+    nextflow run main.nf --cores 4 --reads input.csv --dge comparisons.csv
 
     ${c_yellow}Input:${c_reset}
-    ${c_green}--reads${c_reset}         a CSV file following the pattern: mock_rep1,fastq1,fastq2 with fastq2 beeing optional 
+    ${c_green}--reads${c_reset}         a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)${c_reset}
+    ${c_green}--dge${c_reset}           a CSV file following the pattern: conditionX,conditionY
+                                        Each line stands for one differential gene expression comparison.
     ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]

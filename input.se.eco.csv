@@ -1,6 +1,7 @@
-mock_rep1,data/eco/SRR2932637.fastq.gz
-mock_rep2,data/eco/SRR2932638.fastq.gz
-mock_rep3,data/eco/SRR2932639.fastq.gz
-treat_rep1,data/eco/SRR2932644.fastq.gz
-treat_rep2,data/eco/SRR2932645.fastq.gz
-treat_rep3,data/eco/SRR2932646.fastq.gz
+Sample,R,Condition,Patient
+mock_rep1,data/eco/SRR2932637.fastq.gz,mock,,
+mock_rep2,data/eco/SRR2932638.fastq.gz,mock,,
+mock_rep3,data/eco/SRR2932639.fastq.gz,mock,,
+treat_rep1,data/eco/SRR2932644.fastq.gz,treat,,
+treat_rep2,data/eco/SRR2932645.fastq.gz,treat,,
+treat_rep3,data/eco/SRR2932646.fastq.gz,treat,,
