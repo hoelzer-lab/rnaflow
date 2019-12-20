@@ -6,14 +6,15 @@
 process sortmerna {
   conda 'envs/sortmerna.yaml'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.other.fastq"
-  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.aligned.log"
+  // publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.aligned.log"
 
   input:
   tuple val(name), file(reads)
   file(db)
 
   output:
-  tuple val(name), file("${name}*.other.fastq")
+  tuple val(name), file("${name}*.other.fastq"), emit: no_rna_fastq
+  path "${name}.aligned.log", emit: log
 
   script:
   if (params.mode == 'single') {

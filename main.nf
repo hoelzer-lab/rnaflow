@@ -151,6 +151,7 @@ include './modules/sortmerna' params(cores: params.cores, output: params.output,
 include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
 include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
 include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
+include './modules/multiqc' params(output: params.output, dir: params.multiqc_dir)
 
 // helpers
 include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
@@ -241,13 +242,13 @@ workflow analysis_reference_based {
     fastp(illumina_input_ch)
 
     //remove rRNA
-    sortmerna(fastp.out, sortmerna_db)
+    sortmerna(fastp.out.sample_trimmed, sortmerna_db)
 
     //map
-    hisat2(sortmerna.out, hisat2_index)
+    hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
 
     //count
-    featurecounts(hisat2.out, annotation)
+    featurecounts(hisat2.out.sample_bam, annotation)
 
     //prepare annotation for R input
     prepare_annotation_gene_rows(annotation)
@@ -260,16 +261,16 @@ workflow analysis_reference_based {
         .collect()
         .map { it.join(",") }
 
-    featurecounts.out
+    featurecounts.out.formated_counts
         .fork{tuple -> 
         sample: tuple[0]
-        fc_counts_formated: tuple[1][1]
+        fc_counts_formated: tuple[1]
         }
         .set { fc_out }
 
-    fc_out.fc_counts_formated
-        .collect()
-        .set { fc_counts_formated }
+    // fc_out.fc_counts_formated
+    //     .collect()
+    //     .set { fc_counts_formated }
 
     fc_out.sample
         .join( annotated_reads )
@@ -280,13 +281,13 @@ workflow analysis_reference_based {
         }
         .set { annotated_sample }
 
-    annotated_sample.col_label
-        .collect()
-        .set { col_labels }
+    // annotated_sample.col_label
+    //     .collect()
+    //     .set { col_labels }
 
-    annotated_sample.condition
-        .collect()
-        .set { conditions }
+    // annotated_sample.condition
+    //     .collect()
+    //     .set { conditions }
 
     annotated_sample.patient
         .collect{ 
@@ -298,7 +299,9 @@ workflow analysis_reference_based {
          }
         .set { patients }
 
-    deseq2(fc_counts_formated, col_labels, conditions, patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    deseq2(fc_out.fc_counts_formated.collect(), annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+
+    multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
 } 
 
 workflow analysis_de_novo {

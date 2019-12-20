@@ -10,17 +10,18 @@ process hisat2 {
   tuple file(reference), file(index)
 
   output:
-  tuple val(sample_name), file("${sample_name}.sorted.bam")
+  tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: sample_bam 
+  path "${sample_name}_summary.log", emit: log
 
   script:
   if (params.mode == 'single') {
   """
-  hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${params.cores} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
+  hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${params.cores} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
   """
   }
   else {
   """
-  hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${params.cores} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
+  hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${params.cores} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
   """
   } 
 }

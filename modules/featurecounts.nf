@@ -11,7 +11,8 @@ process featurecounts {
   file(annotation)
 
   output:
-  tuple val(name), file("${name}.counts*") // [mock_rep1, [/home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts.formated, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts.summary]]
+  tuple val(name), file("${name}.counts.formated"), emit: formated_counts // [mock_rep1, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts.formated]
+  path "${name}.counts.summary", emit: log
 
   shell:
   if (params.mode == 'single') {
