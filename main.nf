@@ -98,6 +98,12 @@ if (params.dge) {
       }
       // no further processing, in case other tools need this formatted in another way
 }
+/*
+* DESeq2 scripts
+*/
+deseq2_script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
+deseq2_script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
+deseq2_script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
@@ -226,6 +232,9 @@ workflow analysis_reference_based {
         annotation
         sortmerna_db
         dge_comparisons_input_ch
+        deseq2_script
+        deseq2_script_refactor_reportingtools_table
+        deseq2_script_improve_deseq_table
 
   main:
     //trim
@@ -245,10 +254,6 @@ workflow analysis_reference_based {
     prepare_annotation(annotation)
 
     //defs
-    script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
-    script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
-    script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
-
     deseq2_comparisons = dge_comparisons_input_ch
         .map { it.join(":") }
         .map { "\"${it}\"" }
@@ -321,7 +326,7 @@ workflow {
       sortmerna_db = download_sortmerna.out
 
       // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch)
+      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch,deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 }
 
 
