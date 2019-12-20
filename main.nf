@@ -298,7 +298,7 @@ workflow analysis_reference_based {
          }
         .set { patients }
 
-    deseq2(fc_counts_formated, col_labels, conditions, patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, script, script_refactor_reportingtools_table, script_improve_deseq_table)
+    deseq2(fc_counts_formated, col_labels, conditions, patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 } 
 
 workflow analysis_de_novo {
