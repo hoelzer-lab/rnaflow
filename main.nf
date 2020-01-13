@@ -116,9 +116,9 @@ deseq2_script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/imp
 annotated_reads
     .map{ row -> row[-2]}
     .collect()
-    .subscribe onNext: { 
+    .subscribe onNext: {
       for ( i in it ){
-        assert 2 >= it.count(i)
+        assert 2 <= it.count(i)
       }
     }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
 
@@ -268,10 +268,6 @@ workflow analysis_reference_based {
         }
         .set { fc_out }
 
-    // fc_out.fc_counts_formated
-    //     .collect()
-    //     .set { fc_counts_formated }
-
     fc_out.sample
         .join( annotated_reads )
         .fork{ it ->
@@ -280,14 +276,6 @@ workflow analysis_reference_based {
         condition: it[-2]
         }
         .set { annotated_sample }
-
-    // annotated_sample.col_label
-    //     .collect()
-    //     .set { col_labels }
-
-    // annotated_sample.condition
-    //     .collect()
-    //     .set { conditions }
 
     annotated_sample.patient
         .collect{ 
