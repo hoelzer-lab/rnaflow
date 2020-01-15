@@ -38,6 +38,7 @@ println "Reference species:    $params.species"
 println "Output path:          $params.output"
 println "mode:                 $params.mode"
 println "strandness:           $params.strand"
+println "TPM threshold:        $params.tpm"
 
 /************************** 
 * INPUT CHANNELS 
@@ -133,7 +134,7 @@ dge_comparisons_input_ch
     .combine(sample_conditions)
     .subscribe onNext: {
         assert it[1].contains(it[0])
-    }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conitions in ${params.reads}." }
+    }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
 
 /************************** 
 * MODULES
@@ -150,6 +151,7 @@ include './modules/fastp' params(cores: params.cores, output: params.output, dir
 include './modules/sortmerna' params(cores: params.cores, output: params.output, dir: params.sortmerna_dir, mode: params.mode)
 include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
 include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
+include './modules/tpm_filter' params(output: params.output, dir: params.tpm_filter_dir, threshold: params.tpm)
 include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
 include './modules/multiqc' params(output: params.output, dir: params.multiqc_dir)
 
@@ -261,19 +263,28 @@ workflow analysis_reference_based {
         .collect()
         .map { it.join(",") }
 
-    featurecounts.out.formated_counts
-        .fork{tuple -> 
-        sample: tuple[0]
-        fc_counts_formated: tuple[1]
+    featurecounts.out.counts
+        .join( annotated_reads
+                .map{row -> [row[0], row[-2]]} 
+        )
+        .fork{ tupel ->
+          name: tupel[0]
+          count_file: tupel[1]
+          condition: tupel[2]
         }
-        .set { fc_out }
+        .set { tpm }
 
-    fc_out.sample
-        .join( annotated_reads )
+    tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
+
+    tpm_filter.out.samples
+        .flatMap()
+        .join( annotated_reads
+                .map{row -> [row[0], row[-2], row[-1]]}
+        )
         .fork{ it ->
         col_label: it[0]
-        patient: it[-1]
-        condition: it[-2]
+        condition: it[1]
+        patient: it[2]
         }
         .set { annotated_sample }
 
@@ -286,8 +297,11 @@ workflow analysis_reference_based {
           }
          }
         .set { patients }
-
-    deseq2(fc_out.fc_counts_formated.collect(), annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    tpm_filter.out.filtered_counts.view()
+    annotated_sample.col_label.collect().view()
+    annotated_sample.condition.collect().view()
+    patients.view()
+    deseq2(tpm_filter.out.filtered_counts, annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
     multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
 } 
@@ -317,7 +331,7 @@ workflow {
       sortmerna_db = download_sortmerna.out
 
       // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch,deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 }
 
 
@@ -349,6 +363,8 @@ def helpMSG() {
                              Simply provide the path like 'data/db/index'. DEPRECATED
     --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
+    --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
+                             if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
     --cores                  max cores for local use [default $params.cores]
     --memory                 max memory in GB for local use [default $params.memory]
     --output                 name of the result folder [default $params.output]

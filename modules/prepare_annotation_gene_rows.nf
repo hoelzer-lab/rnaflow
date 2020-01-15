@@ -2,7 +2,6 @@
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
 process prepare_annotation_gene_rows {
-    conda 'envs/python3.yaml'
     publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
 
     input: 
