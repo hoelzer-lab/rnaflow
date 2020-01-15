@@ -297,10 +297,7 @@ workflow analysis_reference_based {
           }
          }
         .set { patients }
-    tpm_filter.out.filtered_counts.view()
-    annotated_sample.col_label.collect().view()
-    annotated_sample.condition.collect().view()
-    patients.view()
+        
     deseq2(tpm_filter.out.filtered_counts, annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
     multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
