@@ -5,8 +5,8 @@
 ************************************************************************/
 process sortmerna {
   conda 'envs/sortmerna.yaml'
-  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.other.fastq"
-  // publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.aligned.log"
+  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.other.fastq"
+  publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.aligned.log"
 
   input:
   tuple val(name), file(reads)
@@ -23,7 +23,8 @@ process sortmerna {
 --reads ${reads[0]} \
 --aligned ${name}.aligned \
 --other ${name}.other \
---sam --fastx --log --blast 1 --num_alignments 1 -v 
+--sam --fastx --log --blast 1 --num_alignments 1 -v \
+-a ${params.cores}
   """
   }
   else {
@@ -33,15 +34,9 @@ process sortmerna {
 --reads ${name}.merged.fastq \
 --paired_in --aligned ${name}.aligned \
 --other ${name}.other_merged \
---sam --fastx --log --blast 1 --num_alignments 1 -v 
+--sam --fastx --log --blast 1 --num_alignments 1 -v \
+-a ${params.cores}
   unmerge-paired-reads.sh ${name}.other_merged.fastq ${name}.R1.other.fastq ${name}.R2.other.fastq
   """
   }
 }
-
-/*
-There is already Sortmerna v3 available, however, not on conda. 
-Attention: sortmerna v3 has input parameters for plain and gzipped files. 
-Thus, fastp could return gzipped files then. 
---threads ${params.cores} also only supported in v3
-*/
