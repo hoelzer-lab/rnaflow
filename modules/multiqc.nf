@@ -2,7 +2,7 @@
 * MultiQC
 ************************************************************************/
 process multiqc {
-    conda 'envs/multiqc.yaml'
+    label 'multiqc'
     publishDir "${params.output}/${params.dir}", mode: 'copy'
 
     input:

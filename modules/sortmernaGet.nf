@@ -2,7 +2,7 @@
 * DOWNLOAD SORTMERNA DATABASES
 ********************************************/
 process sortmernaGet {
-    conda 'envs/sortmerna.yaml'
+    label 'sortmerna'
     if (params.cloudProcess) { publishDir "${params.cloudDatabase}/databases/", mode: 'copy', pattern: "sortmerna/data/rRNA_databases" }
     else { storeDir "nextflow-autodownload-databases/databases/" }  
     output:

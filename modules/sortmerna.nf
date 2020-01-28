@@ -4,7 +4,7 @@
 * Remove rRNA reads
 ************************************************************************/
 process sortmerna {
-  conda 'envs/sortmerna.yaml'
+  label 'sortmerna'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.other.fastq"
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.aligned.log"
 

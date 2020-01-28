@@ -2,7 +2,7 @@
 * TPM filter
 ***************************************************/
 process tpm_filter {
-    conda 'envs/python3.yaml'
+    label 'python3'
     publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "**.counts.filtered.formated"
 
     input:

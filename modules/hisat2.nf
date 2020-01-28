@@ -2,7 +2,7 @@
 *
 ************************************************************************/
 process hisat2 {
-  conda 'envs/hisat2.yaml'
+  label 'hisat2'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${sample_name}.sorted.bam"
 
   input:

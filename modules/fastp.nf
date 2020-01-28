@@ -4,7 +4,7 @@
 * TODO: pimp the trimming command for adapters, sliding-window QC, ...
 ************************************************************************/
 process fastp {
-  conda 'envs/fastp.yaml'
+  label 'fastp'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}*.trimmed.fastq"
 
   input:

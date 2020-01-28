@@ -3,7 +3,7 @@
 * TODO: check that we do not miss a gene due to the 'sed 1d' remove of the first two lines
 ************************************************************************/
 process featurecounts {
-  conda 'envs/subread.yaml'
+  label 'subread'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.counts*"
 
   input:

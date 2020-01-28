@@ -2,7 +2,7 @@
 * HISAT2 INDEX
 ************************************************************************/
 process hisat2index {
-  conda 'envs/hisat2.yaml'
+  label 'hisat2'
   if (params.cloudProcess) { publishDir "${params.cloudDatabase}/genomes/${params.reference}", mode: 'copy', pattern: "${params.reference}*.ht2" }
   else { storeDir "nextflow-autodownload-databases/genomes/${params.reference}" }  
 
