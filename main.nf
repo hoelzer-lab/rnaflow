@@ -136,6 +136,10 @@ dge_comparisons_input_ch
         assert it[1].contains(it[0])
     }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
 
+if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
+  exit 1, "--tpm has to be numeric"
+}
+
 /************************** 
 * MODULES
 **************************/
