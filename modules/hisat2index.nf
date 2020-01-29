@@ -14,6 +14,6 @@ process hisat2index {
 
   script:
   """
-  hisat2-build -p ${params.cores} ${reference} ${reference.baseName}
+  hisat2-build -p ${task.cpus} ${reference} ${reference.baseName}
   """
 }

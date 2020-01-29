@@ -17,12 +17,12 @@ process featurecounts {
   shell:
   if (params.mode == 'single') {
   '''
-  featureCounts -T !{params.cores} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
+  featureCounts -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
   '''
   }
   else {
   '''
-  featureCounts -pBP -T !{params.cores} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
+  featureCounts -pBP -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
   '''
   }
 }
