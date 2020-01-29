@@ -2,6 +2,7 @@
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
 process prepare_annotation_gene_rows {
+    label 'python3'
     publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
 
     input: 

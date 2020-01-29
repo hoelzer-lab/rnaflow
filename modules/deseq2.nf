@@ -2,7 +2,7 @@
 * DESEQ2
 ***************************************************/
 process deseq2 {
-    conda 'envs/deseq2.yaml'
+    label 'deseq2'
     publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "*"
 
     input:

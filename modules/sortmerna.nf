@@ -4,7 +4,7 @@
 * Remove rRNA reads
 ************************************************************************/
 process sortmerna {
-  conda 'envs/sortmerna.yaml'
+  label 'sortmerna'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.other.fastq"
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.aligned.log"
 
@@ -24,7 +24,7 @@ process sortmerna {
 --aligned ${name}.aligned \
 --other ${name}.other \
 --sam --fastx --log --blast 1 --num_alignments 1 -v \
--a ${params.cores}
+-a ${task.cpus}
   """
   }
   else {
@@ -35,7 +35,7 @@ process sortmerna {
 --paired_in --aligned ${name}.aligned \
 --other ${name}.other_merged \
 --sam --fastx --log --blast 1 --num_alignments 1 -v \
--a ${params.cores}
+-a ${task.cpus}
   unmerge-paired-reads.sh ${name}.other_merged.fastq ${name}.R1.other.fastq ${name}.R2.other.fastq
   """
   }

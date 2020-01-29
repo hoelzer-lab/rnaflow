@@ -2,7 +2,7 @@
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
 process prepare_annotation {
-    conda 'envs/python3.yaml'
+    label 'python3'
     publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${annotation.baseName}.id2ensembl"
 
     input: 

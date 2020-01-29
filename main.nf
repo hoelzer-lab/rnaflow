@@ -148,13 +148,13 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 include './modules/sortmernaGet' params(cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/hisat2index' params(cores: params.cores, reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include './modules/hisat2index' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
 
 // analysis
-include './modules/fastp' params(cores: params.cores, output: params.output, dir: params.fastp_dir, mode: params.mode)
-include './modules/sortmerna' params(cores: params.cores, output: params.output, dir: params.sortmerna_dir, mode: params.mode)
-include './modules/hisat2' params(cores: params.cores, output: params.output, dir: params.hisat2_dir, mode: params.mode)
-include './modules/featurecounts' params(cores: params.cores, output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
+include './modules/fastp' params(output: params.output, dir: params.fastp_dir, mode: params.mode)
+include './modules/sortmerna' params(output: params.output, dir: params.sortmerna_dir, mode: params.mode)
+include './modules/hisat2' params(output: params.output, dir: params.hisat2_dir, mode: params.mode)
+include './modules/featurecounts' params(output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
 include './modules/tpm_filter' params(output: params.output, dir: params.tpm_filter_dir, threshold: params.tpm)
 include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
 include './modules/multiqc' params(output: params.output, dir: params.multiqc_dir)

@@ -2,7 +2,7 @@
 *
 ************************************************************************/
 process hisat2 {
-  conda 'envs/hisat2.yaml'
+  label 'hisat2'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${sample_name}.sorted.bam"
 
   input:
@@ -16,12 +16,12 @@ process hisat2 {
   script:
   if (params.mode == 'single') {
   """
-  hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${params.cores} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
+  hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
   """
   }
   else {
   """
-  hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${params.cores} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${params.cores}
+  hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
   """
   } 
 }

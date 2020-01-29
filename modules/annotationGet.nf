@@ -3,6 +3,7 @@
 ********************************************/
 process annotationGet {
     //conda 'envs/hisat2.yaml'
+    label 'python3'
     if (params.cloudProcess) { publishDir "${params.cloudDatabase}/annotations/${params.annotation}", mode: 'copy', pattern: "${params.annotation}.gtf" }
     else { storeDir "nextflow-autodownload-databases/annotations/${params.annotation}" }  
     output:

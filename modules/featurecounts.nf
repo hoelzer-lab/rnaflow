@@ -3,7 +3,7 @@
 * TODO: check that we do not miss a gene due to the 'sed 1d' remove of the first two lines
 ************************************************************************/
 process featurecounts {
-  conda 'envs/subread.yaml'
+  label 'subread'
   publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "${name}.counts*"
 
   input:
@@ -17,12 +17,12 @@ process featurecounts {
   shell:
   if (params.mode == 'single') {
   '''
-  featureCounts -T !{params.cores} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
+  featureCounts -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
   '''
   }
   else {
   '''
-  featureCounts -pBP -T !{params.cores} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
+  featureCounts -pBP -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
   '''
   }
 }

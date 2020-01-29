@@ -3,6 +3,7 @@
 ********************************************/
 process referenceGet {
     //conda 'envs/hisat2.yaml'
+    label 'python3'
     if (params.cloudProcess) { publishDir "${params.cloudDatabase}/genomes/${params.reference}", mode: 'copy', pattern: "${params.reference}.fa" }
     else { storeDir "nextflow-autodownload-databases/genomes/${params.reference}" }  
     output:
