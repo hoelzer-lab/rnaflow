@@ -32,13 +32,17 @@ if (params.dge == '') {exit 1, "--dge is a required parameter"}
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
-println "\nD I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S"
-println "= = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = ="
-println "Reference species:    $params.species"
-println "Output path:          $params.output"
-println "mode:                 $params.mode"
-println "strandness:           $params.strand"
-println "TPM threshold:        $params.tpm"
+
+log.info """\
+    D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
+    = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
+    Reference species:    $params.species
+    Output path:          $params.output
+    mode:                 $params.mode
+    strandness:           $params.strand
+    TPM threshold:        $params.tpm
+    """
+    .stripIndent()
 
 /************************** 
 * INPUT CHANNELS 
@@ -48,56 +52,56 @@ println "TPM threshold:        $params.tpm"
 * read in sample sheet
 */
 if (params.reads) { 
-  if (params.mode == 'single') {
+    if (params.mode == 'single') {
     Channel
-      .fromPath( params.reads, checkIfExists: true)
-      .splitCsv(header: true, sep: ',')
-      .map{row ->
-          def sample = row['Sample']
-          def read = file(row['R'], checkIfExists: true)
-          def condition = row['Condition']
-          def patient = row['Patient']
-          return [ sample, read, condition, patient ]
-      }
-      .tap { annotated_reads }
-      .tap { illumina_input_ch }
-      .map { sample, read, condition, patient ->
-              return [ sample, [ read ] ] }
-      .set { illumina_input_ch }
+        .fromPath( params.reads, checkIfExists: true)
+        .splitCsv(header: true, sep: ',')
+        .map{row ->
+            def sample = row['Sample']
+            def read = file(row['R'], checkIfExists: true)
+            def condition = row['Condition']
+            def patient = row['Patient']
+            return [ sample, read, condition, patient ]
+        }
+        .tap { annotated_reads }
+        .tap { illumina_input_ch }
+        .map { sample, read, condition, patient ->
+            return [ sample, [ read ] ] }
+        .set { illumina_input_ch }
 
-  } else {
+    } else {
     Channel
-      .fromPath( params.reads, checkIfExists: true)
-      .splitCsv(header: true, sep: ',')
-      .map{row ->
-          def sample = row['Sample']
-          def read1 = file(row['R1'], checkIfExists: true)
-          def read2 = file(row['R2'], checkIfExists: true)
-          def condition = row['Condition']
-          def patient = row['Patient']
-          return [ sample, read1, read2, condition, patient ]
-      }
-      .tap { annotated_reads }
-      .tap { illumina_input_ch }
-      .map { sample, read1, read2, condition, patient ->
-              return [ sample, [ read1, read2 ] ] }
-      .set { illumina_input_ch }
-  }
+        .fromPath( params.reads, checkIfExists: true)
+        .splitCsv(header: true, sep: ',')
+        .map{row ->
+            def sample = row['Sample']
+            def read1 = file(row['R1'], checkIfExists: true)
+            def read2 = file(row['R2'], checkIfExists: true)
+            def condition = row['Condition']
+            def patient = row['Patient']
+            return [ sample, read1, read2, condition, patient ]
+        }
+        .tap { annotated_reads }
+        .tap { illumina_input_ch }
+        .map { sample, read1, read2, condition, patient ->
+            return [ sample, [ read1, read2 ] ] }
+        .set { illumina_input_ch }
+    }
 }
 
 /*
 * read in comparisons
 */
 if (params.dge) {
-  dge_comparisons_input_ch = Channel
-      .fromPath( params.dge, checkIfExists: true)
-      .splitCsv(header: true, sep: ',')
-      .map{row ->
-          def condition1 = row['Condition1']
-          def condition2 = row['Condition2']
-          return [ condition1, condition2 ]
-      }
-      // no further processing, in case other tools need this formatted in another way
+    dge_comparisons_input_ch = Channel
+        .fromPath( params.dge, checkIfExists: true)
+        .splitCsv(header: true, sep: ',')
+        .map{row ->
+            def condition1 = row['Condition1']
+            def condition2 = row['Condition2']
+            return [ condition1, condition2 ]
+        }
+        // no further processing, in case other tools need this formatted in another way
 }
 /*
 * DESeq2 scripts
@@ -118,9 +122,9 @@ annotated_reads
     .map{ row -> row[-2]}
     .collect()
     .subscribe onNext: {
-      for ( i in it ){
+        for ( i in it ){
         assert 2 <= it.count(i)
-      }
+        }
     }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
 
 
@@ -137,7 +141,7 @@ dge_comparisons_input_ch
     }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
 
 if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
-  exit 1, "--tpm has to be numeric"
+    exit 1, "--tpm has to be numeric"
 }
 
 /************************** 
@@ -145,23 +149,22 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 **************************/
 
 // databases
-include './modules/referenceGet' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/annotationGet' params(annotation: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/sortmernaGet' params(cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/hisat2index' params(reference: params.species, cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
+include referenceGet from './modules/referenceGet'
+include annotationGet from './modules/annotationGet'
+include sortmernaGet from './modules/sortmernaGet'
+include hisat2index from './modules/hisat2'
 
 // analysis
-include './modules/fastp' params(output: params.output, dir: params.fastp_dir, mode: params.mode)
-include './modules/sortmerna' params(output: params.output, dir: params.sortmerna_dir, mode: params.mode)
-include './modules/hisat2' params(output: params.output, dir: params.hisat2_dir, mode: params.mode)
-include './modules/featurecounts' params(output: params.output, dir: params.featurecounts_dir, mode: params.mode, strand: params.strand)
-include './modules/tpm_filter' params(output: params.output, dir: params.tpm_filter_dir, threshold: params.tpm)
-include './modules/deseq2' params(output: params.output, dir: params.deseq2_dir, species: params.species)
-include './modules/multiqc' params(output: params.output, dir: params.multiqc_dir)
+include fastp from './modules/fastp'
+include sortmerna from './modules/sortmerna'
+include hisat2 from './modules/hisat2'
+include featurecounts from './modules/featurecounts'
+include tpm_filter from './modules/tpm_filter'
+include deseq2 from './modules/deseq2'
+include multiqc from './modules/multiqc'
 
 // helpers
-include './modules/prepare_annotation' params(output: params.output, dir: params.annotation_dir)
-include './modules/prepare_annotation_gene_rows' params(output: params.output, dir: params.annotation_dir)
+include {prepare_annotation; prepare_annotation_gene_rows} from './modules/prepare_annotation'
 
 /************************** 
 * DATABASES
@@ -173,56 +176,60 @@ It is written for local use and cloud use via params.cloudProcess.
 */
 
 workflow download_reference {
-  main:
-    // local storage via storeDir
-    if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
-    // cloud storage file.exists()?
-    if (params.cloudProcess) {
-      reference_preload = file("${params.cloudDatabase}/genomes/${params.reference}/${params.reference}.fa.gz")
-      if (reference_preload.exists()) { reference = reference_preload }
-      else  { referenceGet(); reference = referenceGet.out } 
-    }
-  emit: reference
+    main:
+        // local storage via storeDir
+        if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
+        // cloud storage file.exists()?
+        if (params.cloudProcess) {
+            reference_preload = file("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
+            if (reference_preload.exists()) { reference = reference_preload }
+            else { referenceGet(); reference = referenceGet.out } 
+        }
+    emit:
+        reference
 }
 
 workflow download_annotation {
-  main:
-    // local storage via storeDir
-    if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
-    // cloud storage file.exists()?
-    if (params.cloudProcess) {
-      annotation_preload = file("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
-      if (annotation_preload.exists()) { annotation = annotation_preload }
-      else  { annotationGet(); annotation = annotationGet.out } 
-    }
-  emit: annotation
+    main:
+        // local storage via storeDir
+        if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
+        // cloud storage file.exists()?
+        if (params.cloudProcess) {
+            annotation_preload = file("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
+            if (annotation_preload.exists()) { annotation = annotation_preload }
+            else { annotationGet(); annotation = annotationGet.out } 
+        }
+    emit:
+        annotation
 }
 
 workflow download_sortmerna {
-  main:
-    // local storage via storeDir
-    if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
-    // cloud storage file.exists()?
-    if (params.cloudProcess) {
-      sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
-      if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
-      else  { sortmernaGet(); sortmerna = sortmernaGet.out } 
-    }
-  emit: sortmerna
+    main:
+        // local storage via storeDir
+        if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
+        // cloud storage file.exists()?
+        if (params.cloudProcess) {
+            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
+            if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
+            else { sortmernaGet(); sortmerna = sortmernaGet.out } 
+        }
+    emit:
+        sortmerna
 }
 
 workflow hisat2_index_reference {
-  get: reference
-  main:
-    // local storage via storeDir
-    if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
-    // cloud storage file.exists()?
-    if (params.cloudProcess) {
-      index_preload = file("${params.cloudDatabase}/genomes/${params.reference}/${params.reference}*.ht2")
-      if (index_preload.exists()) { index = index_preload }
-      else  { hisat2index(reference); index = hisat2index.out } 
-    }
-  emit: index
+    take: reference
+    main:
+        // local storage via storeDir
+        if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
+        // cloud storage file.exists()?
+        if (params.cloudProcess) {
+            index_preload = file("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
+            if (index_preload.exists()) { index = index_preload }
+            else { hisat2index(reference); index = hisat2index.out } 
+        }
+    emit:
+        index
 }
 
 
@@ -234,7 +241,8 @@ workflow hisat2_index_reference {
 
 
 workflow analysis_reference_based {
-  get:  illumina_input_ch
+    take:
+        illumina_input_ch
         hisat2_index
         annotation
         sortmerna_db
@@ -243,68 +251,68 @@ workflow analysis_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
 
-  main:
-    //trim
-    fastp(illumina_input_ch)
+    main:
+        //trim
+        fastp(illumina_input_ch)
 
-    //remove rRNA
-    sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+        //remove rRNA
+        sortmerna(fastp.out.sample_trimmed, sortmerna_db)
 
-    //map
-    hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
+        //map
+        hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
 
-    //count
-    featurecounts(hisat2.out.sample_bam, annotation)
+        //count
+        featurecounts(hisat2.out.sample_bam, annotation)
 
-    //prepare annotation for R input
-    prepare_annotation_gene_rows(annotation)
-    prepare_annotation(annotation)
+        //prepare annotation for R input
+        prepare_annotation_gene_rows(annotation)
+        prepare_annotation(annotation)
 
-    //defs
-    deseq2_comparisons = dge_comparisons_input_ch
-        .map { it.join(":") }
-        .map { "\"${it}\"" }
-        .collect()
-        .map { it.join(",") }
+        //defs
+        deseq2_comparisons = dge_comparisons_input_ch
+            .map { it.join(":") }
+            .map { "\"${it}\"" }
+            .collect()
+            .map { it.join(",") }
 
-    featurecounts.out.counts
-        .join( annotated_reads
-                .map{row -> [row[0], row[-2]]} 
-        )
-        .fork{ tupel ->
-          name: tupel[0]
-          count_file: tupel[1]
-          condition: tupel[2]
-        }
-        .set { tpm }
+        featurecounts.out.counts
+            .join( annotated_reads
+                    .map{row -> [row[0], row[-2]]} 
+            )
+            .multiMap{ tupel ->
+                name: tupel[0]
+                count_file: tupel[1]
+                condition: tupel[2]
+            }
+            .set { tpm }
 
-    tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
+        tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
 
-    tpm_filter.out.samples
-        .flatMap()
-        .join( annotated_reads
-                .map{row -> [row[0], row[-2], row[-1]]}
-        )
-        .fork{ it ->
-        col_label: it[0]
-        condition: it[1]
-        patient: it[2]
-        }
-        .set { annotated_sample }
+        tpm_filter.out.samples
+            .flatMap()
+            .join( annotated_reads
+                    .map{row -> [row[0], row[-2], row[-1]]}
+            )
+            .multiMap{ it ->
+            col_label: it[0]
+            condition: it[1]
+            patient: it[2]
+            }
+            .set { annotated_sample }
 
-    annotated_sample.patient
-        .collect{ 
-          if (it) {
-            return it
-          } else {
-            return
-          }
-         }
-        .set { patients }
-        
-    deseq2(tpm_filter.out.filtered_counts, annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+        annotated_sample.patient
+            .collect{ 
+                if (it) {
+                return it
+                } else {
+                return
+                }
+                }
+            .set { patients }
+            
+        deseq2(tpm_filter.out.filtered_counts, annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
-    multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
+        multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
 } 
 
 workflow analysis_de_novo {
@@ -319,20 +327,20 @@ workflow analysis_de_novo {
 /* Comment section: */
 
 workflow {
-      // get the reference genome and index it for hisat2
-      hisat2_index_reference(download_reference())
-      hisat2_index = hisat2_index_reference.out
+    // get the reference genome and index it for hisat2
+    hisat2_index_reference(download_reference())
+    hisat2_index = hisat2_index_reference.out
 
-      // get the annotation
-      download_annotation()
-      annotation = download_annotation.out
+    // get the annotation
+    download_annotation()
+    annotation = download_annotation.out
 
-      // get sortmerna databases
-      download_sortmerna()
-      sortmerna_db = download_sortmerna.out
+    // get sortmerna databases
+    download_sortmerna()
+    sortmerna_db = download_sortmerna.out
 
-      // start reference-based analysis
-      analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    // start reference-based analysis
+    analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 }
 
 

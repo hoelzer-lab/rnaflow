@@ -3,7 +3,7 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
-    publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "*"
+    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
 
     input:
     file(fc_counts_formated)
