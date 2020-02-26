@@ -8,7 +8,7 @@ process annotationGet {
     else { storeDir "nextflow-autodownload-databases/annotations/${params.species}" }  
     
     output:
-    file("${params.species}.gtf")
+    path("${params.species}.gtf")
     
     script:
     if (params.species == 'hsa') {

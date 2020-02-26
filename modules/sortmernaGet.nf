@@ -8,7 +8,7 @@ process sortmernaGet {
     else { storeDir "nextflow-autodownload-databases/databases/" }  
 
     output:
-    file("sortmerna/data/rRNA_databases")
+    path("sortmerna/data/rRNA_databases")
 
     script:
     """

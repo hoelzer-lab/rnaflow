@@ -8,10 +8,10 @@ process hisat2index {
     else { storeDir "nextflow-autodownload-databases/genomes/${params.species}" }  
 
     input:
-    file(reference)
+    path(reference)
 
     output:
-    tuple file(reference), file("${params.species}*.ht2")
+    tuple path(reference), path("${params.species}*.ht2")
 
     script:
     """
@@ -28,8 +28,8 @@ process hisat2 {
     publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "${sample_name}.sorted.bam"
 
     input:
-    tuple val(sample_name), file(reads)
-    tuple file(reference), file(index)
+    tuple val(sample_name), path(reads)
+    tuple path(reference), path(index)
 
     output:
     tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: sample_bam 

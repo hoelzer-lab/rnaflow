@@ -9,7 +9,7 @@ process fastp {
     publishDir "${params.output}/${params.fastp_dir}", mode: 'copy', pattern: "${name}*.trimmed.fastq"
 
     input:
-    tuple val(name), file(reads)
+    tuple val(name), path(reads)
 
     output:
     tuple val(name), path("${name}*.trimmed.fastq"), emit: sample_trimmed

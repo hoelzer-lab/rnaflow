@@ -6,16 +6,16 @@ process deseq2 {
     publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
 
     input:
-    file(fc_counts_formated)
+    path(fc_counts_formated)
     val(col_labels)
     val(condition)
     val(patients)
     val(comparisons)
-    file(ensembl2id)
-    file(annotation_genes)
-    file(script)
-    file(script_refactor_reportingtools_table)
-    file(script_improve_deseq_table)
+    path(ensembl2id)
+    path(annotation_genes)
+    path(script)
+    path(script_refactor_reportingtools_table)
+    path(script_improve_deseq_table)
 
     output:
     path("*")

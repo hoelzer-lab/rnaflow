@@ -7,7 +7,7 @@ process referenceGet {
     else { storeDir "nextflow-autodownload-databases/genomes/${params.species}" }  
     
     output:
-    file("${params.species}.fa")
+    path("${params.species}.fa")
     
     script:
     if (params.species == 'hsa') {

@@ -75,8 +75,8 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read1 = file(row['R1'], checkIfExists: true)
-            def read2 = file(row['R2'], checkIfExists: true)
+            def read1 = path(row['R1'], checkIfExists: true)
+            def read2 = path(row['R2'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read1, read2, condition, patient ]
@@ -181,7 +181,7 @@ workflow download_reference {
         if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = file("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
+            reference_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
             if (reference_preload.exists()) { reference = reference_preload }
             else { referenceGet(); reference = referenceGet.out } 
         }
@@ -195,7 +195,7 @@ workflow download_annotation {
         if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = file("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
+            annotation_preload = path("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
             if (annotation_preload.exists()) { annotation = annotation_preload }
             else { annotationGet(); annotation = annotationGet.out } 
         }
@@ -209,7 +209,7 @@ workflow download_sortmerna {
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
+            sortmerna_preload = path("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
             if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
             else { sortmernaGet(); sortmerna = sortmernaGet.out } 
         }
@@ -224,7 +224,7 @@ workflow hisat2_index_reference {
         if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            index_preload = file("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
+            index_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
             if (index_preload.exists()) { index = index_preload }
             else { hisat2index(reference); index = hisat2index.out } 
         }

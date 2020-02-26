@@ -10,11 +10,11 @@ process sortmerna {
     publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}.aligned.log"
 
     input:
-    tuple val(name), file(reads)
-    file(db)
+    tuple val(name), path(reads)
+    path(db)
 
     output:
-    tuple val(name), file("${name}*.other.fastq"), emit: no_rna_fastq
+    tuple val(name), path("${name}*.other.fastq"), emit: no_rna_fastq
     path "${name}.aligned.log", emit: log
 
     script:

@@ -6,10 +6,10 @@ process prepare_annotation {
     publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.id2ensembl"
 
     input: 
-    file(annotation)
+    path(annotation)
 
     output:
-    file("${annotation.baseName}.id2ensembl")
+    path("${annotation.baseName}.id2ensembl")
 
     shell:
     '''
@@ -38,10 +38,10 @@ process prepare_annotation_gene_rows {
     publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
 
     input: 
-    file(annotation)
+    path(annotation)
 
     output:
-    file("${annotation.baseName}.gene.gtf")
+    path("${annotation.baseName}.gene.gtf")
 
     script:
     """
