@@ -7,12 +7,12 @@ process deseq2 {
 
     input:
     path(fc_counts_formated)
-    val(col_labels)
     val(condition)
-    val(patients)
+    val(col_labels)
     val(comparisons)
     path(ensembl2id)
     path(annotation_genes)
+    val(patients)
     path(script)
     path(script_refactor_reportingtools_table)
     path(script_improve_deseq_table)
@@ -22,7 +22,7 @@ process deseq2 {
     
     script:
 
-    samples = fc_counts_formated.collect { "\"${it}\"" }.join(",")
+    sample_files = fc_counts_formated.collect { "\"${it}\"" }.join(",")
     col_labels = col_labels.collect { "\"${it}\"" }.join(",")
     conditions = condition.collect { "\"${it}\"" }.join(",")
     levels = condition.collect { "\"${it}\"" }.toSet().join(",")
@@ -34,7 +34,7 @@ process deseq2 {
     }
 
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${samples}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
     """
 }
 /*
