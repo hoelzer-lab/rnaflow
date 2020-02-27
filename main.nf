@@ -291,12 +291,12 @@ workflow analysis_reference_based {
         tpm_filter.out.samples
             .flatMap()
             .join( annotated_reads
-                    .map{row -> [row[0], row[-2], row[-1]]}
+                .map{row -> [row[0], row[-2], row[-1]]}
             )
             .multiMap{ it ->
-            col_label: it[0]
-            condition: it[1]
-            patient: it[2]
+                col_label: it[0]
+                condition: it[1]
+                patient: it[2]
             }
             .set { annotated_sample }
 
@@ -309,8 +309,8 @@ workflow analysis_reference_based {
                 }
                 }
             .set { patients }
-            
-        deseq2(tpm_filter.out.filtered_counts, annotated_sample.col_label.collect(), annotated_sample.condition.collect(), patients, deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+        
+        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, patients, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
         multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
 } 
