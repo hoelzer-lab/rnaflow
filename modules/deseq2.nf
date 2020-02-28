@@ -27,7 +27,7 @@ process deseq2 {
     conditions = condition.collect { "\"${it}\"" }.join(",")
     levels = condition.collect { "\"${it}\"" }.toSet().join(",")
     if ( patients.toSet().size() == 1 && ! patients.toSet()[0] ) {
-        // patients is a list with only null as emlements ([null, null, null, null])
+        // patients is a list with empty emlements ([, , , ])
         patients = ''
     } else {
         patients = patients.collect { "\"${it}\"" }.join(",")

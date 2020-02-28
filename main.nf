@@ -295,24 +295,14 @@ workflow analysis_reference_based {
             }
             .set { annotated_sample }
 
-        annotated_sample.patient
-            .collect{ 
-                if (it) {
-                return it
-                } else {
-                return
-                }
-                }
-            .set { patients }
-
         deseq2_comparisons = dge_comparisons_input_ch
             .map { it.join(":") }
             .map { "\"${it}\"" }
             .collect()
             .map { it.join(",") }
-                    
+
         // run DEseq2
-        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, patients, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
         // run MultiQC
         multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
