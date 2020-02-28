@@ -252,29 +252,23 @@ workflow analysis_reference_based {
         deseq2_script_improve_deseq_table
 
     main:
-        //trim
+        // trim with fastp
         fastp(illumina_input_ch)
 
-        //remove rRNA
+        // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
 
-        //map
+        // map with HISAT2
         hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
 
-        //count
+        // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
 
-        //prepare annotation for R input
+        // prepare annotation for R input
         prepare_annotation_gene_rows(annotation)
         prepare_annotation(annotation)
 
-        //defs
-        deseq2_comparisons = dge_comparisons_input_ch
-            .map { it.join(":") }
-            .map { "\"${it}\"" }
-            .collect()
-            .map { it.join(",") }
-
+        // filter by TPM value
         featurecounts.out.counts
             .join( annotated_reads
                     .map{row -> [row[0], row[-2]]} 
@@ -288,6 +282,7 @@ workflow analysis_reference_based {
 
         tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
 
+        // prepare DEseq2
         tpm_filter.out.samples
             .flatMap()
             .join( annotated_reads
@@ -309,9 +304,17 @@ workflow analysis_reference_based {
                 }
                 }
             .set { patients }
-        
+
+        deseq2_comparisons = dge_comparisons_input_ch
+            .map { it.join(":") }
+            .map { "\"${it}\"" }
+            .collect()
+            .map { it.join(",") }
+                    
+        // run DEseq2
         deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, patients, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
+        // run MultiQC
         multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
 } 
 
