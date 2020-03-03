@@ -3,38 +3,38 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
-    publishDir "${params.output}/${params.dir}", mode: 'copy', pattern: "*"
+    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
 
     input:
-    file(fc_counts_formated)
-    val(col_labels)
+    path(fc_counts_formated)
     val(condition)
-    val(patients)
+    val(col_labels)
     val(comparisons)
-    file(ensembl2id)
-    file(annotation_genes)
-    file(script)
-    file(script_refactor_reportingtools_table)
-    file(script_improve_deseq_table)
+    path(ensembl2id)
+    path(annotation_genes)
+    val(patients)
+    path(script)
+    path(script_refactor_reportingtools_table)
+    path(script_improve_deseq_table)
 
     output:
     path("*")
     
     script:
 
-    samples = fc_counts_formated.collect { "\"${it}\"" }.join(",")
+    sample_files = fc_counts_formated.collect { "\"${it}\"" }.join(",")
     col_labels = col_labels.collect { "\"${it}\"" }.join(",")
     conditions = condition.collect { "\"${it}\"" }.join(",")
     levels = condition.collect { "\"${it}\"" }.toSet().join(",")
     if ( patients.toSet().size() == 1 && ! patients.toSet()[0] ) {
-        // patients is a list with only null as emlements ([null, null, null, null])
+        // patients is a list with empty emlements ([, , , ])
         patients = ''
     } else {
         patients = patients.collect { "\"${it}\"" }.join(",")
     }
 
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${samples}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
     """
 }
 /*

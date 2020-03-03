@@ -3,7 +3,7 @@
 ************************************************************************/
 process multiqc {
     label 'multiqc'
-    publishDir "${params.output}/${params.dir}", mode: 'copy'
+    publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy'
 
     input:
     path(fastp)
