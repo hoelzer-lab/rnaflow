@@ -75,8 +75,8 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read1 = path(row['R1'], checkIfExists: true)
-            def read2 = path(row['R2'], checkIfExists: true)
+            def read1 = file(row['R1'], checkIfExists: true)
+            def read2 = file(row['R2'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read1, read2, condition, patient ]
@@ -209,7 +209,7 @@ workflow download_sortmerna {
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            sortmerna_preload = path("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
+            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
             if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
             else { sortmernaGet(); sortmerna = sortmernaGet.out } 
         }
