@@ -75,8 +75,8 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read1 = path(row['R1'], checkIfExists: true)
-            def read2 = path(row['R2'], checkIfExists: true)
+            def read1 = file(row['R1'], checkIfExists: true)
+            def read2 = file(row['R2'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read1, read2, condition, patient ]

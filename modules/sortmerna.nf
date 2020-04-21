@@ -6,7 +6,7 @@
 process sortmerna {
     label 'sortmerna'
 
-    publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}.other.fastq"
+    publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}*.other.fastq"
     publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}.aligned.log"
 
     input:
