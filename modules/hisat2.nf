@@ -3,15 +3,11 @@
 ************************************************************************/
 process hisat2index {
     label 'hisat2'
-
-    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/genomes/${params.species}", mode: 'copy', pattern: "${params.species}*.ht2" }
-    else { storeDir "nextflow-autodownload-databases/genomes/${params.species}" }  
-
     input:
     path(reference)
 
     output:
-    tuple path(reference), path("${params.species}*.ht2")
+    tuple path(reference), path("${reference.baseName}*.ht2")
 
     script:
     """

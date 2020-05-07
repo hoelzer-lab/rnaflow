@@ -217,22 +217,6 @@ workflow download_sortmerna {
         sortmerna
 }
 
-workflow hisat2_index_reference {
-    take: reference
-    main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            index_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
-            if (index_preload.exists()) { index = index_preload }
-            else { hisat2index(reference); index = hisat2index.out } 
-        }
-    emit:
-        index
-}
-
-
 /************************** 
 * SUB WORKFLOWS
 **************************/
@@ -243,7 +227,7 @@ workflow hisat2_index_reference {
 workflow analysis_reference_based {
     take:
         illumina_input_ch
-        hisat2_index
+        reference   
         annotation
         sortmerna_db
         dge_comparisons_input_ch
@@ -258,8 +242,10 @@ workflow analysis_reference_based {
         // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
 
+        // HISAT2 index
+        hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
+        hisat2(sortmerna.out.no_rna_fastq, hisat2index.out)
 
         // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
@@ -321,8 +307,8 @@ workflow analysis_de_novo {
 
 workflow {
     // get the reference genome and index it for hisat2
-    hisat2_index_reference(download_reference())
-    hisat2_index = hisat2_index_reference.out
+    download_reference()
+    reference = download_reference.out
 
     // get the annotation
     download_annotation()
@@ -333,7 +319,7 @@ workflow {
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 }
 
 
