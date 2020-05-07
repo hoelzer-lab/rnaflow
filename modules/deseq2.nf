@@ -34,7 +34,7 @@ process deseq2 {
     }
 
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients})' ${script}
     """
 }
 /*

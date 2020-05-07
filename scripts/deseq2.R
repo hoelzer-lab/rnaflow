@@ -392,10 +392,11 @@ comparisons <- eval( parse(text=args[6]) )
 out <- paste(project_dir,'/',sep='') # deseq2 dir is created by nextflow in the results dir ()
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
-species <- eval( parse(text=args[9]) )[1]
+# species <- eval( parse(text=args[9]) )[1]
 
 ntops <- c(500)
-patients <- eval( parse(text=args[10]) ) # patients is a vector like c("1","1","1","2","2","2"), so if we have samples from the same patient we want to use as replicates, and not all vs all
+patients <- eval( parse(text=args[9]) )
+# patients <- eval( parse(text=args[10]) ) # patients is a vector like c("1","1","1","2","2","2"), so if we have samples from the same patient we want to use as replicates, and not all vs all
 #gene.files <- eval( parse(text=args[11]) ) # c("/this/is/file1","/this/is/file2",...) BEST IF THIS DOES NOT HAVE A FILE ENDING LIKE .csv, .txt, ... because used for header and plot titles
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
