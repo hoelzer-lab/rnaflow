@@ -164,7 +164,7 @@ include deseq2 from './modules/deseq2'
 include multiqc from './modules/multiqc'
 
 // helpers
-include {prepare_annotation; prepare_annotation_gene_rows} from './modules/prepare_annotation'
+include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 
 /************************** 
 * DATABASES
