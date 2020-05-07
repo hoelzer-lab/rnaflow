@@ -265,8 +265,8 @@ workflow analysis_reference_based {
         featurecounts(hisat2.out.sample_bam, annotation)
 
         // prepare annotation for R input
-        prepare_annotation_gene_rows(annotation)
-        prepare_annotation(annotation)
+        format_annotation_gene_rows(annotation)
+        format_annotation(annotation)
 
         // filter by TPM value
         featurecounts.out.counts
