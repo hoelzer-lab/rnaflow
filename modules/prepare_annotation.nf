@@ -21,12 +21,15 @@ process prepare_annotation {
                 if split_line[2] == 'gene':
                     desc = split_line[8]
                     gene_id = line.split('gene_id')[1].split(';')[0].replace('"', '').strip()
-                if 'gene_name' in line:
-                    gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
-                else:
-                    gene_name = gene_id
-                gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
-                out.write('\\t'.join([gene_id, gene_name, gene_biotype]) + '\\n')
+                    if 'gene_name' in desc:
+                        gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
+                    else:
+                        gene_name = gene_id
+                    if 'gene_biotype' in desc:
+                        gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
+                    else:
+                        gene_biotype = 'NA'
+                    out.write('\\t'.join([gene_id, gene_name, gene_biotype]) + '\\n')
     '''
 }
 
