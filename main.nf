@@ -90,6 +90,15 @@ if (params.reads) {
 }
 
 /*
+* read in genome(s)
+*/
+if ( params.species ) {
+    species_auto_ch = Channel.value( params.species )
+} else {
+    species_auto_ch = Channel.empty()
+}
+
+/*
 * read in comparisons
 */
 if (params.dge) {
@@ -178,12 +187,12 @@ It is written for local use and cloud use via params.cloudProcess.
 workflow download_reference {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
+        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
+            reference_preload = path("${params.cloudDatabase}/genomes/" + species_auto_ch + ".fa.gz")
             if (reference_preload.exists()) { reference = reference_preload }
-            else { referenceGet(); reference = referenceGet.out } 
+            else { referenceGet( species_auto_ch ); reference = referenceGet.out } 
         }
     emit:
         reference
@@ -192,12 +201,12 @@ workflow download_reference {
 workflow download_annotation {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
+        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = path("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
+            annotation_preload = path("${params.cloudDatabase}/annotations/${species_auto_ch}.gtf.gz")
             if (annotation_preload.exists()) { annotation = annotation_preload }
-            else { annotationGet(); annotation = annotationGet.out } 
+            else { annotationGet( species_auto_ch ); annotation = annotationGet.out } 
         }
     emit:
         annotation
