@@ -26,9 +26,14 @@ println "\033[2mCPUs to use: $params.cores"
 println "Output dir name: $params.output\u001B[0m"
 println " "}
 
-if (params.profile) { exit 1, "--profile is WRONG use -profile" }
-if (params.reads == '') {exit 1, "--reads is a required parameter"}
-if (params.dge == '') {exit 1, "--dge is a required parameter"}
+Set species = ['hsa', 'eco']
+
+if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
+if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
+if ( params.dge == '' ) { exit 1, "--dge is a required parameter" }
+if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
@@ -90,12 +95,36 @@ if (params.reads) {
 }
 
 /*
-* read in genome(s)
+* read in auto genome(s)
 */
 if ( params.species ) {
     species_auto_ch = Channel.value( params.species )
 } else {
     species_auto_ch = Channel.empty()
+}
+
+/*
+* read in genome(s)
+*/
+if ( params.genome ) {
+    reference_custom_ch = Channel
+        .fromPath( params.genome, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    reference_custom_ch = Channel.empty()
+}
+
+/*
+* read in annotation(s)
+*/
+if ( params.annotation ) {
+    annotation_custom_ch = Channel
+        .fromPath( params.annotation, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    annotation_custom_ch = Channel.empty()
 }
 
 /*
@@ -158,8 +187,8 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 **************************/
 
 // databases
-include referenceGet from './modules/referenceGet'
-include annotationGet from './modules/annotationGet'
+include {referenceGet; concat_genome} from './modules/referenceGet'
+include {annotationGet; concat_annotation} from './modules/annotationGet'
 include sortmernaGet from './modules/sortmernaGet'
 include hisat2index from './modules/hisat2'
 
@@ -184,32 +213,32 @@ The Database Section is designed to "auto-get" pre prepared databases.
 It is written for local use and cloud use via params.cloudProcess.
 */
 
-workflow download_reference {
+workflow download_auto_reference {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference = referenceGet.out }
+        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
             reference_preload = path("${params.cloudDatabase}/genomes/" + species_auto_ch + ".fa.gz")
-            if (reference_preload.exists()) { reference = reference_preload }
-            else { referenceGet( species_auto_ch ); reference = referenceGet.out } 
+            if (reference_preload.exists()) { reference_auto_ch = reference_preload }
+            else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
     emit:
-        reference
+        reference_auto_ch
 }
 
-workflow download_annotation {
+workflow download_auto_annotation {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation = annotationGet.out }
+        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
             annotation_preload = path("${params.cloudDatabase}/annotations/${species_auto_ch}.gtf.gz")
-            if (annotation_preload.exists()) { annotation = annotation_preload }
-            else { annotationGet( species_auto_ch ); annotation = annotationGet.out } 
+            if (annotation_preload.exists()) { annotation_auto_ch = annotation_preload }
+            else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
     emit:
-        annotation
+        annotation_auto_ch
 }
 
 workflow download_sortmerna {
@@ -236,7 +265,7 @@ workflow download_sortmerna {
 workflow analysis_reference_based {
     take:
         illumina_input_ch
-        reference   
+        reference
         annotation
         sortmerna_db
         dge_comparisons_input_ch
@@ -316,12 +345,18 @@ workflow analysis_de_novo {
 
 workflow {
     // get the reference genome and index it for hisat2
-    download_reference()
-    reference = download_reference.out
+    download_auto_reference()
+    reference_auto = download_auto_reference.out
 
     // get the annotation
-    download_annotation()
-    annotation = download_annotation.out
+    download_auto_annotation()
+    annotation_auto = download_auto_annotation.out
+
+    // concatenate genomes and annotations
+    concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+    reference = concat_genome.out
+    concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+    annotation = concat_annotation.out
 
     // get sortmerna databases
     download_sortmerna()
@@ -353,6 +388,8 @@ def helpMSG() {
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
+    ${c_green}--genome${c_reset}        csv file reference files
+    ${c_green}--annotation${c_reset}    csv file with annotation files
 
     ${c_yellow}Options${c_reset}
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 

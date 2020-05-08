@@ -30,5 +30,16 @@ process annotationGet {
     }
 }
 
+process concat_annotation {
 
+  input:
+  path '*'
 
+  output:
+  path 'annotation.gtf'
+  
+  script:
+  """
+  cat * > annotation.gtf
+  """
+}

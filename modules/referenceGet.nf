@@ -29,5 +29,16 @@ process referenceGet {
     }
 }
 
+process concat_genome {
 
+  input:
+  path '*'
 
+  output:
+  path 'reference.fa'
+  
+  script:
+  """
+  cat * > reference.fa
+  """
+}
