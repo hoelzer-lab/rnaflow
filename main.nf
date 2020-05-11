@@ -17,12 +17,16 @@ println "\u001B[32mProfile: $workflow.profile\033[0m"
 println " "
 println "\033[2mCurrent User: $workflow.userName"
 println "Nextflow-version: $nextflow.version"
-println "Starting time: $nextflow.timestamp"
+println "Starting time: $workflow.start"
 println "Workdir location:"
-println "  $workflow.workDir\u001B[0m"
+println "  $workflow.workDir"
+println "Launchdir location:"
+println "  $workflow.launchDir"
+println "Configuration files:"
+println "  $workflow.configFiles\u001B[0m"
 println " "
 if (workflow.profile == 'standard') {
-println "\033[2mCPUs to use: $params.cores"
+println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores"
 println "Output dir name: $params.output\u001B[0m"
 println " "}
 
@@ -41,10 +45,9 @@ if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported sp
 log.info """\
     D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
-    Reference species:    $params.species
     Output path:          $params.output
-    mode:                 $params.mode
-    strandness:           $params.strand
+    Mode:                 $params.mode
+    Strandness:           $params.strand
     TPM threshold:        $params.tpm
     """
     .stripIndent()
@@ -203,6 +206,8 @@ include multiqc from './modules/multiqc'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
+
+exit 1
 
 /************************** 
 * DATABASES
