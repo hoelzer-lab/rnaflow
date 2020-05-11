@@ -207,8 +207,6 @@ include multiqc from './modules/multiqc'
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 
-exit 1
-
 /************************** 
 * DATABASES
 **************************/
