@@ -144,9 +144,9 @@ if (params.dge) {
 /*
 * DESeq2 scripts
 */
-deseq2_script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
-deseq2_script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
-deseq2_script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
+deseq2_script = Channel.fromPath( workflow.projectDir + '/scripts/deseq2.R', checkIfExists: true )
+deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/scripts/refactor_reportingtools_table.rb', checkIfExists: true )
+deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/scripts/improve_deseq_table.rb', checkIfExists: true )
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
