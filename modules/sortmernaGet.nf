@@ -4,8 +4,8 @@
 process sortmernaGet {
     label 'sortmerna'
 
-    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/databases/", mode: 'copy', pattern: "sortmerna/data/rRNA_databases" }
-    else { storeDir "nextflow-autodownload-databases/databases/" }  
+    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/", mode: 'copy', pattern: "sortmerna/data/rRNA_databases" }
+    else { storeDir "${params.permanentCacheDir}/databases/" }  
 
     output:
     path("sortmerna/data/rRNA_databases")

@@ -3,7 +3,8 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
-    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
+    if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
+    else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
     input:
     path(fc_counts_formated)

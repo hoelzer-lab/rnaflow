@@ -5,8 +5,9 @@
 ************************************************************************/
 process fastp {
     label 'fastp'
-
-    publishDir "${params.output}/${params.fastp_dir}", mode: 'copy', pattern: "${name}*.trimmed.fastq"
+    
+    if (params.cloudProcess) { publishDir "${params.output}/${params.fastp_dir}", mode: 'copy', pattern: "*.trimmed.fastq" }
+    else { publishDir "${params.output}/${params.fastp_dir}", pattern: "*.trimmed.fastq" }
 
     input:
     tuple val(name), path(reads)

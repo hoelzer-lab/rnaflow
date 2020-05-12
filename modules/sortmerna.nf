@@ -5,9 +5,14 @@
 ************************************************************************/
 process sortmerna {
     label 'sortmerna'
-
-    publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}*.other.fastq"
-    publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "${name}.aligned.log"
+    
+    if (params.cloudProcess) {
+        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq"
+        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.aligned.log" }
+    else {
+        publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.other.fastq"
+        publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.aligned.log" 
+    }
 
     input:
     tuple val(name), path(reads)

@@ -3,7 +3,9 @@
 ***************************************************/
 process tpm_filter {
     label 'python3'
-    publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated"
+
+    if (params.cloudProcess) { publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated" }
+    else { publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated" }
 
     input:
     val(sample)

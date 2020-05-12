@@ -21,7 +21,9 @@ process hisat2index {
 ************************************************************************/
 process hisat2 {
     label 'hisat2'
-    publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "${sample_name}.sorted.bam"
+
+    if (params.cloudProcess) { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
+    else { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
 
     input:
     tuple val(sample_name), path(reads)

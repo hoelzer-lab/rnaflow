@@ -4,7 +4,9 @@
 ************************************************************************/
 process featurecounts {
     label 'subread'
-    publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "${name}.counts*"
+
+    if (params.cloudProcess) { publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "*.counts" }
+    else { publishDir "${params.output}/${params.featurecounts_dir}", pattern: "*.counts" }
 
     input:
     tuple val(name), path(bam)
