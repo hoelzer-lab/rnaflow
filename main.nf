@@ -222,7 +222,7 @@ workflow download_auto_reference {
         if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = path("${params.cloudDatabase}/genomes/" + species_auto_ch + ".fa.gz")
+            reference_preload = file("${params.cloudDatabase}/genomes/" + species_auto_ch + ".fa.gz")
             if (reference_preload.exists()) { reference_auto_ch = reference_preload }
             else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
@@ -236,7 +236,7 @@ workflow download_auto_annotation {
         if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = path("${params.cloudDatabase}/annotations/${species_auto_ch}.gtf.gz")
+            annotation_preload = file("${params.cloudDatabase}/annotations/${species_auto_ch}.gtf.gz")
             if (annotation_preload.exists()) { annotation_auto_ch = annotation_preload }
             else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
@@ -250,7 +250,7 @@ workflow download_sortmerna {
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
+            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/data/rRNA_databases")
             if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
             else { sortmernaGet(); sortmerna = sortmernaGet.out } 
         }
