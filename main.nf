@@ -17,18 +17,27 @@ println "\u001B[32mProfile: $workflow.profile\033[0m"
 println " "
 println "\033[2mCurrent User: $workflow.userName"
 println "Nextflow-version: $nextflow.version"
-println "Starting time: $nextflow.timestamp"
+println "Starting time: $workflow.start"
 println "Workdir location:"
-println "  $workflow.workDir\u001B[0m"
+println "  $workflow.workDir"
+println "Launchdir location:"
+println "  $workflow.launchDir"
+println "Configuration files:"
+println "  $workflow.configFiles\u001B[0m"
 println " "
 if (workflow.profile == 'standard') {
-println "\033[2mCPUs to use: $params.cores"
+println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores"
 println "Output dir name: $params.output\u001B[0m"
 println " "}
 
-if (params.profile) { exit 1, "--profile is WRONG use -profile" }
-if (params.reads == '') {exit 1, "--reads is a required parameter"}
-if (params.dge == '') {exit 1, "--dge is a required parameter"}
+Set species = ['hsa', 'eco']
+
+if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
+if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
+if ( params.dge == '' ) { exit 1, "--dge is a required parameter" }
+if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
@@ -36,10 +45,9 @@ if (params.dge == '') {exit 1, "--dge is a required parameter"}
 log.info """\
     D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
-    Reference species:    $params.species
     Output path:          $params.output
-    mode:                 $params.mode
-    strandness:           $params.strand
+    Mode:                 $params.mode
+    Strandness:           $params.strand
     TPM threshold:        $params.tpm
     """
     .stripIndent()
@@ -90,6 +98,39 @@ if (params.reads) {
 }
 
 /*
+* read in auto genome(s)
+*/
+if ( params.species ) {
+    species_auto_ch = Channel.value( params.species )
+} else {
+    species_auto_ch = Channel.empty()
+}
+
+/*
+* read in genome(s)
+*/
+if ( params.genome ) {
+    reference_custom_ch = Channel
+        .fromPath( params.genome, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    reference_custom_ch = Channel.empty()
+}
+
+/*
+* read in annotation(s)
+*/
+if ( params.annotation ) {
+    annotation_custom_ch = Channel
+        .fromPath( params.annotation, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    annotation_custom_ch = Channel.empty()
+}
+
+/*
 * read in comparisons
 */
 if (params.dge) {
@@ -106,9 +147,9 @@ if (params.dge) {
 /*
 * DESeq2 scripts
 */
-deseq2_script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
-deseq2_script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
-deseq2_script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
+deseq2_script = Channel.fromPath( workflow.projectDir + '/scripts/deseq2.R', checkIfExists: true )
+deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/scripts/refactor_reportingtools_table.rb', checkIfExists: true )
+deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/scripts/improve_deseq_table.rb', checkIfExists: true )
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
@@ -149,8 +190,8 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 **************************/
 
 // databases
-include referenceGet from './modules/referenceGet'
-include annotationGet from './modules/annotationGet'
+include {referenceGet; concat_genome} from './modules/referenceGet'
+include {annotationGet; concat_annotation} from './modules/annotationGet'
 include sortmernaGet from './modules/sortmernaGet'
 include hisat2index from './modules/hisat2'
 
@@ -164,7 +205,7 @@ include deseq2 from './modules/deseq2'
 include multiqc from './modules/multiqc'
 
 // helpers
-include {prepare_annotation; prepare_annotation_gene_rows} from './modules/prepare_annotation'
+include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 
 /************************** 
 * DATABASES
@@ -175,32 +216,32 @@ The Database Section is designed to "auto-get" pre prepared databases.
 It is written for local use and cloud use via params.cloudProcess.
 */
 
-workflow download_reference {
+workflow download_auto_reference {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
+        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
-            if (reference_preload.exists()) { reference = reference_preload }
-            else { referenceGet(); reference = referenceGet.out } 
+            reference_preload = path("${params.cloudDatabase}/genomes/" + species_auto_ch + ".fa.gz")
+            if (reference_preload.exists()) { reference_auto_ch = reference_preload }
+            else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
     emit:
-        reference
+        reference_auto_ch
 }
 
-workflow download_annotation {
+workflow download_auto_annotation {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
+        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = path("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
-            if (annotation_preload.exists()) { annotation = annotation_preload }
-            else { annotationGet(); annotation = annotationGet.out } 
+            annotation_preload = path("${params.cloudDatabase}/annotations/${species_auto_ch}.gtf.gz")
+            if (annotation_preload.exists()) { annotation_auto_ch = annotation_preload }
+            else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
     emit:
-        annotation
+        annotation_auto_ch
 }
 
 workflow download_sortmerna {
@@ -217,22 +258,6 @@ workflow download_sortmerna {
         sortmerna
 }
 
-workflow hisat2_index_reference {
-    take: reference
-    main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            index_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
-            if (index_preload.exists()) { index = index_preload }
-            else { hisat2index(reference); index = hisat2index.out } 
-        }
-    emit:
-        index
-}
-
-
 /************************** 
 * SUB WORKFLOWS
 **************************/
@@ -243,7 +268,7 @@ workflow hisat2_index_reference {
 workflow analysis_reference_based {
     take:
         illumina_input_ch
-        hisat2_index
+        reference
         annotation
         sortmerna_db
         dge_comparisons_input_ch
@@ -258,15 +283,17 @@ workflow analysis_reference_based {
         // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
 
+        // HISAT2 index
+        hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
+        hisat2(sortmerna.out.no_rna_fastq, hisat2index.out)
 
         // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
 
         // prepare annotation for R input
-        prepare_annotation_gene_rows(annotation)
-        prepare_annotation(annotation)
+        format_annotation_gene_rows(annotation)
+        format_annotation(annotation)
 
         // filter by TPM value
         featurecounts.out.counts
@@ -302,7 +329,7 @@ workflow analysis_reference_based {
             .map { it.join(",") }
 
         // run DEseq2
-        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
         // run MultiQC
         multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
@@ -321,19 +348,25 @@ workflow analysis_de_novo {
 
 workflow {
     // get the reference genome and index it for hisat2
-    hisat2_index_reference(download_reference())
-    hisat2_index = hisat2_index_reference.out
+    download_auto_reference()
+    reference_auto = download_auto_reference.out
 
     // get the annotation
-    download_annotation()
-    annotation = download_annotation.out
+    download_auto_annotation()
+    annotation_auto = download_auto_annotation.out
+
+    // concatenate genomes and annotations
+    concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+    reference = concat_genome.out
+    concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+    annotation = concat_annotation.out
 
     // get sortmerna databases
     download_sortmerna()
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 }
 
 
@@ -358,6 +391,8 @@ def helpMSG() {
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
+    ${c_green}--genome${c_reset}        csv file reference files
+    ${c_green}--annotation${c_reset}    csv file with annotation files
 
     ${c_yellow}Options${c_reset}
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 

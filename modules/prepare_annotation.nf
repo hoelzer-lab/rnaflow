@@ -1,7 +1,7 @@
 /**************************************************
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
-process prepare_annotation {
+process format_annotation {
     label 'python3'
     publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.id2ensembl"
 
@@ -36,7 +36,7 @@ process prepare_annotation {
 /**************************************************
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
-process prepare_annotation_gene_rows {
+process format_annotation_gene_rows {
     label 'python3'
     publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
 
