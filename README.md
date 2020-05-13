@@ -13,8 +13,17 @@ nextflow run main.nf --help
 Dependencies will automatically be installed via conda, just execute:
 
 ```bash
-nextflow run main.nf -- max_cores 6 --cores 2 --reads input.se.eco.csv --species eco --dge input.dge_comparison.csv
+nextflow run main.nf -- max_cores 6 --cores 2 --reads input.se.eco.csv --species eco
 ```
+
+with `eco` or `hsa`, or define your own genome reference and annotation files in CSV files:
+
+```bash
+nextflow run main.nf -- max_cores 6 --cores 2 --reads input.se.eco.csv --genome fastas.csv --annotation gtf.csv
+```
+
+Genomes and annotations from `--genome` and `--annotation` (and `--species`) are concatenated.
+In default all possible comparisons are made. Use `--dge` to change that.
 
 # Flow chart
 

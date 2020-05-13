@@ -36,14 +36,13 @@ Set species = ['hsa', 'eco']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
-if ( params.dge == '' ) { exit 1, "--dge is a required parameter" }
 if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
 if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
 if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
-
+if ( params.dge ) { comparison = params.dge } else { comparison = 'all' }
 log.info """\
     D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
@@ -51,6 +50,7 @@ log.info """\
     Mode:                 $params.mode
     Strandness:           $params.strand
     TPM threshold:        $params.tpm
+    Comparisons:          $comparison 
     """
     .stripIndent()
 
@@ -132,19 +132,42 @@ if ( params.annotation ) {
     annotation_custom_ch = Channel.empty()
 }
 
+
+annotated_reads
+    .map{row -> row[-2]}
+    .toList()
+    .toSet()
+    .tap { sample_conditions }
+    .tap { sample_conditions2 }
 /*
 * read in comparisons
 */
 if (params.dge) {
     dge_comparisons_input_ch = Channel
-        .fromPath( params.dge, checkIfExists: true)
-        .splitCsv(header: true, sep: ',')
-        .map{row ->
+        .fromPath( params.dge, checkIfExists: true )
+        .splitCsv( header: true, sep: ',' )
+        .map{ row ->
             def condition1 = row['Condition1']
             def condition2 = row['Condition2']
             return [ condition1, condition2 ]
-        }
-        // no further processing, in case other tools need this formatted in another way
+        } // no further processing, in case other tools need this formatted in another way
+
+        // check if conditions form dge and reads file match
+        dge_comparisons_input_ch
+            .collect()
+            .flatten()
+            .combine(sample_conditions)
+            .subscribe onNext: {
+                assert it[1].contains(it[0])
+            }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
+} else {
+    // automatically use all possible comparisons
+    dge_comparisons_input_ch = sample_conditions
+        .flatten()
+        .combine(sample_conditions2.flatten())
+        .filter{ it[0] != it[1] }
+        .map{ it -> it.sort() }
+        .unique()
 }
 /*
 * DESeq2 scripts
@@ -169,19 +192,6 @@ annotated_reads
         assert 2 <= it.count(i)
         }
     }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
-
-
-sample_conditions = annotated_reads
-    .map{row -> row[-2]}
-    .toList()
-    .toSet()
-dge_comparisons_input_ch
-    .collect()
-    .flatten()
-    .combine(sample_conditions)
-    .subscribe onNext: {
-        assert it[1].contains(it[0])
-    }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
 
 if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
     exit 1, "--tpm has to be numeric"
@@ -382,21 +392,28 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --cores 4 --reads input.csv --dge comparisons.csv
+    nextflow run main.nf --cores 4 --reads input.csv --species eco
+    or
+    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
+    or
+    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
+    ${c_dim}Genomes and annotatiosn from --genome, --annotation and --species are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}         a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
-                                        ${c_dim}(check terminal output if correctly assigned)${c_reset}
-    ${c_green}--dge${c_reset}           a CSV file following the pattern: conditionX,conditionY
-                                        Each line stands for one differential gene expression comparison.
-    ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.species]
+                                        ${c_dim}(check terminal output if correctly assigned)
+                                        In default all possible comparisons of conditions are made. Use --dge to change this.${c_reset}
+    ${c_green}--species${c_reset}       reference genome and annotation with automatic download.
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
-    ${c_green}--genome${c_reset}        csv file reference files
-    ${c_green}--annotation${c_reset}    csv file with annotation files
+    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files.
+                                        ${c_dim}If set, --annotation must also be set.${c_reset}
+    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files
 
     ${c_yellow}Options${c_reset}
+    --dge                    a CSV file following the pattern: conditionX,conditionY
+                             Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
                              If provided, no new index will be build. Must be named 'index.*.ht2'.  
                              Simply provide the path like 'data/db/index'. DEPRECATED
