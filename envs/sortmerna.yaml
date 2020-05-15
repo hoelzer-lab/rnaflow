@@ -1,5 +1,7 @@
 name: sortmerna
 channels:
   - bioconda
+  - conda-forge
 dependencies:
   - sortmerna=2.1b
+  - pigz=2.3.4
