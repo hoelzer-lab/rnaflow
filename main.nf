@@ -137,8 +137,7 @@ annotated_reads
     .map{row -> row[-2]}
     .toList()
     .toSet()
-    .tap { sample_conditions }
-    .tap { sample_conditions2 }
+    .into { sample_conditions; sample_conditions2 }
 /*
 * read in comparisons
 */
