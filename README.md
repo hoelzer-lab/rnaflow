@@ -23,7 +23,7 @@ nextflow run main.nf -- max_cores 6 --cores 2 --reads input.se.eco.csv --genome 
 ```
 
 Genomes and annotations from `--genome` and `--annotation` (and `--species`) are concatenated.
-In default all possible comparisons are made. Use `--dge` to change that.
+By default, all possible comparisons are performed. Use `--dge` to change this.
 
 # Flow chart
 
