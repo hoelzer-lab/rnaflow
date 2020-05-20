@@ -4,8 +4,8 @@
 process annotationGet {
     label 'python3'
     
-    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/annotations/", mode: 'copy', pattern: "*.gtf" }
-    else { storeDir "nextflow-autodownload-databases/annotations/" }  
+    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
+    else { storeDir "${params.permanentCacheDir}/annotations/" }  
     
     input:
     val(species)

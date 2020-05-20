@@ -3,7 +3,9 @@
 ************************************************************************/
 process multiqc {
     label 'multiqc'
-    publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy'
+
+    if (params.cloudProcess) { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy' }
+    else { publishDir "${params.output}/${params.multiqc_dir}" }
 
     input:
     path(fastp)

@@ -3,8 +3,8 @@
 ********************************************/
 process referenceGet {
     label 'python3'
-    if (params.cloudProcess) { publishDir "${params.cloudDatabase}/genomes/", mode: 'copy', pattern: "*.fa" }
-    else { storeDir "nextflow-autodownload-databases/genomes/" }  
+    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
+    else { storeDir "${params.permanentCacheDir}/genomes/" }  
     
     input:
     val(species)
