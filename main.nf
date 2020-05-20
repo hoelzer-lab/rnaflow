@@ -32,7 +32,7 @@ println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_core
 println "Output dir name: $params.output\u001B[0m"
 println " "}
 
-Set species = ['hsa', 'eco']
+Set species = ['hsa', 'eco', 'mmu']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
@@ -405,7 +405,8 @@ def helpMSG() {
     ${c_green}--species${c_reset}       reference genome and annotation with automatic download.
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
-                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
+                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                        - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]${c_reset}
     ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files.
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files

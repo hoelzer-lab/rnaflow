@@ -28,6 +28,13 @@ process annotationGet {
     mv Escherichia_coli_k_12.ASM80076v1.45.gtf ${species}.gtf
     """
     }
+    if (species == 'mmu') {
+    """
+    wget ftp://ftp.ensembl.org/pub/release-99/gtf/mus_musculus/Mus_musculus.GRCm38.99.gtf.gz
+    gunzip -f Mus_musculus.GRCm38.99.gtf.gz
+    mv Mus_musculus.GRCm38.99.gtf ${species}.gtf
+    """
+    }
 }
 
 process concat_annotation {

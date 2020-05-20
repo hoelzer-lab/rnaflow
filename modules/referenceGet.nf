@@ -27,6 +27,13 @@ process referenceGet {
     mv Escherichia_coli_k_12.ASM80076v1.dna.toplevel.fa ${species}.fa
     """
     }
+    if (species == 'mmu') {
+    """
+    wget ftp://ftp.ensembl.org/pub/release-99/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz
+    gunzip -f Mus_musculus.GRCm38.dna.primary_assembly.fa.gz
+    mv Mus_musculus.GRCm38.dna.primary_assembly.fa ${species}.fa
+    """
+    }
 }
 
 process concat_genome {

@@ -16,7 +16,7 @@ Dependencies will automatically be installed via conda, just execute:
 nextflow run main.nf --max_cores 6 --cores 2 --reads input.se.eco.csv --species eco
 ```
 
-with `eco` or `hsa`, or define your own genome reference and annotation files in CSV files:
+with `eco`, `mmu` or `hsa`, or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run main.nf --max_cores 6 --cores 2 --reads input.se.eco.csv --genome fastas.csv --annotation gtf.csv
