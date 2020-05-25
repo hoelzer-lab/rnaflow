@@ -299,7 +299,7 @@ workflow analysis_reference_based {
         // map with HISAT2
         hisat2(sortmerna.out.no_rna_fastq, hisat2index.out)
 
-        // count with featurecountssortmerna_db
+        // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
 
         // prepare annotation for R input
