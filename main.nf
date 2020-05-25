@@ -234,7 +234,7 @@ workflow download_auto_reference {
         // cloud storage file.exists()?
         if (params.cloudProcess) {
             reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
-            if (reference_preload.exists()) { reference_auto_ch = reference_preload }
+            if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
             else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
     emit:
@@ -248,7 +248,7 @@ workflow download_auto_annotation {
         // cloud storage file.exists()?
         if (params.cloudProcess) {
             annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
-            if (annotation_preload.exists()) { annotation_auto_ch = annotation_preload }
+            if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
             else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
     emit:
@@ -299,7 +299,7 @@ workflow analysis_reference_based {
         // map with HISAT2
         hisat2(sortmerna.out.no_rna_fastq, hisat2index.out)
 
-        // count with featurecounts
+        // count with featurecountssortmerna_db
         featurecounts(hisat2.out.sample_bam, annotation)
 
         // prepare annotation for R input
@@ -318,9 +318,6 @@ workflow analysis_reference_based {
             }
             .set { tpm }
 
-        tpm.name.toSortedList().view()
-        tpm.count_file.toSortedList().view()
-        tpm.condition.toSortedList().view()
         tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
 
         // prepare DEseq2
