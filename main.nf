@@ -233,8 +233,8 @@ workflow download_auto_reference {
         if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = file("${params.permanentCacheDir}/genomes/" + species_auto_ch + ".fa.gz")
-            if (reference_preload.exists()) { reference_auto_ch = reference_preload }
+            reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+            if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
             else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
     emit:
@@ -247,8 +247,8 @@ workflow download_auto_annotation {
         if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = file("${params.permanentCacheDir}/annotations/${species_auto_ch}.gtf.gz")
-            if (annotation_preload.exists()) { annotation_auto_ch = annotation_preload }
+            annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+            if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
             else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
     emit:
