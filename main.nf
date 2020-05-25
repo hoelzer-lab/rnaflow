@@ -27,10 +27,10 @@ println "  $params.permanentCacheDir"
 println "Configuration files:"
 println "  $workflow.configFiles\u001B[0m"
 println " "
-if (workflow.profile == 'standard') {
-println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores"
-println "Output dir name: $params.output\u001B[0m"
-println " "}
+if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
+    println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
+    println " "
+}
 
 Set species = ['hsa', 'eco', 'mmu']
 
