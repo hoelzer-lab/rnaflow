@@ -21,7 +21,6 @@ process hisat2index {
 ************************************************************************/
 process hisat2 {
     label 'hisat2'
-    memory { task.memory * task.attempt }
 
     if (params.cloudProcess) { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
     else { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
