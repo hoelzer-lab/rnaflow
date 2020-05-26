@@ -3,6 +3,7 @@
 ***************************************************/
 process format_annotation {
     label 'python3'
+    label 'smallTask'
 
     if (params.cloudProcess) { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2ensembl" }
     else { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.id2ensembl" }
@@ -40,6 +41,7 @@ process format_annotation {
 ***************************************************/
 process format_annotation_gene_rows {
     label 'python3'
+    label 'smallTask'
     publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
 
     input: 
