@@ -27,10 +27,10 @@ println "  $params.permanentCacheDir"
 println "Configuration files:"
 println "  $workflow.configFiles\u001B[0m"
 println " "
-if (workflow.profile == 'standard') {
-println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores"
-println "Output dir name: $params.output\u001B[0m"
-println " "}
+if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
+    println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
+    println " "
+}
 
 Set species = ['hsa', 'eco', 'mmu']
 
@@ -421,17 +421,24 @@ def helpMSG() {
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --cores                  max cores for local use [default $params.cores]
+    
+    ${c_dim}Computing options:
+    --cores                  max cores per process for local use [default $params.cores]
+    --max_cores              max cores used on the machine for local use [default $params.max_cores]
     --memory                 max memory in GB for local use [default $params.memory]
     --output                 name of the result folder [default $params.output]
 
-    ${c_dim}Nextflow options:
+    --permanentCacheDir      location for auto-download data like databases[default $params.permanentCacheDir]
+    --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
+    --workdir                working directory for all intermediate results [default $params.workdir]
+
+    Nextflow options:
     -with-report rep.html    cpu / ram usage (may cause errors)
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)
 
     Profile:
-    -profile                 standard (local, including conda) [default standard]
+    -profile                 standard (local and conda),local, conda, slurm, ara (slurm, conda and customization) [default standard]
                              ${c_reset}
     """.stripIndent()
 }
