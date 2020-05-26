@@ -423,7 +423,8 @@ def helpMSG() {
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
     
     ${c_dim}Computing options:
-    --cores                  max cores for local use [default $params.cores]
+    --cores                  max cores per process for local use [default $params.cores]
+    --max_cores              max cores used on the machine for local use [default $params.max_cores]
     --memory                 max memory in GB for local use [default $params.memory]
     --output                 name of the result folder [default $params.output]
 
