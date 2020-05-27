@@ -3,6 +3,7 @@
 ********************************************/
 process annotationGet {
     label 'python3'
+    label 'smallTask'
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
     else { storeDir "${params.permanentCacheDir}/annotations/" }  
@@ -37,6 +38,7 @@ process annotationGet {
 }
 
 process concat_annotation {
+  label 'smallTask'
 
   input:
   path '*'
