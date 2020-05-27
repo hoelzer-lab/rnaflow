@@ -3,7 +3,7 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
-    label 'smallTask'
+
     if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
     else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
