@@ -13,6 +13,7 @@ process multiqc {
     path(sortmerna)
     path(hisat2)
     path(featurecounts)
+    path(fastqc)
 
     output:
     path "*multiqc_report.html"
@@ -20,6 +21,8 @@ process multiqc {
 
     script:
     """
+    for i in *.tar.gz; do tar zxvf \$i; done 
+    cp fastqc_*/* .
     multiqc .    
     """
 }
