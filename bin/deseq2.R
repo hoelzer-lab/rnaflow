@@ -6,6 +6,7 @@ library("ReportingTools")
 library("pheatmap")
 library("biomaRt")
 library("svglite")
+library("piano")
 
 ###############################################################################################
 ## FUNCTIONS
@@ -694,7 +695,7 @@ for (comparison in comparisons) {
   ## PCAs
   plot.pca(out.sub, vsd.sub, col.labels.sub, NA)
 
-  # this would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, ...
+  # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, ...
   #plot.pca.highest.variance(out.sub, vsd.sub, Pvars.sub, ntops, comparison)
 
   ## HEATMAPs

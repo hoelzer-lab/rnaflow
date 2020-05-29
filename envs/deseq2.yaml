@@ -16,3 +16,4 @@ dependencies:
   - ruby=2.2.3
   - openpyxl
   - pandas=1.0.3
+  - bioconductor-piano
