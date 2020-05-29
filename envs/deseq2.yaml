@@ -1,5 +1,6 @@
 name: deseq2
 channels:
+  - anaconda
   - bioconda
   - r
   - conda-forge
@@ -13,3 +14,5 @@ dependencies:
   - r-xml2=1.2.0
   - r-svglite=1.2.3
   - ruby=2.2.3
+  - openpyxl
+  - pandas=1.0.3

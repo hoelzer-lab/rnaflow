@@ -153,7 +153,7 @@ plot.pca.highest.variance <- function(out, rld, Pvars, ntops, comparison) {
     cond1 <- paste(cond1,time1,sep="_")
     cond2 <- paste(cond2,time2,sep="_")
     dataGG$condition <- c(cond1, cond1, cond1, cond2, cond2, cond2)
-    dataGG$timepoint <- c(time1, time1, time1, time2, time2, time2)
+    #dataGG$timepoint <- c(time1, time1, time1, time2, time2, time2)
     dataGG$replicate <- c('N1','N2','N3','N1','N2','N3')
     
 #      ggplot(dataGG, aes(PC1, PC2, colour=condition, fill=timepoint, shape=replicate)) +
@@ -395,6 +395,8 @@ out <- paste(project_dir,'/',sep='') # deseq2 dir is created by nextflow in the 
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
 # species <- eval( parse(text=args[9]) )[1]
+
+go.terms <- c()
 
 ntops <- c(500)
 patients <- eval( parse(text=args[9]) )
@@ -657,39 +659,43 @@ for (comparison in comparisons) {
   tmp_out <- paste(out.sub, "tmp", sep="/")
   dir.create(file.path(tmp_out, ''), showWarnings = FALSE)
   #### do ruby script
-  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
-  #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_full.xlsx", sep=""))
-
+  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_full.xlsx", sep=""))
 
   # 2) filtered (resFold) set
   csv <- paste(out.sub,name,"_filtered.csv",sep="")
   write.csv(as.data.frame(resFold), file=csv)
-  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
-  #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered.xlsx", sep=""))
+  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_NA.xlsx", sep=""))
 
   csv05 <- paste(out.sub,name,"_filtered_p05.csv",sep="")
   write.csv(as.data.frame(resFold05), file=csv05)
   csv01 <- paste(out.sub,name,"_filtered_p01.csv",sep="")
   write.csv(as.data.frame(resFold01), file=csv01)
 
-  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
-  #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p05.xlsx", sep=""))
-  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
-  #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p01.xlsx", sep=""))
+  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p05.xlsx", sep=""))
+  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p01.xlsx", sep=""))
+
 
   #data.set <- rownames(deseq2.res)
   #results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
-  #
+
+
   ### MA plotting
-  #ma.size <- c(-7,7)
-  #plot.ma(out.sub, deseq2.res, ma.size, rld.sub)
-  #if (length(go.terms) > 0) {
-  #  plot.ma.go(out.sub, deseq2.res, ma.size, rld.sub, results.gene, go.terms)
-  #}
+  ma.size <- c(-7,7)
+  plot.ma(out.sub, deseq2.res, ma.size, vsd.sub)
+  # nice extension for later to color genes that belong to specific GO terms
+  if (length(go.terms) > 0) {
+    plot.ma.go(out.sub, deseq2.res, ma.size, vsd.sub, results.gene, go.terms)
+  }
 
   ## PCAs
-  #plot.pca(out.sub, rld.sub, col.labels.sub, NA)
-  #plot.pca.highest.variance(out.sub, rld.sub, Pvars.sub, ntops, comparison)
+  plot.pca(out.sub, vsd.sub, col.labels.sub, NA)
+
+  # this would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, ...
+  #plot.pca.highest.variance(out.sub, vsd.sub, Pvars.sub, ntops, comparison)
 
   ## HEATMAPs
   #TODO PHEATMAP REBUILD!!!
@@ -697,7 +703,7 @@ for (comparison in comparisons) {
   hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
   plot.heat.countmatrix(out.sub, dds.sub, vsd.sub, col.labels.sub, 50)
   plot.heat.fc(out.sub, deseq2.res, resFold, dds.sub, vsd.sub, col.labels.sub, 50)
-  plot.sample2sample(out.sub, dds.sub, rld.sub, col.labels.sub)
+  plot.sample2sample(out.sub, dds.sub, vsd.sub, col.labels.sub)
 
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
