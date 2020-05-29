@@ -425,17 +425,17 @@ input.csv <- paste(out,"input.csv",sep="")
 write.csv(as.data.frame(df), file=input.csv)
 
 if (length(patients) > 0) {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients)
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design= patients + conditions)
     # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
 } else {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels)
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design= conditions)
     # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
 }
 
 ### IMPORTANT STEP< OTHERWIESE DESEQ WILL DO THE COMPARISON IN ALPHABETICAL ORDER!!!!
-#ddsHTSeq$condition <- relevel(ddsHTSeq$condition, ref=levels[1]) ## this is enough if we only have two conditions, 
+#ddsHTSeq$condition <- relevel(ddsHTSeq$condition, ref=levels[1]) ## this is enough if we only have two conditions,
 #but for more conditions we need factor() to order every level according to input files
 ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
 ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
@@ -475,7 +475,8 @@ write.csv(as.data.frame(assay(vsd)), file=csv)
 
 #simple pca
 pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-plotPCA(rld, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
+#plotPCA(rld, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
+plotPCA(vsd, intgroup=c("design")) #"sizeFactor" worked somehow....
 dev.off()
 
 ntop = 500
@@ -483,15 +484,15 @@ ntop = 500
 
 #####################################################
 ## TODO GENERALIZE
-if (42 == 0) { 
+if (42 == 0) {
 Pvars <- rowVars(assay(dds))
 select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
 
 PCA <- prcomp(t(assay(rld)[select, ]), scale = T)
 percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
 
-dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2], 
-                    PC3 = PCA$x[,3], PC4 = PCA$x[,4], 
+dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2],
+                    PC3 = PCA$x[,3], PC4 = PCA$x[,4],
                     sampleNO = colData(rld)$type,
                     condition = colData(rld)$condition)
 
@@ -504,7 +505,7 @@ ggplot(dataGG, aes(PC1, PC2, color=condition, shape=timepoint)) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
     ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
-    ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) + 
+    ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) +
     ggsave(paste(out,"statistics/pca_top",ntop,".pdf",sep=""))
 }
 #####################################################
@@ -542,8 +543,8 @@ for (gene in selected.ensembl.ids) {
 
 ### LOG STABILIZED
 file <- paste(out,"heatmaps/heatmap_count_matrix_row-scaled.pdf",sep="")
-pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE, 
-         labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA, 
+pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+         labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
          height = 12, width = 8, file = file)
 
 ## REPORT TO HTML
@@ -560,7 +561,7 @@ system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analy
 ###################################
 
 for (comparison in comparisons) {
-  
+
   l1 <- strsplit(comparison, ':')[[1]][1]
   l2 <- strsplit(comparison, ':')[[1]][2]
 
@@ -572,7 +573,7 @@ for (comparison in comparisons) {
   vsd.sub <- vsd[ , vsd$condition %in% c(l1, l2) ]
   dds.sub <- dds[ , dds$condition %in% c(l1, l2) ]
 
-  ## adapt the levels 
+  ## adapt the levels
   dds.sub$condition <- droplevels(dds.sub$condition)
   dds.sub$type <- droplevels(dds.sub$type)
   rld.sub$condition <- droplevels(rld.sub$condition)
@@ -580,11 +581,11 @@ for (comparison in comparisons) {
   vsd.sub$condition <- droplevels(vsd.sub$condition)
   vsd.sub$type <- droplevels(vsd.sub$type)
 
-  deseq2.res <- results(dds, contrast=c("condition",l2,l1)) 
+  deseq2.res <- results(dds, contrast=c("condition",l2,l1))
   summary(deseq2.res)
 
   name <- paste("deseq2_",l1,"_",l2,sep="")
-  
+
   Pvars.sub <- rowVars(assay(rld.sub))
 
   #adjust variabels
@@ -613,32 +614,32 @@ for (comparison in comparisons) {
 
   # We can order our results table by the smallest adjusted p value:
   resOrdered <<- deseq2.res[order(deseq2.res$padj),]
-  
+
   # filter NA values in fc and padj
   resNA = deseq2.res[ !is.na(deseq2.res$log2FoldChange) , ]
   resNA = resNA[ !is.na(resNA$padj) , ]
-  
+
   # filter 0 baseMean
   resBaseMean = resNA[ resNA$baseMean > 0.0 , ]
-  
+
   # resFold is now sorted by abs(foldchange) and all NA entries are removed as well as all zero baseMean values
   resFold <<-resBaseMean[rev(order(abs(resBaseMean$log2FoldChange))),]
-  
+
   resFold05 <<- resFold[ resFold$padj < 0.05 , ]
   resFold01 <<- resFold[ resFold$padj < 0.01 , ]
 
   length(rownames(resFold01))
-  
+
   df.sub <- data.frame(samples = samples.sub, columns = col.labels.sub, conditions = conditions.sub)
   input.csv.sub <- paste(out.sub,"/input.csv",sep="")
   write.csv(as.data.frame(df.sub), file=input.csv.sub)
 
-if (42 == 0 ) { 
+if (0 == 0 ) {
 
   ########
   ## write out excel sheets of the genes
   ########
-  
+
   # 1) full result table without applied filters
   csv <- paste(out.sub,name,"_full.csv",sep="")
   write.csv(as.data.frame(resOrdered), file=csv)
@@ -646,55 +647,55 @@ if (42 == 0 ) {
   tmp_out <- paste(out.sub, "tmp", sep="/")
   dir.create(file.path(tmp_out, ''), showWarnings = FALSE)
   #### do ruby script
-  system(paste("./improve_deseq_csv.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_full.xlsx", sep=""))
-  
-  
+
+
   # 2) filtered (resFold) set
   csv <- paste(out.sub,name,"_filtered.csv",sep="")
   write.csv(as.data.frame(resFold), file=csv)
-  system(paste("./improve_deseq_csv.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered.xlsx", sep=""))
-  
+
   csv05 <- paste(out.sub,name,"_filtered_p05.csv",sep="")
   write.csv(as.data.frame(resFold05), file=csv05)
   csv01 <- paste(out.sub,name,"_filtered_p01.csv",sep="")
   write.csv(as.data.frame(resFold01), file=csv01)
-  
-  system(paste("./improve_deseq_csv.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
+
+  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p05.xlsx", sep=""))
-  system(paste("./improve_deseq_csv.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
+  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p01.xlsx", sep=""))
 
-  data.set <- rownames(deseq2.res)
-  results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
+  #data.set <- rownames(deseq2.res)
+  #results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
+  #
+  ### MA plotting
+  #ma.size <- c(-7,7)
+  #plot.ma(out.sub, deseq2.res, ma.size, rld.sub)
+  #if (length(go.terms) > 0) {
+  #  plot.ma.go(out.sub, deseq2.res, ma.size, rld.sub, results.gene, go.terms)
+  #}
 
-  ## MA plotting
-  ma.size <- c(-7,7)
-  plot.ma(out.sub, deseq2.res, ma.size, rld.sub)
-  if (length(go.terms) > 0) {
-    plot.ma.go(out.sub, deseq2.res, ma.size, rld.sub, results.gene, go.terms)
-  }
-  
   ## PCAs
-  plot.pca(out.sub, rld.sub, col.labels.sub, NA)
-  plot.pca.highest.variance(out.sub, rld.sub, Pvars.sub, ntops, comparison)
-  
+  #plot.pca(out.sub, rld.sub, col.labels.sub, NA)
+  #plot.pca.highest.variance(out.sub, rld.sub, Pvars.sub, ntops, comparison)
+
   ## HEATMAPs
-  #TODO PHEATMAP REBUILD!!! 
+  #TODO PHEATMAP REBUILD!!!
   #TODO AND BUILD HEATMAP BASED ON GENE LIST
   hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
   plot.heat.countmatrix(out.sub, dds.sub, vsd.sub, col.labels.sub, 50)
   plot.heat.fc(out.sub, deseq2.res, resFold, dds.sub, vsd.sub, col.labels.sub, 50)
   plot.sample2sample(out.sub, dds.sub, rld.sub, col.labels.sub)
-  
+
   ## Report HTML
-  if (length(rownames(resFold05)) > 0) { 
+  if (length(rownames(resFold05)) > 0) {
     report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
   }
-  
+
   ## piano
-  piano(out.sub, resBaseMean, resFold, ensembl)
+  #piano(out.sub, resBaseMean, resFold, ensembl)
 
 
 } # END IF 42
