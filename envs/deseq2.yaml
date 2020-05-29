@@ -1,9 +1,9 @@
 name: deseq2
 channels:
-  - anaconda
-  - bioconda
-  - r
   - conda-forge
+  - anaconda
+  - r
+  - bioconda
 dependencies:
   - bioconductor-deseq2=1.24.0   
   - libopenblas=0.3.7
@@ -11,9 +11,9 @@ dependencies:
   - r-ggplot2=3.2.1
   - r-pheatmap=1.0.12
   - bioconductor-reportingtools=2.24.0
-  - r-xml2=1.2.0
-  - r-svglite=1.2.3
-  - ruby=2.2.3
   - openpyxl
   - pandas=1.0.3
+  - r-xml2=1.2.0
+  - r-svglite=1.2.3
   - bioconductor-piano
+  - ruby
