@@ -1,6 +1,7 @@
 name: deseq2
 channels:
   - bioconda
+  - r
   - conda-forge
 dependencies:
   - bioconductor-deseq2=1.24.0   
@@ -9,3 +10,6 @@ dependencies:
   - r-ggplot2=3.2.1
   - r-pheatmap=1.0.12
   - bioconductor-reportingtools=2.24.0
+  - r-xml2=1.2.0
+  - r-svglite=1.2.3
+  - ruby=2.2.3

@@ -4,6 +4,8 @@ library("gplots")
 library("ggplot2")
 library("ReportingTools")
 library("pheatmap")
+library("biomaRt")
+library("svglite")
 
 ###############################################################################################
 ## FUNCTIONS
@@ -425,11 +427,11 @@ input.csv <- paste(out,"input.csv",sep="")
 write.csv(as.data.frame(df), file=input.csv)
 
 if (length(patients) > 0) {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design= patients + conditions)
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design = paste(patients, conditions, sep = ':'))
     # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
 } else {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design= conditions)
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design = conditions)
     # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
 }
@@ -470,21 +472,24 @@ csv <- paste(out,"/normalized_counts.vsd.csv",sep="")
 write.csv(as.data.frame(assay(vsd)), file=csv)
 
 ## BIOMART OBJECT
-#ensembl = useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="mlucifugus_gene_ensembl", host = "may2017.archive.ensembl.org")
-#mart <- useDataset("mlucifugus_gene_ensembl", ensembl)
+# the below code works actually. But for example not for ecoli because I think that's a different ensembl db
+# we can use this for hsapiens, mmusculus, mlucifugus, ... 
+#ensembl = useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl", host = "apr2020.archive.ensembl.org")
+#mart <- useDataset("mmusculus_gene_ensembl", ensembl)
 
-#simple pca
+#simple pca (2020-05-29 switched from rsd to vsd)
 pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-#plotPCA(rld, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
 plotPCA(vsd, intgroup=c("design")) #"sizeFactor" worked somehow....
+dev.off()
+
+pdf(paste(out,"statistics/pca_simple_replicates_colored.pdf",sep=""))
+plotPCA(vsd, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
 dev.off()
 
 ntop = 500
 
-
 #####################################################
-## TODO GENERALIZE
-if (42 == 0) {
+## TODO: time points as extra input 
 Pvars <- rowVars(assay(dds))
 select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
 
@@ -496,25 +501,26 @@ dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2],
                     sampleNO = colData(rld)$type,
                     condition = colData(rld)$condition)
 
-dataGG$condition <- c('Mock','Mock','Mock','Mock','Mock','Mock','IFN','IFN','IFN','IFN','IFN','IFN','RVFV','RVFV','RVFV','RVFV','RVFV','RVFV')
-dataGG$timepoint <- c('6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h')
-dataGG$replicate <- c('N1','N2','N3','N1','N2','N3','N1','N2','N3','N1','N2','N3','N1','N2','N3','N1','N2','N3')
+dataGG$condition <- conditions
+#dataGG$timepoint <- c('6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h')
+dataGG$replicate <- col.labels
 
-ggplot(dataGG, aes(PC1, PC2, color=condition, shape=timepoint)) +
+#ggplot(dataGG, aes(PC1, PC2, color=condition, shape=timepoint)) +
+ggplot(dataGG, aes(PC1, PC2, color=condition)) +
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
     ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
     ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) +
     ggsave(paste(out,"statistics/pca_top",ntop,".pdf",sep=""))
-}
+
 #####################################################
 
 ## Heat map of the sample-to-sample distances
 hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
 #hmcol <- colorRampPalette(brewer.pal(9, "RdBu"))(100) # this is a red/blue color map
 
-distsRL <- dist(t(assay(rld)))
+distsRL <- dist(t(assay(vsd)))
 
 mat <- as.matrix(distsRL)
 rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
@@ -547,13 +553,19 @@ pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
          labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
          height = 12, width = 8, file = file)
 
+
 ## REPORT TO HTML
 db <- NULL
 
 des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 1', basePath = out, reportDirectory = "html/")
 publish(dds, des2Report.full, pvalueCutoff=1, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(dds)))
 finish(des2Report.full)
+# I get now 'ruby: error while loading shared libraries: libjemalloc.so.1'
+# apt-get install -y libjemalloc-dev
+# did not solve this
+# but maybe was just a local problem with my environment
 system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_full.html ', annotation_genes, sep=''))
+
 
 
 ###################################
@@ -634,8 +646,6 @@ for (comparison in comparisons) {
   input.csv.sub <- paste(out.sub,"/input.csv",sep="")
   write.csv(as.data.frame(df.sub), file=input.csv.sub)
 
-if (0 == 0 ) {
-
   ########
   ## write out excel sheets of the genes
   ########
@@ -647,14 +657,14 @@ if (0 == 0 ) {
   tmp_out <- paste(out.sub, "tmp", sep="/")
   dir.create(file.path(tmp_out, ''), showWarnings = FALSE)
   #### do ruby script
-  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_full.xlsx", sep=""))
 
 
   # 2) filtered (resFold) set
   csv <- paste(out.sub,name,"_filtered.csv",sep="")
   write.csv(as.data.frame(resFold), file=csv)
-  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered.xlsx", sep=""))
 
   csv05 <- paste(out.sub,name,"_filtered_p05.csv",sep="")
@@ -662,9 +672,9 @@ if (0 == 0 ) {
   csv01 <- paste(out.sub,name,"_filtered_p01.csv",sep="")
   write.csv(as.data.frame(resFold01), file=csv01)
 
-  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p05.xlsx", sep=""))
-  #system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
+  system(paste("./improve_deseq_table.rb ", annotation_genes, " ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
   #system(paste("ssconvert ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p01.xlsx", sep=""))
 
   #data.set <- rownames(deseq2.res)
@@ -696,9 +706,6 @@ if (0 == 0 ) {
 
   ## piano
   #piano(out.sub, resBaseMean, resFold, ensembl)
-
-
-} # END IF 42
 
 }
 ##################################################

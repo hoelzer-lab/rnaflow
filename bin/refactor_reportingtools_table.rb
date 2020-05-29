@@ -6,7 +6,25 @@ class RefactorReportingtoolsTable
 
   def initialize(html_path, anno)
 
-    species = anno.sub('.gene.gtf','')
+    # does not work anymore because the input is now named 'annotation.gene.gtf'
+    #species = anno.sub('.gene.gtf','')
+
+    # fix for now, we need at some point a more general mechanic to detect the (main) species (host) used. Likely as a parameter
+    species = 'na'
+    f = File.open(anno, 'r')
+    f.each do |line|
+      unless line.start_with?('#')
+        s = line.split("\t")
+        if s[8] && s[8].include?('gene_id')
+          gene_id = s[8].split(';')[0].split('gene_id')[1].gsub('"','').chomp.strip
+          species = 'eco' if gene_id.start_with?('ER')
+          species = 'hsa' if gene_id.start_with?('ENSG')
+          species = 'mmu' if gene_id.start_with?('ENSMUSG')
+          break if species != 'na'
+        end
+      end
+    end
+    f.close
 
     case species
       when 'eco' 
@@ -15,6 +33,9 @@ class RefactorReportingtoolsTable
       when 'hsa'
         $scan_gene_id_pattern = 'ENSG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?g='
+      when 'mmu'
+        $scan_gene_id_pattern = 'ENSMUSG[0-9]+'
+        $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?g='
       else
         $scan_gene_id_pattern = false
         $ensembl_url = false
