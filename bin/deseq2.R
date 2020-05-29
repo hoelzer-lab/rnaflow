@@ -442,10 +442,10 @@ if (length(patients) > 0) {
 ### IMPORTANT STEP< OTHERWIESE DESEQ WILL DO THE COMPARISON IN ALPHABETICAL ORDER!!!!
 #ddsHTSeq$condition <- relevel(ddsHTSeq$condition, ref=levels[1]) ## this is enough if we only have two conditions,
 #but for more conditions we need factor() to order every level according to input files
-ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
-ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
-print(ddsHTSeq)
-print(ddsHTSeq$condition)
+#ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
+#ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
+#print(ddsHTSeq)
+#print(ddsHTSeq$condition)
 
 print("DESeq Data Object:")
 dds <- DESeq(ddsHTSeq, betaPrior = TRUE)
