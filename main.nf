@@ -213,6 +213,7 @@ include hisat2 from './modules/hisat2'
 include featurecounts from './modules/featurecounts'
 include tpm_filter from './modules/tpm_filter'
 include deseq2 from './modules/deseq2'
+include fastqc from './modules/fastqc'
 include multiqc from './modules/multiqc'
 
 // helpers
@@ -288,6 +289,9 @@ workflow analysis_reference_based {
         deseq2_script_improve_deseq_table
 
     main:
+        // initial QC of raw reads
+        fastqc(illumina_input_ch)
+
         // trim with fastp
         fastp(illumina_input_ch)
 
@@ -343,7 +347,12 @@ workflow analysis_reference_based {
         deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
 
         // run MultiQC
-        multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
+        multiqc(fastp.out.json_report.collect(), 
+                sortmerna.out.log.collect(), 
+                hisat2.out.log.collect(), 
+                featurecounts.out.log.collect(), 
+                fastqc.out.tar.map {name, fastqc -> tuple(fastqc)}.collect()
+        )
 } 
 
 workflow analysis_de_novo {
