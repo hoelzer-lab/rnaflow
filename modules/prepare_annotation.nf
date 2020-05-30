@@ -21,7 +21,7 @@ process format_annotation {
         for line in gtf:
             if not line.startswith('#'):
                 split_line = line.split('\\t')
-                if split_line[2] == 'gene':
+                if split_line[2] == 'gene' or split_line[2] == 'pseudogene':
                     desc = split_line[8]
                     gene_id = line.split('gene_id')[1].split(';')[0].replace('"', '').strip()
                     if 'gene_name' in desc:
@@ -52,6 +52,6 @@ process format_annotation_gene_rows {
 
     script:
     """
-    awk '{if(\$3=="gene"){print \$0}}' ${annotation} > ${annotation.baseName}.gene.gtf
+    awk '{if(\$3=="gene" || \$3=="pseudogene"){print \$0}}' ${annotation} > ${annotation.baseName}.gene.gtf
     """
 }
