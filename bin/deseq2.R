@@ -442,10 +442,10 @@ if (length(patients) > 0) {
 ### IMPORTANT STEP< OTHERWIESE DESEQ WILL DO THE COMPARISON IN ALPHABETICAL ORDER!!!!
 #ddsHTSeq$condition <- relevel(ddsHTSeq$condition, ref=levels[1]) ## this is enough if we only have two conditions,
 #but for more conditions we need factor() to order every level according to input files
-#ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
-#ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
-#print(ddsHTSeq)
-#print(ddsHTSeq$condition)
+ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
+ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
+print(ddsHTSeq)
+print(ddsHTSeq$condition)
 
 print("DESeq Data Object:")
 dds <- DESeq(ddsHTSeq, betaPrior = TRUE)
@@ -467,26 +467,25 @@ vsd <- varianceStabilizingTransformation(dds)
 rlogMat <- assay(rld)
 vstMat <- assay(vsd)
 
-par(mfrow=c(1,3))
-notAllZero <- (rowSums(counts(dds))>0)
+#par(mfrow=c(1,3))
+#notAllZero <- (rowSums(counts(dds))>0)
 
 ## write out the full vsd table, we want to load them later for pathway heatmap in additional script
 csv <- paste(out,"/normalized_counts.vsd.csv",sep="")
 write.csv(as.data.frame(assay(vsd)), file=csv)
 
 ## BIOMART OBJECT
-# the below code works actually. But for example not for ecoli because I think that's a different ensembl db
+# the below code works actually. But we need to know the reference species. But for example not for ecoli because I think that's a different ensembl db
 # we can use this for hsapiens, mmusculus, mlucifugus, ... 
 #ensembl = useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl", host = "apr2020.archive.ensembl.org")
 #mart <- useDataset("mmusculus_gene_ensembl", ensembl)
 
-#simple pca (2020-05-29 switched from rsd to vsd)
 pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-plotPCA(vsd, intgroup=c("design")) #"sizeFactor" worked somehow....
+plotPCA(rld, intgroup=c("design")) #"sizeFactor" worked somehow....
 dev.off()
 
 pdf(paste(out,"statistics/pca_simple_replicates_colored.pdf",sep=""))
-plotPCA(vsd, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
+plotPCA(rld, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
 dev.off()
 
 ntop = 500
