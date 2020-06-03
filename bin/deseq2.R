@@ -506,6 +506,7 @@ dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2],
 
 dataGG$condition <- conditions
 #dataGG$timepoint <- c('6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h')
+#dataGG$timepoint <- c('xh','xh','xh','xh','xh','xh','xh','xh','xh','xh','xh','xh',) # this could be a solution to just plot 'no' difference in timepoint
 dataGG$replicate <- col.labels
 
 #ggplot(dataGG, aes(PC1, PC2, color=condition, shape=timepoint)) +
