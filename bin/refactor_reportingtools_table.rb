@@ -74,7 +74,7 @@ class RefactorReportingtoolsTable
     html_file = File.open(html_path,'r')    
     html_file_refac = File.open(html_path.sub('.html','_table.html'),'w')
 
-    pvalue = File.basename(html_path, '.html').split('_').reverse[0]
+    #pvalue = File.basename(html_path, '.html').split('_').reverse[0]
 
     html_file.each do |line|
       if line.start_with?('<div class="container"')
@@ -85,6 +85,7 @@ class RefactorReportingtoolsTable
         tmp_array[2..tmp_array.length-3].each do |row|
           row_splitted = row.sub('<a href','<a target="_blank" href').split('</td>')
           gene_id = row_splitted[0].scan(/#{$scan_gene_id_pattern}/)[0]
+          next unless gene_id
           gene_id = gene_id.gsub('"','')
           gene_name = $id2name[gene_id]
           gene_biotype = $id2biotype[gene_id]
@@ -95,8 +96,7 @@ class RefactorReportingtoolsTable
 	        else
             new_row = [row_splitted[0], "<td class=\"\">#{gene_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'            
           end          
-          html_file_refac << new_row << '</tr>'
-          
+          html_file_refac << new_row << '</tr>'  
         end
         table_footer = tmp_array[tmp_array.length-2]
         html_file_refac << refac_table_header(table_footer, 3) << '</tr>' # table footer
