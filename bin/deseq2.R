@@ -560,7 +560,7 @@ pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
 ## REPORT TO HTML
 db <- NULL
 
-des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 1', basePath = out, reportDirectory = "html/")
+des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, no pvalue cutoff', basePath = out, reportDirectory = "html/")
 publish(dds, des2Report.full, pvalueCutoff=1.1, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(dds)))
 finish(des2Report.full)
 system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_full.html ', annotation_genes, sep=''))
@@ -705,6 +705,7 @@ for (comparison in comparisons) {
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
     report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
+    system(paste("ln -s $PWD/html/figuresRNAseq_analysis_with_DESeq2_full $PDW/",out.sub,"/html/figuresRNAseq_analysis_with_DESeq2",sep=''))
   }
 
   ## piano
