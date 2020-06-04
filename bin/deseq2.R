@@ -36,7 +36,7 @@ report.html <- function(out, dds, deseq2.res, l1, l2, use.contrasts, annotation_
     publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
   }
   finish(des2Report05)
-  system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_p05.html ', annotation_genes, ' add_plots' sep=''))
+  system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_p05.html ', annotation_genes, ' add_plots', sep=''))
 }
 
 
@@ -705,7 +705,7 @@ for (comparison in comparisons) {
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
     report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
-    system(paste("ln -s $PWD/html/figuresRNAseq_analysis_with_DESeq2_full $PDW/",out.sub,"/html/figuresRNAseq_analysis_with_DESeq2_full",sep=''))
+    system(paste("ln -s $PWD/html/figuresRNAseq_analysis_with_DESeq2_full ",out.sub,"/html/",sep=''))
   }
 
   ## piano
