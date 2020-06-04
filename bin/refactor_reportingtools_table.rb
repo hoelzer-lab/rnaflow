@@ -103,6 +103,7 @@ class RefactorReportingtoolsTable
       end
     end
     html_file.close; html_file_tmp.close
+    `rm #{html_file_tmp.path}`
 
   end
   
