@@ -56,7 +56,11 @@ class RefactorReportingtoolsTable
         gene_name = 'NA'
       end
       gene_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
-      gene_biotype = s[8].split('gene_biotype')[1].split(';')[0].gsub('"','').strip
+      if line.include?('gene_biotype')
+        gene_biotype = s[8].split('gene_biotype')[1].split(';')[0].gsub('"','').strip
+      else
+        gene_biotype = 'NA'
+      end
       chr = s[0]
       start = s[3]
       stop = s[4]
