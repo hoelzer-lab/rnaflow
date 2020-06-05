@@ -295,7 +295,7 @@ workflow analysis_reference_based {
         fastqc(illumina_input_ch)
 
         // trim with fastp
-        fastp(illumina_input_ch)
+        fastp(illumina_input_ch, params.fastp_additional_params)
 
         // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
@@ -418,9 +418,9 @@ def helpMSG() {
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                         - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]${c_reset}
-    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files.
+    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files (one path in each line).
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
-    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files
+    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files (one path in each line)
 
     ${c_yellow}Options${c_reset}
     --dge                    a CSV file following the pattern: conditionX,conditionY
