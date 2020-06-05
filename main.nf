@@ -214,7 +214,7 @@ include hisat2 from './modules/hisat2'
 include featurecounts from './modules/featurecounts'
 include tpm_filter from './modules/tpm_filter'
 include deseq2 from './modules/deseq2'
-include fastqc from './modules/fastqc'
+include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
 include multiqc from './modules/multiqc'
 
 // helpers
@@ -292,10 +292,13 @@ workflow analysis_reference_based {
 
     main:
         // initial QC of raw reads
-        fastqc(illumina_input_ch)
+        fastqcPre(illumina_input_ch)
 
         // trim with fastp
         fastp(illumina_input_ch, params.fastp_additional_params)
+
+        // QC after fastp
+        fastqcPost(fastp.out.sample_trimmed)
 
         // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
@@ -353,7 +356,8 @@ workflow analysis_reference_based {
                 sortmerna.out.log.collect(), 
                 hisat2.out.log.collect(), 
                 featurecounts.out.log.collect(), 
-                fastqc.out.tar.map {name, fastqc -> tuple(fastqc)}.collect()
+                fastqcPre.out.zip.collect(),
+                fastqcPost.out.zip.collect()
         )
 } 
 
