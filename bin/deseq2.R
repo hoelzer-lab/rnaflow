@@ -705,7 +705,12 @@ for (comparison in comparisons) {
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
     report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
-    system(paste("ln -s $PWD/html/figuresRNAseq_analysis_with_DESeq2_full ",out.sub,"/html/",sep=''))
+    # copy PDF and PNG plots
+    dir.create(file.path(out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full'), showWarnings = FALSE)
+    for (id in rownames(resFold05)) {
+      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/boxplot.', id, '.pdf ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
+      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/mini.', id, '.png ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
+    }
   }
 
   ## piano

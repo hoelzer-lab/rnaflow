@@ -72,6 +72,7 @@ class RefactorReportingtoolsTable
       # add plot HTML code and then give this updated file to the refactor function
       add_plot_html_code(html_path)
       refactor_deseq_html_table(html_path.sub('.html','.html.tmp'))
+      `rm #{html_path}.tmp`
     else
       refactor_deseq_html_table(html_path)
     end
@@ -103,7 +104,6 @@ class RefactorReportingtoolsTable
       end
     end
     html_file.close; html_file_tmp.close
-    `rm #{html_file_tmp.path}`
 
   end
   
