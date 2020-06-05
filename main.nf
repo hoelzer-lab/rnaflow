@@ -176,6 +176,11 @@ deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.project
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
 deseq2_script_csv2xlsx = Channel.fromPath( workflow.projectDir + '/bin/csv_to_excel.py', checkIfExists: true )
 
+/*
+* MultiQC config
+*/
+multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
+
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
 //}
@@ -215,7 +220,7 @@ include featurecounts from './modules/featurecounts'
 include tpm_filter from './modules/tpm_filter'
 include deseq2 from './modules/deseq2'
 include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
-include multiqc from './modules/multiqc'
+include { multiqc; multiqc_sample_names } from './modules/multiqc'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
@@ -289,6 +294,7 @@ workflow analysis_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         deseq2_script_csv2xlsx
+        multiqc_config
 
     main:
         // initial QC of raw reads
@@ -352,7 +358,10 @@ workflow analysis_reference_based {
         deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
 
         // run MultiQC
-        multiqc(fastp.out.json_report.collect(), 
+        multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
+        multiqc(multiqc_config, 
+                multiqc_sample_names.out,
+                fastp.out.json_report.collect(), 
                 sortmerna.out.log.collect(), 
                 hisat2.out.log.collect(), 
                 featurecounts.out.log.collect(), 
@@ -392,7 +401,7 @@ workflow {
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx, multiqc_config)
 }
 
 

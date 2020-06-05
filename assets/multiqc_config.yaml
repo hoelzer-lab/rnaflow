@@ -1,0 +1,13 @@
+module_order:    
+    - fastqc:
+        name: 'FastQC (raw)'
+        path_filters_exclude:
+            - '*.trimmed_fastqc.zip'
+    - fastp
+    - fastqc:
+        name: 'FastQC (trimmed)'
+        path_filters:
+            - '*.trimmed_fastqc.zip'   
+    - sortmerna   
+    - hisat2
+    - featureCounts
