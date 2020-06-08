@@ -31,12 +31,12 @@ report.html <- function(out, dds, deseq2.res, l1, l2, use.contrasts, annotation_
 
   des2Report05 <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_p05', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 0.05', basePath = out, reportDirectory = "html/")
   if (use.contrasts) {
-    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), contrast = c("condition",l1,l2))
+    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), contrast = c("condition",l1,l2), make.plots = FALSE)
   } else {
-    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)))
+    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
   }
   finish(des2Report05)
-  system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_full.html ', annotation_genes, sep=''))
+  system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_p05.html ', annotation_genes, ' add_plots', sep=''))
 }
 
 
@@ -560,8 +560,8 @@ pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
 ## REPORT TO HTML
 db <- NULL
 
-des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 1', basePath = out, reportDirectory = "html/")
-publish(dds, des2Report.full, pvalueCutoff=1, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(dds)))
+des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, no pvalue cutoff', basePath = out, reportDirectory = "html/")
+publish(dds, des2Report.full, pvalueCutoff=1.1, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(dds)))
 finish(des2Report.full)
 system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_full.html ', annotation_genes, sep=''))
 
@@ -691,7 +691,7 @@ for (comparison in comparisons) {
   ## PCAs
   plot.pca(out.sub, vsd.sub, col.labels.sub, NA)
 
-  # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, ...
+  # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
   #plot.pca.highest.variance(out.sub, vsd.sub, Pvars.sub, ntops, comparison)
 
   ## HEATMAPs
@@ -705,6 +705,12 @@ for (comparison in comparisons) {
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
     report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
+    # copy PDF and PNG plots
+    dir.create(file.path(out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full'), showWarnings = FALSE)
+    for (id in rownames(resFold05)) {
+      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/boxplot.', id, '.pdf ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
+      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/mini.', id, '.png ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
+    }
   }
 
   ## piano
