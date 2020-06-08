@@ -28,6 +28,7 @@ process hisat2 {
     input:
     tuple val(sample_name), path(reads)
     tuple path(reference), path(index)
+    val(additionalParams)
 
     output:
     tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: sample_bam 
@@ -36,12 +37,12 @@ process hisat2 {
     script:
     if (params.mode == 'single') {
     """
-    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
     """
     }
     else {
     """
-    hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
     """
     } 
 }

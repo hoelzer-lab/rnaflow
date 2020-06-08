@@ -312,7 +312,7 @@ workflow analysis_reference_based {
         // HISAT2 index
         hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna.out.no_rna_fastq, hisat2index.out)
+        hisat2(sortmerna.out.no_rna_fastq, hisat2index.out, params.histat2_additional_params)
 
         // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
