@@ -76,7 +76,7 @@ process tpm_filter {
                 num_filtered_features = df_cond.shape[0]
         
     with open('tpm_stats.tsv', 'w') as stats:
-        stats.write(f'"Number of filtered features"\\t{num_filtered_features}\\n')
+        stats.write(f'"Number of retained features"\\t{num_filtered_features}\\n')
         stats.write(f'"Number of filtered out features"\\t{num_unfiltered_features-num_filtered_features}\\n')        
     '''
 }
