@@ -16,6 +16,7 @@ process tpm_filter {
     output:
     val sample, emit: samples // [mock_rep1, mock_rep2, treat_rep1, treat_rep2]
     path "**.counts.filtered.formated", emit: filtered_counts // [mock_rep1.counts.filtered.formated, mock_rep2.counts.filtered.formated, treat_rep1.counts.filtered.formated, treat_rep2.counts.filtered.formated]
+    path "tpm_stats.tsv", emit: stats
 
     script:
     // make lists of strings for the python script
@@ -29,6 +30,9 @@ process tpm_filter {
 
     import pandas as pd
     import numpy as np
+
+    num_unfiltered_features = None
+    num_filtered_features = None
 
     df = pd.DataFrame()
     cols = []
@@ -50,6 +54,9 @@ process tpm_filter {
         df_i[col_tpm] = tpm
         df = pd.concat([df, df_i], axis=1)
 
+        if not num_unfiltered_features:
+            num_unfiltered_features = df_i.shape[0]
+
     df.columns = pd.MultiIndex.from_tuples(df.columns)
 
     df_mean_tpm = pd.DataFrame()
@@ -59,17 +66,17 @@ process tpm_filter {
 
     df_filtered = df[np.sum(df_mean_tpm < !{params.tpm}, axis=1) != len(set(!{conditions}))]
 
-    #out_sep_list = [None for i in !{samples}]
-
     for cond, df_cond in df_filtered.groupby(level=[0,1,2], axis=1):
         if cond[-1] == 'counts':
             df_cond.columns = [cond[1]]
             df_cond.reset_index(inplace=True)
-            #out_sep_list[!{samples}.index(cond[1])] = df_cond
             df_cond.to_csv(f"{cond[1]}.counts.filtered.formated", sep='\\t', columns=['Geneid', cond[1]], header=False, index=False)
+            
+            if not num_filtered_features:
+                num_filtered_features = df_cond.shape[0]
         
-    #for i,df_i in enumerate(out_sep_list):
-        #sample_name =!{samples}[i]
-        #df_i.to_csv(f"{sample_name}.counts.filtered.formated", sep='\\t', columns=['Geneid', sample_name], header=False, index=False)
+    with open('tpm_stats.tsv', 'w') as stats:
+        stats.write(f'"Number of filtered features"\\t{num_filtered_features}\\n')
+        stats.write(f'"Number of filtered out features"\\t{num_unfiltered_features-num_filtered_features}\\n')        
     '''
 }

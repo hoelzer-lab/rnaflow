@@ -366,7 +366,9 @@ workflow analysis_reference_based {
                 hisat2.out.log.collect(), 
                 featurecounts.out.log.collect(), 
                 fastqcPre.out.zip.collect(),
-                fastqcPost.out.zip.collect()
+                fastqcPost.out.zip.collect(),
+                tpm_filter.out.stats,
+                params.tpm
         )
 } 
 

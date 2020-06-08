@@ -17,6 +17,8 @@ process multiqc {
     path(featurecounts)
     path(fastqcPre)
     path(fastqcPost)
+    path(tpm_stats)
+    val(tpm_threshold)
 
     output:
     path "*multiqc_report.html"
@@ -24,7 +26,7 @@ process multiqc {
 
     script:
     """
-    multiqc . -c ${config} --sample-names ${sample_names}
+    multiqc . -c ${config} --sample-names ${sample_names} --cl_config "custom_data: { tpm_filter: { description: 'Transcripts per Million (TPM) filter results: At first, the mean TPM value for each condition is calculated. Then, a feature is retained, if at least one mean TPM value is above the threshold of ${tpm_threshold}. A feature is filtered out, if all mean TPM values are below the threshold of ${tpm_threshold}.' } }"
     """
 }
 
