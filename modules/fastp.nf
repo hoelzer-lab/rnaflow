@@ -11,6 +11,7 @@ process fastp {
 
     input:
     tuple val(name), path(reads)
+    val(additionalParams)
 
     output:
     tuple val(name), path("${name}*.trimmed.fastq.gz"), emit: sample_trimmed
@@ -19,12 +20,12 @@ process fastp {
     script:
     if (params.mode == 'single') {
     """
-    fastp -i ${reads[0]} -o ${name}.trimmed.fastq.gz -n 5 --thread ${task.cpus} --json ${name}_fastp.json -z 6
+    fastp -i ${reads[0]} -o ${name}.trimmed.fastq.gz -n 5 --thread ${task.cpus} --json ${name}_fastp.json -z 6 ${additionalParams}
     """
     }
     else {
     """
-    fastp -i ${reads[0]} -I ${reads[1]} -o ${name}.R1.trimmed.fastq.gz -O ${name}.R2.trimmed.fastq.gz -n 5 --thread ${task.cpus} --json ${name}_fastp.json -z 6
+    fastp -i ${reads[0]} -I ${reads[1]} -o ${name}.R1.trimmed.fastq.gz -O ${name}.R2.trimmed.fastq.gz -n 5 --thread ${task.cpus} --json ${name}_fastp.json -z 6 ${additionalParams}
     """
     }
 }

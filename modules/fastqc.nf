@@ -9,13 +9,10 @@ process fastqc {
     tuple val(name), path(reads) 
 
     output:
-    tuple val(name), path("*.tar.gz"), emit: tar
+    path("*_fastqc.zip", emit: zip)
 
     script:
     """
-    mkdir -p fastqc_\$(basename \$PWD)
-    fastqc -t ${task.cpus} ${reads} -o fastqc_\$(basename \$PWD)
-    tar zcvf fastqc_\$(basename \$PWD).tar.gz fastqc_\$(basename \$PWD)
-    rm -rf fastqc_\$(basename \$PWD)
+    fastqc --noextract -t ${task.cpus} ${reads}
     """
 }

@@ -176,6 +176,11 @@ deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.project
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
 deseq2_script_csv2xlsx = Channel.fromPath( workflow.projectDir + '/bin/csv_to_excel.py', checkIfExists: true )
 
+/*
+* MultiQC config
+*/
+multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
+
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
 //}
@@ -214,8 +219,8 @@ include hisat2 from './modules/hisat2'
 include featurecounts from './modules/featurecounts'
 include tpm_filter from './modules/tpm_filter'
 include deseq2 from './modules/deseq2'
-include fastqc from './modules/fastqc'
-include multiqc from './modules/multiqc'
+include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
+include { multiqc; multiqc_sample_names } from './modules/multiqc'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
@@ -289,13 +294,17 @@ workflow analysis_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         deseq2_script_csv2xlsx
+        multiqc_config
 
     main:
         // initial QC of raw reads
-        fastqc(illumina_input_ch)
+        fastqcPre(illumina_input_ch)
 
         // trim with fastp
-        fastp(illumina_input_ch)
+        fastp(illumina_input_ch, params.fastp_additional_params)
+
+        // QC after fastp
+        fastqcPost(fastp.out.sample_trimmed)
 
         // remove rRNA with SortmeRNA
         sortmerna(fastp.out.sample_trimmed, sortmerna_db)
@@ -349,11 +358,17 @@ workflow analysis_reference_based {
         deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
 
         // run MultiQC
-        multiqc(fastp.out.json_report.collect(), 
+        multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
+        multiqc(multiqc_config, 
+                multiqc_sample_names.out,
+                fastp.out.json_report.collect(), 
                 sortmerna.out.log.collect(), 
                 hisat2.out.log.collect(), 
                 featurecounts.out.log.collect(), 
-                fastqc.out.tar.map {name, fastqc -> tuple(fastqc)}.collect()
+                fastqcPre.out.zip.collect(),
+                fastqcPost.out.zip.collect(),
+                tpm_filter.out.stats,
+                params.tpm
         )
 } 
 
@@ -388,7 +403,7 @@ workflow {
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx, multiqc_config)
 }
 
 
@@ -418,9 +433,9 @@ def helpMSG() {
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                         - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]${c_reset}
-    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files.
+    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files (one path in each line).
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
-    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files
+    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files (one path in each line)
 
     ${c_yellow}Options${c_reset}
     --dge                    a CSV file following the pattern: conditionX,conditionY

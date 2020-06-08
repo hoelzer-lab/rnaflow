@@ -1,0 +1,52 @@
+module_order:    
+    - fastqc:
+        name: 'FastQC (raw)'
+        anchor: 'fastqc_raw'
+        path_filters_exclude:
+            - '*.trimmed_fastqc.zip'
+    - fastp:
+        anchor: 'fastp'
+    - fastqc:
+        name: 'FastQC (trimmed)'
+        anchor: 'fastqc_trimmed'
+        path_filters:
+            - '*.trimmed_fastqc.zip'   
+    - sortmerna:
+        anchor: 'sortmerna'
+    - hisat2:
+        anchor: 'hisat2'
+    - featureCounts:
+        anchor: 'featureCounts'
+    - custom_data
+    
+report_section_order:
+    fastqc_raw:
+        order: 1000
+    fastp:
+        after: fastqc_raw
+    fastqc_trimmed:
+        after: fastp
+    sortmerna:
+        after: fastqc_trimmed
+    hisat2:
+        after: sortmerna
+    featureCounts:
+        after: hisat2
+    tpm_filter:
+        after: featureCounts
+    
+
+custom_data:
+    tpm_filter:
+        file_format: 'tsv'
+        section_name: 'TPM filter'
+        anchor: 'tpm_filter'
+        plot_type: 'bargraph'
+        pconfig:
+            id: 'TPM filter'
+            title: 'TPM filter'
+            ylab: 'Number of features'
+
+sp:
+    tpm_filter:
+        fn: 'tpm_stats.tsv'
