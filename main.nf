@@ -306,13 +306,20 @@ workflow analysis_reference_based {
         // QC after fastp
         fastqcPost(fastp.out.sample_trimmed)
 
-        // remove rRNA with SortmeRNA
-        sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+        if ( params.skip_sortmerna ) {
+            sortmerna_no_rna_fastq = fastp.out.sample_trimmed
+            sortmerna_log = Channel.empty()
+        } else {
+            // remove rRNA with SortmeRNA
+            sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+            sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
+            sortmerna_log = sortmerna.out.log
+        }
 
         // HISAT2 index
         hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna.out.no_rna_fastq, hisat2index.out, params.histat2_additional_params)
+        hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.histat2_additional_params)
 
         // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
@@ -362,7 +369,7 @@ workflow analysis_reference_based {
         multiqc(multiqc_config, 
                 multiqc_sample_names.out,
                 fastp.out.json_report.collect(), 
-                sortmerna.out.log.collect(), 
+                sortmerna_log.collect().ifEmpty([]), 
                 hisat2.out.log.collect(), 
                 featurecounts.out.log.collect(), 
                 fastqcPre.out.zip.collect(),
