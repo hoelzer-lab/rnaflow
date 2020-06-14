@@ -17,30 +17,40 @@ println "\u001B[32mProfile: $workflow.profile\033[0m"
 println " "
 println "\033[2mCurrent User: $workflow.userName"
 println "Nextflow-version: $nextflow.version"
-println "Starting time: $nextflow.timestamp"
+println "Starting time: $workflow.start"
 println "Workdir location:"
-println "  $workflow.workDir\u001B[0m"
+println "  $workflow.workDir"
+println "Launchdir location:"
+println "  $workflow.launchDir"
+println "Permanent cache directory:"
+println "  $params.permanentCacheDir"
+println "Configuration files:"
+println "  $workflow.configFiles\u001B[0m"
 println " "
-if (workflow.profile == 'standard') {
-println "\033[2mCPUs to use: $params.cores"
-println "Output dir name: $params.output\u001B[0m"
-println " "}
+if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
+    println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
+    println " "
+}
 
-if (params.profile) { exit 1, "--profile is WRONG use -profile" }
-if (params.reads == '') {exit 1, "--reads is a required parameter"}
-if (params.dge == '') {exit 1, "--dge is a required parameter"}
+Set species = ['hsa', 'eco', 'mmu']
+
+if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
+if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
+if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
-
+if ( params.dge ) { comparison = params.dge } else { comparison = 'all' }
 log.info """\
     D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
-    Reference species:    $params.species
     Output path:          $params.output
-    mode:                 $params.mode
-    strandness:           $params.strand
+    Mode:                 $params.mode
+    Strandness:           $params.strand
     TPM threshold:        $params.tpm
+    Comparisons:          $comparison 
     """
     .stripIndent()
 
@@ -90,25 +100,86 @@ if (params.reads) {
 }
 
 /*
+* read in auto genome(s)
+*/
+if ( params.species ) {
+    species_auto_ch = Channel.value( params.species )
+} else {
+    species_auto_ch = Channel.empty()
+}
+
+/*
+* read in genome(s)
+*/
+if ( params.genome ) {
+    reference_custom_ch = Channel
+        .fromPath( params.genome, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    reference_custom_ch = Channel.empty()
+}
+
+/*
+* read in annotation(s)
+*/
+if ( params.annotation ) {
+    annotation_custom_ch = Channel
+        .fromPath( params.annotation, checkIfExists: true )
+        .splitCsv()
+        .map { it -> file("${it[0]}", checkIfExists: true) }
+} else {
+    annotation_custom_ch = Channel.empty()
+}
+
+
+annotated_reads
+    .map{row -> row[-2]}
+    .toList()
+    .toSet()
+    .into { sample_conditions; sample_conditions2 }
+/*
 * read in comparisons
 */
 if (params.dge) {
     dge_comparisons_input_ch = Channel
-        .fromPath( params.dge, checkIfExists: true)
-        .splitCsv(header: true, sep: ',')
-        .map{row ->
+        .fromPath( params.dge, checkIfExists: true )
+        .splitCsv( header: true, sep: ',' )
+        .map{ row ->
             def condition1 = row['Condition1']
             def condition2 = row['Condition2']
             return [ condition1, condition2 ]
-        }
-        // no further processing, in case other tools need this formatted in another way
+        } // no further processing, in case other tools need this formatted in another way
+
+        // check if conditions form dge and reads file match
+        dge_comparisons_input_ch
+            .collect()
+            .flatten()
+            .combine(sample_conditions)
+            .subscribe onNext: {
+                assert it[1].contains(it[0])
+            }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
+} else {
+    // automatically use all possible comparisons
+    dge_comparisons_input_ch = sample_conditions
+        .flatten()
+        .combine(sample_conditions2.flatten())
+        .filter{ it[0] != it[1] }
+        .map{ it -> it.sort() }
+        .unique()
 }
 /*
 * DESeq2 scripts
 */
-deseq2_script = Channel.fromPath( "${params.scripts_dir}/deseq2.R", checkIfExists: true )
-deseq2_script_refactor_reportingtools_table = Channel.fromPath( "${params.scripts_dir}/refactor_reportingtools_table.rb", checkIfExists: true )
-deseq2_script_improve_deseq_table = Channel.fromPath( "${params.scripts_dir}/improve_deseq_table.rb", checkIfExists: true )
+deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIfExists: true )
+deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
+deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
+deseq2_script_csv2xlsx = Channel.fromPath( workflow.projectDir + '/bin/csv_to_excel.py', checkIfExists: true )
+
+/*
+* MultiQC config
+*/
+multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
@@ -127,19 +198,6 @@ annotated_reads
         }
     }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
 
-
-sample_conditions = annotated_reads
-    .map{row -> row[-2]}
-    .toList()
-    .toSet()
-dge_comparisons_input_ch
-    .collect()
-    .flatten()
-    .combine(sample_conditions)
-    .subscribe onNext: {
-        assert it[1].contains(it[0])
-    }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
-
 if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
     exit 1, "--tpm has to be numeric"
 }
@@ -149,8 +207,8 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 **************************/
 
 // databases
-include referenceGet from './modules/referenceGet'
-include annotationGet from './modules/annotationGet'
+include {referenceGet; concat_genome} from './modules/referenceGet'
+include {annotationGet; concat_annotation} from './modules/annotationGet'
 include sortmernaGet from './modules/sortmernaGet'
 include hisat2index from './modules/hisat2'
 
@@ -161,10 +219,11 @@ include hisat2 from './modules/hisat2'
 include featurecounts from './modules/featurecounts'
 include tpm_filter from './modules/tpm_filter'
 include deseq2 from './modules/deseq2'
-include multiqc from './modules/multiqc'
+include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
+include { multiqc; multiqc_sample_names } from './modules/multiqc'
 
 // helpers
-include {prepare_annotation; prepare_annotation_gene_rows} from './modules/prepare_annotation'
+include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 
 /************************** 
 * DATABASES
@@ -175,32 +234,32 @@ The Database Section is designed to "auto-get" pre prepared databases.
 It is written for local use and cloud use via params.cloudProcess.
 */
 
-workflow download_reference {
+workflow download_auto_reference {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet(); reference = referenceGet.out }
+        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            reference_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}.fa.gz")
-            if (reference_preload.exists()) { reference = reference_preload }
-            else { referenceGet(); reference = referenceGet.out } 
+            reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+            if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
+            else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
         }
     emit:
-        reference
+        reference_auto_ch
 }
 
-workflow download_annotation {
+workflow download_auto_annotation {
     main:
         // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet(); annotation = annotationGet.out }
+        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            annotation_preload = path("${params.cloudDatabase}/annotations/${params.annotation}/${params.annotation}.gtf.gz")
-            if (annotation_preload.exists()) { annotation = annotation_preload }
-            else { annotationGet(); annotation = annotationGet.out } 
+            annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+            if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
+            else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
         }
     emit:
-        annotation
+        annotation_auto_ch
 }
 
 workflow download_sortmerna {
@@ -209,29 +268,13 @@ workflow download_sortmerna {
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            sortmerna_preload = file("${params.cloudDatabase}/databases/sortmerna/rRNA_databases")
+            sortmerna_preload = file("${params.permanentCacheDir}/databases/sortmerna/data/rRNA_databases")
             if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
             else { sortmernaGet(); sortmerna = sortmernaGet.out } 
         }
     emit:
         sortmerna
 }
-
-workflow hisat2_index_reference {
-    take: reference
-    main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { hisat2index(reference); index = hisat2index.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            index_preload = path("${params.cloudDatabase}/genomes/${params.species}/${params.species}*.ht2")
-            if (index_preload.exists()) { index = index_preload }
-            else { hisat2index(reference); index = hisat2index.out } 
-        }
-    emit:
-        index
-}
-
 
 /************************** 
 * SUB WORKFLOWS
@@ -243,30 +286,47 @@ workflow hisat2_index_reference {
 workflow analysis_reference_based {
     take:
         illumina_input_ch
-        hisat2_index
+        reference
         annotation
         sortmerna_db
         dge_comparisons_input_ch
         deseq2_script
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
+        deseq2_script_csv2xlsx
+        multiqc_config
 
     main:
+        // initial QC of raw reads
+        fastqcPre(illumina_input_ch)
+
         // trim with fastp
-        fastp(illumina_input_ch)
+        fastp(illumina_input_ch, params.fastp_additional_params)
 
-        // remove rRNA with SortmeRNA
-        sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+        // QC after fastp
+        fastqcPost(fastp.out.sample_trimmed)
 
+        if ( params.skip_sortmerna ) {
+            sortmerna_no_rna_fastq = fastp.out.sample_trimmed
+            sortmerna_log = Channel.empty()
+        } else {
+            // remove rRNA with SortmeRNA
+            sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+            sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
+            sortmerna_log = sortmerna.out.log
+        }
+
+        // HISAT2 index
+        hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna.out.no_rna_fastq, hisat2_index)
+        hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.histat2_additional_params)
 
         // count with featurecounts
         featurecounts(hisat2.out.sample_bam, annotation)
 
         // prepare annotation for R input
-        prepare_annotation_gene_rows(annotation)
-        prepare_annotation(annotation)
+        format_annotation_gene_rows(annotation)
+        format_annotation(annotation)
 
         // filter by TPM value
         featurecounts.out.counts
@@ -302,10 +362,21 @@ workflow analysis_reference_based {
             .map { it.join(",") }
 
         // run DEseq2
-        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, prepare_annotation.out, prepare_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
 
         // run MultiQC
-        multiqc(fastp.out.json_report.collect(), sortmerna.out.log.collect(), hisat2.out.log.collect(), featurecounts.out.log.collect())
+        multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
+        multiqc(multiqc_config, 
+                multiqc_sample_names.out,
+                fastp.out.json_report.collect(), 
+                sortmerna_log.collect().ifEmpty([]), 
+                hisat2.out.log.collect(), 
+                featurecounts.out.log.collect(), 
+                fastqcPre.out.zip.collect(),
+                fastqcPost.out.zip.collect(),
+                tpm_filter.out.stats,
+                params.tpm
+        )
 } 
 
 workflow analysis_de_novo {
@@ -321,19 +392,25 @@ workflow analysis_de_novo {
 
 workflow {
     // get the reference genome and index it for hisat2
-    hisat2_index_reference(download_reference())
-    hisat2_index = hisat2_index_reference.out
+    download_auto_reference()
+    reference_auto = download_auto_reference.out
 
     // get the annotation
-    download_annotation()
-    annotation = download_annotation.out
+    download_auto_annotation()
+    annotation_auto = download_auto_annotation.out
+
+    // concatenate genomes and annotations
+    concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+    reference = concat_genome.out
+    concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+    annotation = concat_annotation.out
 
     // get sortmerna databases
     download_sortmerna()
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, hisat2_index, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx, multiqc_config)
 }
 
 
@@ -347,19 +424,29 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --cores 4 --reads input.csv --dge comparisons.csv
+    nextflow run main.nf --cores 4 --reads input.csv --species eco
+    or
+    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
+    or
+    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
+    ${c_dim}Genomes and annotatiosn from --genome, --annotation and --species are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}         a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
-                                        ${c_dim}(check terminal output if correctly assigned)${c_reset}
-    ${c_green}--dge${c_reset}           a CSV file following the pattern: conditionX,conditionY
-                                        Each line stands for one differential gene expression comparison.
-    ${c_green}--species${c_reset}       reference genome and annotation are selected based on this parameter [default $params.species]
+                                        ${c_dim}(check terminal output if correctly assigned)
+                                        In default all possible comparisons of conditions are made. Use --dge to change this.${c_reset}
+    ${c_green}--species${c_reset}       reference genome and annotation with automatic download.
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
-                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]${c_reset}
+                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                        - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]${c_reset}
+    ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files (one path in each line).
+                                        ${c_dim}If set, --annotation must also be set.${c_reset}
+    ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files (one path in each line)
 
     ${c_yellow}Options${c_reset}
+    --dge                    a CSV file following the pattern: conditionX,conditionY
+                             Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
                              If provided, no new index will be build. Must be named 'index.*.ht2'.  
                              Simply provide the path like 'data/db/index'. DEPRECATED
@@ -367,17 +454,24 @@ def helpMSG() {
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --cores                  max cores for local use [default $params.cores]
+    
+    ${c_dim}Computing options:
+    --cores                  max cores per process for local use [default $params.cores]
+    --max_cores              max cores used on the machine for local use [default $params.max_cores]
     --memory                 max memory in GB for local use [default $params.memory]
     --output                 name of the result folder [default $params.output]
 
-    ${c_dim}Nextflow options:
+    --permanentCacheDir      location for auto-download data like databases[default $params.permanentCacheDir]
+    --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
+    --workdir                working directory for all intermediate results [default $params.workdir]
+
+    Nextflow options:
     -with-report rep.html    cpu / ram usage (may cause errors)
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)
 
     Profile:
-    -profile                 standard (local, including conda) [default standard]
+    -profile                 standard (local and conda),local, conda, slurm, ara (slurm, conda and customization) [default standard]
                              ${c_reset}
     """.stripIndent()
 }

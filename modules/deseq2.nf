@@ -3,7 +3,9 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
-    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
+
+    if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
+    else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
     input:
     path(fc_counts_formated)
@@ -16,6 +18,7 @@ process deseq2 {
     path(script)
     path(script_refactor_reportingtools_table)
     path(script_improve_deseq_table)
+    path(script_csv2xlsx)
 
     output:
     path("*")
@@ -34,7 +37,7 @@ process deseq2 {
     }
 
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c("${params.species}") c(${patients})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients})' ${script}
     """
 }
 /*

@@ -1,7 +1,6 @@
-name: sortmerna
+name: fastqc
 channels:
   - bioconda
   - conda-forge
 dependencies:
-  - sortmerna=2.1b
-  - pigz=2.3.4
+  - fastqc>=0.11.9
