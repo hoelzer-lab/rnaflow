@@ -448,9 +448,8 @@ print(ddsHTSeq)
 print(ddsHTSeq$condition)
 
 print("DESeq Data Object:")
-dds <- DESeq(ddsHTSeq)
+dds <- DESeq(ddsHTSeq, betaPrior = TRUE)
 head(dds)
-res <- lfcShrink(dds, coef=2, type='apeglm')
 
 ## write out this table to have the size factors and normalized read
 ## counts for each gene and sample
