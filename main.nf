@@ -301,7 +301,7 @@ workflow analysis_reference_based {
         fastqcPre(illumina_input_ch)
 
         // trim with fastp
-        fastp(illumina_input_ch, params.fastp_additional_params)
+        fastp(illumina_input_ch)
 
         // QC after fastp
         fastqcPost(fastp.out.sample_trimmed)

@@ -16,15 +16,15 @@ process featurecounts {
     tuple val(name), path("${name}.counts"), emit: counts // [mock_rep1, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.counts]
     path "${name}.counts.summary", emit: log
 
-    shell:
+    script:
     if (params.mode == 'single') {
-    '''
-    featureCounts -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
-    '''
+    """
+    featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts ${bam}
+    """
     }
     else {
-    '''
-    featureCounts -pBP -T !{task.cpus} -s !{params.strand} -a !{annotation} -o !{name}.counts !{bam}
-    '''
+    """
+    featureCounts -pBP -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts ${bam}
+    """
     }
 }
