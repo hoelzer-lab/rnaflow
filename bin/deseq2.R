@@ -463,8 +463,8 @@ write.csv(as.data.frame(dds$sizeFactor), file=csv)
 ###################################
 ## Extracting transformed values
 ###################################
-rld <- rlog(dds, blind=FALSE)
-vsd <- vst(dds, blind=FALSE)
+rld <- rlog(dds)
+vsd <- varianceStabilizingTransformation(dds)
 rlogMat <- assay(rld)
 vstMat <- assay(vsd)
 
