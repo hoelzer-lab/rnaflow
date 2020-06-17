@@ -329,18 +329,18 @@ workflow analysis_reference_based {
         format_annotation(annotation)
 
         // filter by TPM value
-        featurecounts.out.counts
+        // prepare input channels
+        tpm_prep_ch = featurecounts.out.counts
             .join( annotated_reads
                     .map{row -> [row[0], row[-2]]} 
-            )
-            .multiMap{ tupel ->
-                name: tupel[0]
-                count_file: tupel[1]
-                condition: tupel[2]
-            }
-            .set { tpm }
+            ).toSortedList { entry -> entry[0] } 
+            .transpose()
 
-        tpm_filter(tpm.name.toSortedList(), tpm.count_file.toSortedList(), tpm.condition.toSortedList())
+        samples = tpm_prep_ch.first() 
+        counts = tpm_prep_ch.take(2).last()
+        conditions = tpm_prep_ch.last()
+
+        tpm_filter(samples, counts, conditions)
 
         // prepare DEseq2
         tpm_filter.out.samples
@@ -454,14 +454,15 @@ def helpMSG() {
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    
+    --skip_sortmerna         Skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+
     ${c_dim}Computing options:
     --cores                  max cores per process for local use [default $params.cores]
     --max_cores              max cores used on the machine for local use [default $params.max_cores]
     --memory                 max memory in GB for local use [default $params.memory]
     --output                 name of the result folder [default $params.output]
 
-    --permanentCacheDir      location for auto-download data like databases[default $params.permanentCacheDir]
+    --permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
     --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
     --workdir                working directory for all intermediate results [default $params.workdir]
 
