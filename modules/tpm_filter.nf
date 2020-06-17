@@ -5,8 +5,8 @@ process tpm_filter {
     label 'python3'
     label 'smallTask'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated" }
-    else { publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated" }
+    if (params.cloudProcess) { publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated.tsv" }
+    else { publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv" }
 
     input:
     val(sample)
@@ -15,7 +15,7 @@ process tpm_filter {
 
     output:
     val sample, emit: samples // [mock_rep1, mock_rep2, treat_rep1, treat_rep2]
-    path "**.counts.filtered.formated", emit: filtered_counts // [mock_rep1.counts.filtered.formated, mock_rep2.counts.filtered.formated, treat_rep1.counts.filtered.formated, treat_rep2.counts.filtered.formated]
+    path "**.counts.filtered.formated.tsv", emit: filtered_counts // [mock_rep1.counts.filtered.formated.tsv, mock_rep2.counts.filtered.formated.tsv, treat_rep1.counts.filtered.formated.tsv, treat_rep2.counts.filtered.formated.tsv]
     path "tpm_stats.tsv", emit: stats
 
     script:
@@ -70,7 +70,7 @@ process tpm_filter {
         if cond[-1] == 'counts':
             df_cond.columns = [cond[1]]
             df_cond.reset_index(inplace=True)
-            df_cond.to_csv(f"{cond[1]}.counts.filtered.formated", sep='\\t', columns=['Geneid', cond[1]], header=False, index=False)
+            df_cond.to_csv(f"{cond[1]}.counts.filtered.formated.tsv", sep='\\t', columns=['Geneid', cond[1]], header=False, index=False)
             
             if not num_filtered_features:
                 num_filtered_features = df_cond.shape[0]
