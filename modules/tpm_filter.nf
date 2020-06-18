@@ -5,8 +5,13 @@ process tpm_filter {
     label 'python3'
     label 'smallTask'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated.tsv" }
-    else { publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv" }
+    if (params.cloudProcess) { 
+        publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated.tsv"
+        publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.tpm.tsv"
+    } else { 
+        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv" 
+        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.tpm.tsv"
+    }
 
     input:
     val(sample)
@@ -16,6 +21,7 @@ process tpm_filter {
     output:
     val sample, emit: samples // [mock_rep1, mock_rep2, treat_rep1, treat_rep2]
     path "**.counts.filtered.formated.tsv", emit: filtered_counts // [mock_rep1.counts.filtered.formated.tsv, mock_rep2.counts.filtered.formated.tsv, treat_rep1.counts.filtered.formated.tsv, treat_rep2.counts.filtered.formated.tsv]
+    path "**.counts.tpm.tsv", emit: counts_with_tpm
     path "tpm_stats.tsv", emit: stats
 
     script:
@@ -53,6 +59,10 @@ process tpm_filter {
 
         df_i[col_tpm] = tpm
         df = pd.concat([df, df_i], axis=1)
+
+        # write table with count and tpm values
+        df_i.columns = ['counts', 'tpm']
+        df_i.to_csv(f"{sample}.counts.tpm.tsv", sep='\\t')
 
         if not num_unfiltered_features:
             num_unfiltered_features = df_i.shape[0]
