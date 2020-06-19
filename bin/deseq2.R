@@ -201,7 +201,7 @@ plot.pca <- function(out, vsd, col.labels, patients) {
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes")) +
+    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes") +
     ggsave(paste(out,"statistics/pca_simple.svg",sep=""))
   
     ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
@@ -211,7 +211,7 @@ plot.pca <- function(out, vsd, col.labels, patients) {
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
     coord_fixed() + 
     theme(legend.box = "horizontal") +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes")) +
+    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes"))  +
     ggsave(paste(out,"statistics/pca_ggsave_bigger_fixed.svg",sep=""), width=10, height=10)
   
 }
@@ -450,7 +450,7 @@ print(ddsHTSeq$condition)
 print("DESeq Data Object:")
 dds <- DESeq(ddsHTSeq)
 head(dds)
-res <- lfcShrink(dds, coef=2, type='apeglm')
+# res <- lfcShrink(dds, coef=2, type='apeglm') # if not shrik  here - dispersion has have to be estimated later
 
 ## write out this table to have the size factors and normalized read
 ## counts for each gene and sample
@@ -493,8 +493,8 @@ for (ntop in c(500,50)){
   if (length(patients) > 0) {
     pcaData <- plotPCA(vsd, intgroup=c("condition", "type", "patients"), ntop=ntop, returnData=TRUE)
     percentVar <- round(100 * attr(pcaData, "percentVar"))
-    ggplot(pcaData, aes(PC1, PC2, color=condition, shape=type:patients)) + 
-      geom_point(size=3) + 
+    ggplot(pcaData, aes(PC1, PC2, color=type:patients, shape=condition)) + 
+      geom_point(size=3) +
       xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
       ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
       coord_fixed() +
@@ -504,7 +504,7 @@ for (ntop in c(500,50)){
   } else{
     pcaData <- plotPCA(vsd, intgroup=c("condition", "type"), ntop=ntop, returnData=TRUE)
     percentVar <- round(100 * attr(pcaData, "percentVar"))
-    ggplot(pcaData, aes(PC1, PC2, color=condition, shape=patients)) + 
+    ggplot(pcaData, aes(PC1, PC2, color=type, shape=condition)) + 
       geom_point(size=3) + 
       xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
       ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
@@ -592,7 +592,24 @@ for (comparison in comparisons) {
   vsd.sub$condition <- droplevels(vsd.sub$condition)
   vsd.sub$type <- droplevels(vsd.sub$type)
 
-  deseq2.res <- results(dds, contrast=c("condition",l2,l1))
+  factor <- "condition"
+  numerator <- l2
+  denominator <- l1
+  group <- colData(dds)[[factor]]
+  group <- relevel(x = group, ref = denominator)
+  colData(dds)[[factor]] <- group
+  # dds <- nbinomWaldTest(dds)
+  dds <- DESeq(dds) # nbinomWaldTest() via DESeq(), but the dispersion does not have to be estimated again | was not done before
+  resultsNames <- resultsNames(dds)
+  coef <- match(
+    x = paste(factor, numerator, "vs", denominator, sep = "_"),
+    table = resultsNames )
+  deseq2.res <- lfcShrink(
+        dds = dds,
+        type = "apeglm",
+        coef = coef
+  )
+
   summary(deseq2.res)
 
   name <- paste("deseq2_",l1,"_",l2,sep="")
