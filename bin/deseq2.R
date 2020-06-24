@@ -201,10 +201,10 @@ plot.pca <- function(out, vsd, col.labels, patients) {
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes") +
+    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes")) +
     ggsave(paste(out,"statistics/pca_simple.svg",sep=""))
   
-    ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
+  ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
     scale_shape_manual(values=1:length(col.labels)) +
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
