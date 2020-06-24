@@ -11,10 +11,10 @@ library("piano")
 ###############################################################################################
 ## FUNCTIONS
 ###############################################################################################
-plot.sample2sample <- function(out, dds, rld, col.labels) {
+plot.sample2sample <- function(out, dds, vsd, col.labels) {
   ## Heat map of the sample-to-sample distances
   
-  distsRL <- dist(t(assay(rld)))
+  distsRL <- dist(t(assay(vsd)))
   
   mat <- as.matrix(distsRL)
   rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
@@ -61,7 +61,7 @@ plot.heat.countmatrix <- function(out, dds, vsd, col.labels, count) {
   
   ### LOG
   #svg(paste(out,"heatmaps/heatmap_count_matrix_log.svg",sep=""))
-  #heatmap.2(assay(rld)[select,], col = hmcol, Rowv = TRUE, Colv = TRUE, scale="none", dendrogram="both", trace="none", margin=c(10, 6), labCol=col.labels)
+  #heatmap.2(assay(vsd)[select,], col = hmcol, Rowv = TRUE, Colv = TRUE, scale="none", dendrogram="both", trace="none", margin=c(10, 6), labCol=col.labels)
   #dev.off()
   
   ### LOG STABILIZED
@@ -123,7 +123,7 @@ plot.heat.fc <- function(out, deseq2.res, resFold, dds, vsd, col.labels, count) 
   }
 
 
-plot.pca.highest.variance <- function(out, rld, Pvars, ntops, comparison) {
+plot.pca.highest.variance <- function(out, vsd, Pvars, ntops, comparison) {
   ###############
   ## Since PCA can be slightly problematic with high dimensional data,
   ## we first select only the 500 genes showing the highest
@@ -137,13 +137,13 @@ plot.pca.highest.variance <- function(out, rld, Pvars, ntops, comparison) {
     
     select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
     
-    PCA <- prcomp(t(assay(rld)[select, ]), scale = F)
+    PCA <- prcomp(t(assay(vsd)[select, ]), scale = F)
     percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
     
     dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2], 
                         PC3 = PCA$x[,3], PC4 = PCA$x[,4], 
-                        sampleNO = colData(rld)$type,
-                        condition = colData(rld)$condition)
+                        sampleNO = colData(vsd)$type,
+                        condition = colData(vsd)$condition)
     
     rownames(dataGG) = dataGG$sampleNO
     
@@ -176,18 +176,18 @@ plot.pca.highest.variance <- function(out, rld, Pvars, ntops, comparison) {
 }
 
 
-plot.pca <- function(out, rld, col.labels, patients) {
+plot.pca <- function(out, vsd, col.labels, patients) {
   # Plot certain Principal Component Analyses.
   
-  head(colData(rld))
+  head(colData(vsd))
   
   ## old plot with less information
   #pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-  #plotPCA(rld, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
+  #plotPCA(vsd, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
   #dev.off()
   
   #pdf(paste(out,"statistics/pca.pdf",sep=""))
-  data <- plotPCA(rld, intgroup=c("condition", "type"), returnData=TRUE) 
+  data <- plotPCA(vsd, intgroup=c("condition", "type"), returnData=TRUE) 
   percentVar <- round(100 * attr(data, "percentVar"))
   
   #ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
@@ -201,7 +201,7 @@ plot.pca <- function(out, rld, col.labels, patients) {
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(rld)), " genes")) +
+    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes")) +
     ggsave(paste(out,"statistics/pca_simple.svg",sep=""))
   
   ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
@@ -227,7 +227,7 @@ build.project.structure <- function(out) {
 }
 
 
-plot.ma <- function(out, deseq2.res, ma.size, rld) {
+plot.ma <- function(out, deseq2.res, ma.size, vsd) {
   ##############################
   ## MA plot
   ############################## 
@@ -246,7 +246,7 @@ plot.ma <- function(out, deseq2.res, ma.size, rld) {
   dev.off()
 }
 
-plot.ma.go <- function(out, deseq2.res, ma.size, rld, results.gene, go.terms) {
+plot.ma.go <- function(out, deseq2.res, ma.size, vsd, results.gene, go.terms) {
   ## We can also make an MA-plot for the results table in which we raised
   ## the log2 fold change threshold (Figure below). We can label individual
   ## points on the MA-plot as well. Here we use the with R function to plot
@@ -259,8 +259,8 @@ plot.ma.go <- function(out, deseq2.res, ma.size, rld, results.gene, go.terms) {
     pdf(paste(out,"statistics/ma_", gsub(":", "", go.term.ma), ".pdf",sep=""))
     plotMA(deseq2.res, main=paste("DESeq2, ", go.term.ma, sep=''), ylim=ma.size)
     results.gene.GO.ma <- grep(go.term.ma, results.gene$go_id, fixed=TRUE)  ### e.g. GO:0002376, immune system process in mice
-    rld.go.ma <- rownames(assay(rld)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
-    for (gene in rld.go.ma) {
+    vsd.go.ma <- rownames(assay(vsd)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
+    for (gene in vsd.go.ma) {
       index = which(ensembl.ids == gene)
       gene.name <- toString(gene.ids[index])
       with(deseq2.res[gene, ], {
@@ -448,7 +448,7 @@ print(ddsHTSeq)
 print(ddsHTSeq$condition)
 
 print("DESeq Data Object:")
-dds <- DESeq(ddsHTSeq, betaPrior = TRUE)
+dds <- DESeq(ddsHTSeq)
 head(dds)
 # res <- lfcShrink(dds, coef=2, type='apeglm') # if not shrik  here - dispersion has have to be estimated later
 
@@ -463,8 +463,8 @@ write.csv(as.data.frame(dds$sizeFactor), file=csv)
 ###################################
 ## Extracting transformed values
 ###################################
-rld <- rlog(dds)
-vsd <- varianceStabilizingTransformation(dds)
+rld <- rlog(dds, blind=FALSE)
+vsd <- vst(dds, blind=FALSE)
 rlogMat <- assay(rld)
 vstMat <- assay(vsd)
 
@@ -481,8 +481,12 @@ write.csv(as.data.frame(assay(vsd)), file=csv)
 #ensembl = useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl", host = "apr2020.archive.ensembl.org")
 #mart <- useDataset("mmusculus_gene_ensembl", ensembl)
 
+###################################
+## PCAs
+###################################
+
 pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-plotPCA(rld, intgroup=c("design")) #"sizeFactor" worked somehow....
+plotPCA(vsd, intgroup=c("design")) #"sizeFactor" worked somehow....
 dev.off()
 
 for (ntop in c(500,50)){
@@ -511,36 +515,9 @@ for (ntop in c(500,50)){
   }
 }
 
-ntop = 500
-
-#####################################################
-## TODO: time points as extra input 
-Pvars <- rowVars(assay(dds))
-select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
-
-PCA <- prcomp(t(assay(rld)[select, ]), scale = T)
-percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
-
-dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2],
-                    PC3 = PCA$x[,3], PC4 = PCA$x[,4],
-                    sampleNO = colData(rld)$type,
-                    condition = colData(rld)$condition)
-
-dataGG$condition <- conditions
-#dataGG$timepoint <- c('6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h','6h','6h','6h','24h','24h','24h')
-#dataGG$timepoint <- c('xh','xh','xh','xh','xh','xh','xh','xh','xh','xh','xh','xh',) # this could be a solution to just plot 'no' difference in timepoint
-dataGG$replicate <- col.labels
-
-#ggplot(dataGG, aes(PC1, PC2, color=condition, shape=timepoint)) +
-ggplot(dataGG, aes(PC1, PC2, color=condition)) +
-    geom_point(size=3) +
-    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
-    ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) +
-    ggsave(paste(out,"statistics/pca_top",ntop,".pdf",sep=""))
-
-#####################################################
+#########################
+## Heat map sample to sample
+#########################
 
 ## Heat map of the sample-to-sample distances
 hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
@@ -637,7 +614,7 @@ for (comparison in comparisons) {
 
   name <- paste("deseq2_",l1,"_",l2,sep="")
 
-  Pvars.sub <- rowVars(assay(rld.sub))
+  Pvars.sub <- rowVars(assay(vsd.sub))
 
   #adjust variabels
   conditions.sub <- c()
