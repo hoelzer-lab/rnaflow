@@ -7,6 +7,7 @@ library("pheatmap")
 library("biomaRt")
 library("svglite")
 library("piano")
+library("apeglm")
 
 ###############################################################################################
 ## FUNCTIONS
