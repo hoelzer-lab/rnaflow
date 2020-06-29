@@ -12,16 +12,16 @@ library("apeglm")
 ###############################################################################################
 ## FUNCTIONS
 ###############################################################################################
-plot.sample2sample <- function(out, dds, vsd, col.labels) {
+plot.sample2sample <- function(out, dds, col.labels, trsf_data, trsf_type) {
   ## Heat map of the sample-to-sample distances
   
-  distsRL <- dist(t(assay(vsd)))
+  distsRL <- dist(t(assay(trsf_data)))
   
   mat <- as.matrix(distsRL)
   rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
   hc <- hclust(distsRL)
   
-  pdf(paste(out,"/heatmaps/heatmap_sample2sample.pdf",sep=""))
+  pdf(paste(out,"/heatmaps/heatmap_sample2sample_",trsf_type,".pdf",sep=""))
   heatmap.2(mat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = rev(hmcol), margin=c(13, 13))
   dev.off()
 }
@@ -41,7 +41,7 @@ report.html <- function(out, dds, deseq2.res, l1, l2, use.contrasts, annotation_
 }
 
 
-plot.heat.countmatrix <- function(out, dds, vsd, col.labels, count) {
+plot.heat.countmatrix <- function(out, dds, col.labels, count, trsf_data, trsf_type) {
   # Plot a heat map of the count matrix, top basemeans
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:count]
   selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
@@ -66,8 +66,8 @@ plot.heat.countmatrix <- function(out, dds, vsd, col.labels, count) {
   #dev.off()
   
   ### LOG STABILIZED
-  file <- paste(out,"heatmaps/heatmap_count_matrix_stabilized.pdf",sep="")
-  pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE, 
+  file <- paste(out,"heatmaps/heatmap_count_matrix_stabilized_",trsf_type,".pdf",sep="")
+  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE, 
            labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA, 
            height = 12, width = 8, file = file)
   
@@ -83,7 +83,7 @@ plot.heat.countmatrix <- function(out, dds, vsd, col.labels, count) {
   # dev.off()
 }
 
-plot.heat.fc <- function(out, deseq2.res, resFold, dds, vsd, col.labels, count) {
+plot.heat.fc <- function(out, deseq2.res, resFold, dds, col.labels, count, trsf_data, trsf_type) {
   # heat map of log2 foldchanges
   gene_names <- row.names(deseq2.res) #all gene names
   fc_gene_names <- row.names(resFold)[1:count] # for the pattern search for the '30' gene IDs with highest foldchange
@@ -117,8 +117,8 @@ plot.heat.fc <- function(out, deseq2.res, resFold, dds, vsd, col.labels, count) 
   #          dendrogram="both", trace="none", margin=c(10, 6), labCol=col.labels, labRow=row_names)
   #dev.off()
   
-  file <- paste(out,"heatmaps/heatmap_foldchange_stabilized.pdf",sep="")
-  pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE, 
+  file <- paste(out,"heatmaps/heatmap_foldchange_stabilized_",trsf_type,".pdf",sep="")
+  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE, 
            labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA, 
            height = 12, width = 8, file = file)
   }
@@ -177,18 +177,17 @@ plot.pca.highest.variance <- function(out, vsd, Pvars, ntops, comparison) {
 }
 
 
-plot.pca <- function(out, vsd, col.labels, patients) {
+plot.pca <- function(out, col.labels, trsf_data, trsf_type) {
   # Plot certain Principal Component Analyses.
-  
-  head(colData(vsd))
+  head(colData(trsf_data))
   
   ## old plot with less information
   #pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-  #plotPCA(vsd, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
+  #plotPCA(trsf_data, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
   #dev.off()
   
   #pdf(paste(out,"statistics/pca.pdf",sep=""))
-  data <- plotPCA(vsd, intgroup=c("condition", "type"), returnData=TRUE) 
+  data <- plotPCA(trsf_data, intgroup=c("condition", "type"), returnData=TRUE) 
   percentVar <- round(100 * attr(data, "percentVar"))
   
   #ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
@@ -202,8 +201,8 @@ plot.pca <- function(out, vsd, col.labels, patients) {
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes")) +
-    ggsave(paste(out,"statistics/pca_simple.svg",sep=""))
+    ggtitle(paste("PC1 vs PC2: 500 genes")) + # 500 default
+    ggsave(paste(out,"statistics/pca_simple_",trsf_type,".svg",sep=""))
   
   ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
     scale_shape_manual(values=1:length(col.labels)) +
@@ -212,9 +211,8 @@ plot.pca <- function(out, vsd, col.labels, patients) {
     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
     coord_fixed() + 
     theme(legend.box = "horizontal") +
-    ggtitle(paste("PC1 vs PC2: ", length(rownames(vsd)), " genes"))  +
-    ggsave(paste(out,"statistics/pca_ggsave_bigger_fixed.svg",sep=""), width=10, height=10)
-  
+    ggtitle(paste("PC1 vs PC2: 500 genes"))  +
+    ggsave(paste(out,"statistics/pca_ggsave_bigger_fixed_",trsf_type,".svg",sep=""), width=10, height=10)
 }
 
 
@@ -228,7 +226,7 @@ build.project.structure <- function(out) {
 }
 
 
-plot.ma <- function(out, deseq2.res, ma.size, vsd) {
+plot.ma <- function(out, deseq2.res, ma.size) {
   ##############################
   ## MA plot
   ############################## 
@@ -247,7 +245,7 @@ plot.ma <- function(out, deseq2.res, ma.size, vsd) {
   dev.off()
 }
 
-plot.ma.go <- function(out, deseq2.res, ma.size, vsd, results.gene, go.terms) {
+plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
   ## We can also make an MA-plot for the results table in which we raised
   ## the log2 fold change threshold (Figure below). We can label individual
   ## points on the MA-plot as well. Here we use the with R function to plot
@@ -257,11 +255,11 @@ plot.ma.go <- function(out, deseq2.res, ma.size, vsd, results.gene, go.terms) {
   ##-----------------------------
   for (go.term.ma in go.terms) {
     #go.term.ma <- "GO:0009615"
-    pdf(paste(out,"statistics/ma_", gsub(":", "", go.term.ma), ".pdf",sep=""))
+    pdf(paste(out,"statistics/ma_",trsf_type,"_", gsub(":", "", go.term.ma), ".pdf",sep=""))
     plotMA(deseq2.res, main=paste("DESeq2, ", go.term.ma, sep=''), ylim=ma.size)
     results.gene.GO.ma <- grep(go.term.ma, results.gene$go_id, fixed=TRUE)  ### e.g. GO:0002376, immune system process in mice
-    vsd.go.ma <- rownames(assay(vsd)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
-    for (gene in vsd.go.ma) {
+    trsf_data.go.ma <- rownames(assay(trsf_data)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
+    for (gene in trsf_data.go.ma) {
       index = which(ensembl.ids == gene)
       gene.name <- toString(gene.ids[index])
       with(deseq2.res[gene, ], {
@@ -472,9 +470,15 @@ vstMat <- assay(vsd)
 #par(mfrow=c(1,3))
 #notAllZero <- (rowSums(counts(dds))>0)
 
-## write out the full vsd table, we want to load them later for pathway heatmap in additional script
-csv <- paste(out,"/normalized_counts.vsd.csv",sep="")
-write.csv(as.data.frame(assay(vsd)), file=csv)
+## write out the full transformed table, we want to load them later for pathway heatmap in additional script
+transformed.counts = vector(mode="list", length=2)
+names(transformed.counts) = c("vsd", "rld")
+transformed.counts[[1]] <- vsd; transformed.counts[[2]] <- rld
+
+for (i in 1:length(transformed.counts)) {
+  csv <- paste(out,"/normalized_counts.",names(transformed.counts)[[i]],".csv",sep="")
+  write.csv(as.data.frame(assay(transformed.counts[[i]])), file=csv)
+}
 
 ## BIOMART OBJECT
 # the below code works actually. But we need to know the reference species. But for example not for ecoli because I think that's a different ensembl db
@@ -485,34 +489,39 @@ write.csv(as.data.frame(assay(vsd)), file=csv)
 ###################################
 ## PCAs
 ###################################
+for (i in 1:length(transformed.counts)) {
+  simple_PCA <- plotPCA(transformed.counts[[i]], intgroup=c("design"), returnData=TRUE)
+  percentVar <- round(100 * attr(simple_PCA, "percentVar"))
+  ggplot(data=simple_PCA, aes_string(x="PC1", y="PC2", color="group")) + geom_point(size=3) + 
+    xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
+    ylab(paste0("PC2: ",round(percentVar[2] * 100),"% variance")) +
+    coord_fixed()
+    ggsave(paste(out,"statistics/pca_simple_",names(transformed.counts)[[i]],".pdf",sep=""))
 
-pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-plotPCA(vsd, intgroup=c("design")) #"sizeFactor" worked somehow....
-dev.off()
-
-for (ntop in c(500,50)){
-  if (length(patients) > 0) {
-    pcaData <- plotPCA(vsd, intgroup=c("condition", "type", "patients"), ntop=ntop, returnData=TRUE)
-    percentVar <- round(100 * attr(pcaData, "percentVar"))
-    ggplot(pcaData, aes(PC1, PC2, color=type:patients, shape=condition)) + 
-      geom_point(size=3) +
-      xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
-      ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-      coord_fixed() +
-      ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
-      ggsave(paste(out,"statistics/pca_detailed_top",ntop,".svg",sep="")) +
-      ggsave(paste(out,"statistics/pca_detailed_top",ntop,".pdf",sep=""))
-  } else{
-    pcaData <- plotPCA(vsd, intgroup=c("condition", "type"), ntop=ntop, returnData=TRUE)
-    percentVar <- round(100 * attr(pcaData, "percentVar"))
-    ggplot(pcaData, aes(PC1, PC2, color=type, shape=condition)) + 
-      geom_point(size=3) + 
-      xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
-      ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-      coord_fixed() +
-      ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
-      ggsave(paste(out,"statistics/pca_detailed_top",ntop,".svg",sep="")) +
-      ggsave(paste(out,"statistics/pca_detailed_top",ntop,".pdf",sep=""))
+  for (ntop in c(500,50)){
+    if (length(patients) > 0) {
+      pcaData <- plotPCA(transformed.counts[[i]], intgroup=c("condition", "type", "patients"), ntop=ntop, returnData=TRUE)
+      percentVar <- round(100 * attr(pcaData, "percentVar"))
+      ggplot(pcaData, aes(PC1, PC2, color=patients:type, shape=condition)) + 
+        geom_point(size=3) +
+        xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
+        ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+        coord_fixed() +
+        ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
+        ggsave(paste(out,"statistics/pca_detailed_top_",names(transformed.counts)[[i]],"_",ntop,".svg",sep="")) +
+        ggsave(paste(out,"statistics/pca_detailed_top_",names(transformed.counts)[[i]],"_",ntop,".pdf",sep=""))
+    } else{
+      pcaData <- plotPCA(transformed.counts[[i]], intgroup=c("condition", "type"), ntop=ntop, returnData=TRUE)
+      percentVar <- round(100 * attr(pcaData, "percentVar"))
+      ggplot(pcaData, aes(PC1, PC2, color=type, shape=condition)) + 
+        geom_point(size=3) + 
+        xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
+        ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+        coord_fixed() +
+        ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
+        ggsave(paste(out,"statistics/pca_detailed_top_",names(transformed.counts)[[i]],"_",ntop,".svg",sep="")) +
+        ggsave(paste(out,"statistics/pca_detailed_top_",names(transformed.counts)[[i]],"_",ntop,".pdf",sep=""))
+    }
   }
 }
 
@@ -524,15 +533,17 @@ for (ntop in c(500,50)){
 hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
 #hmcol <- colorRampPalette(brewer.pal(9, "RdBu"))(100) # this is a red/blue color map
 
-distsRL <- dist(t(assay(vsd)))
+for (i in 1:length(transformed.counts)) {
+  distsRL <- dist(t(assay(transformed.counts[[i]])))
 
-mat <- as.matrix(distsRL)
-rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
-hc <- hclust(distsRL)
+  mat <- as.matrix(distsRL)
+  rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
+  hc <- hclust(distsRL)
 
-pdf(paste(out,"heatmaps/heatmap_sample2sample.pdf",sep=""))
-heatmap.2(mat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = rev(hmcol), margin=c(13, 13))
-dev.off()
+  pdf(paste(out,"heatmaps/heatmap_sample2sample_",names(transformed.counts)[[i]],".pdf",sep=""))
+  heatmap.2(mat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = rev(hmcol), margin=c(13, 13))
+  dev.off()
+}
 
 
 #########################
@@ -552,11 +563,12 @@ for (gene in selected.ensembl.ids) {
 }
 
 ### LOG STABILIZED
-file <- paste(out,"heatmaps/heatmap_count_matrix_row-scaled.pdf",sep="")
-pheatmap(assay(vsd)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
-         labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
-         height = 12, width = 8, file = file)
-
+for (i in 1:length(transformed.counts)) {
+  file <- paste(out,"heatmaps/heatmap_count_matrix_row-scaled_",names(transformed.counts)[[i]],".pdf",sep="")
+  pheatmap(assay(transformed.counts[[i]])[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+          labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
+          height = 12, width = 8, file = file)
+}
 
 ## REPORT TO HTML
 db <- NULL
@@ -584,6 +596,10 @@ for (comparison in comparisons) {
   rld.sub <- rld[ , rld$condition %in% c(l1, l2) ]
   vsd.sub <- vsd[ , vsd$condition %in% c(l1, l2) ]
   dds.sub <- dds[ , dds$condition %in% c(l1, l2) ]
+  
+  transformed.counts.sub = vector(mode="list", length=2)
+  names(transformed.counts.sub) = c("vsd", "rld")
+  transformed.counts.sub[[1]] <- vsd; transformed.counts.sub[[2]] <- rld
 
   ## adapt the levels
   dds.sub$condition <- droplevels(dds.sub$condition)
@@ -696,29 +712,31 @@ for (comparison in comparisons) {
 
   #data.set <- rownames(deseq2.res)
   #results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
-
-
-  ### MA plotting
+  
+  ## MA plotting
   ma.size <- c(-7,7)
-  plot.ma(out.sub, deseq2.res, ma.size, vsd.sub)
-  # nice extension for later to color genes that belong to specific GO terms
-  if (length(go.terms) > 0) {
-    plot.ma.go(out.sub, deseq2.res, ma.size, vsd.sub, results.gene, go.terms)
+  plot.ma(out.sub, deseq2.res, ma.size)
+
+  for (i in 1:length(transformed.counts.sub)) {
+    # nice extension for later to color genes that belong to specific GO terms
+    if (length(go.terms) > 0) {
+      plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    }
+
+    ## PCAs
+    plot.pca(out.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+
+    # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
+    #plot.pca.highest.variance(out.sub, transformed.counts.sub[[i]], Pvars.sub, ntops, comparison)
+
+    ## HEATMAPs
+    #TODO PHEATMAP REBUILD!!!
+    #TODO AND BUILD HEATMAP BASED ON GENE LIST
+    hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
+    plot.heat.countmatrix(out.sub, dds.sub, col.labels.sub, 50, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    plot.heat.fc(out.sub, deseq2.res, resFold, dds.sub, col.labels.sub, 50, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    plot.sample2sample(out.sub, dds.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
   }
-
-  ## PCAs
-  plot.pca(out.sub, vsd.sub, col.labels.sub, NA)
-
-  # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
-  #plot.pca.highest.variance(out.sub, vsd.sub, Pvars.sub, ntops, comparison)
-
-  ## HEATMAPs
-  #TODO PHEATMAP REBUILD!!!
-  #TODO AND BUILD HEATMAP BASED ON GENE LIST
-  hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-  plot.heat.countmatrix(out.sub, dds.sub, vsd.sub, col.labels.sub, 50)
-  plot.heat.fc(out.sub, deseq2.res, resFold, dds.sub, vsd.sub, col.labels.sub, 50)
-  plot.sample2sample(out.sub, dds.sub, vsd.sub, col.labels.sub)
 
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
