@@ -493,8 +493,8 @@ for (i in 1:length(transformed.counts)) {
   simple_PCA <- plotPCA(transformed.counts[[i]], intgroup=c("design"), returnData=TRUE)
   percentVar <- round(100 * attr(simple_PCA, "percentVar"))
   ggplot(data=simple_PCA, aes_string(x="PC1", y="PC2", color="group")) + geom_point(size=3) + 
-    xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
-    ylab(paste0("PC2: ",round(percentVar[2] * 100),"% variance")) +
+    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
     coord_fixed()
     ggsave(paste(out,"statistics/pca_simple_",names(transformed.counts)[[i]],".pdf",sep=""))
 
