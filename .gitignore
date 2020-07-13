@@ -1,4 +1,6 @@
 .snakemake
+conda/
+.vscode/
 
 # some data aspects
 *fai  # fasta indices
