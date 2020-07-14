@@ -484,10 +484,10 @@ workflow assembly_reference {
         stringtie_merge(genome_reference, stringtie.out.gtf.collect(), 'stringtie')
 
         // qc check
-        //busco(trinity.out.assembly, busco_db)    
+        busco(stringtie_merge.out.transcripts, busco_db)    
 
         // transcript annotation 
-        //dammit(trinity.out.assembly, dammit_db, 'trinity')
+        dammit(stringtie_merge.out.transcripts, dammit_db, 'stringtie')
 }
 
 
