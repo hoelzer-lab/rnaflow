@@ -20,9 +20,9 @@ csv.each do |line|
 	s = line.split(',')
   id = s[0].gsub('"','')
   if line.start_with?('""')
-		tmp_out << %w(ensemblID geneName bioType baseMean log2FoldChange lfcSE stat pvalue padj).join(',') << "\n"
+		tmp_out << %w(ensemblID geneName bioType baseMean log2FoldChange lfcSE pvalue padj).join(',') << "\n"
   else
-		tmp_out << [id, h[id][0], h[id][1], s[1], s[2], s[3], s[4], s[5], s[6].chomp].join(',') << "\n"
+		tmp_out << [id, h[id][0], h[id][1], s[1], s[2], s[3], s[4], s[5].chomp].join(',') << "\n"
   end    
 end
 tmp_out.close; csv.close; hash.close
