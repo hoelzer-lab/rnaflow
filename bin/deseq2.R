@@ -32,7 +32,7 @@ report.html <- function(out, dds, deseq2.res, l1, l2, use.contrasts, annotation_
 
   des2Report05 <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_p05', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 0.05', basePath = out, reportDirectory = "html/")
   if (use.contrasts) {
-    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), contrast = c("condition",l1,l2), make.plots = FALSE)
+    publish(deseq2.res, des2Report05, pvalueCutoff=0.05, annotation.db=db, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
   } else {
     publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
   }
@@ -740,7 +740,7 @@ for (comparison in comparisons) {
 
   ## Report HTML
   if (length(rownames(resFold05)) > 0) {
-    report.html(out.sub, dds.sub, deseq2.res, l2, l1, TRUE, annotation_genes)
+    report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
     # copy PDF and PNG plots
     dir.create(file.path(out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full'), showWarnings = FALSE)
     for (id in rownames(resFold05)) {
