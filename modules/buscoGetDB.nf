@@ -1,6 +1,7 @@
 process buscoGetDB {
-    label 'busco'
-    label 'smallTask'
+    //label 'busco'
+    //label 'smallTask'
+    container 'nanozoo/busco:3.0.2--40d1506'
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/busco/${params.busco}", mode: 'copy', pattern: "${params.busco}.tar.gz" }
     else { storeDir "${params.permanentCacheDir}/databases/busco/${params.busco}" }  

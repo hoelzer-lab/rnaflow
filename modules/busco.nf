@@ -1,5 +1,7 @@
 process busco {
-    label 'busco'
+    //label 'busco'
+    container 'nanozoo/busco:3.0.2--40d1506'
+    
       publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_summary.txt"
       publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_figure.pdf"
     input:
