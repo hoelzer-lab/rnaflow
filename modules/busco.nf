@@ -1,7 +1,7 @@
 process busco {
     label 'busco'
-      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "${name}_busco_summary.txt"
-      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "${name}_busco_figure.pdf"
+      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_summary.txt"
+      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_figure.pdf"
     input:
       path fasta
       path database
