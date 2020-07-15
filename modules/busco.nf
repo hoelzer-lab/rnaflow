@@ -1,9 +1,8 @@
 process busco {
-    //label 'busco'
-    container 'nanozoo/busco:3.0.2--40d1506'
+    label 'busco'
     
-      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_summary.txt"
-      publishDir "${params.output}/${params.annotation_dir}/busco", mode: 'copy', pattern: "busco_figure.pdf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", mode: 'copy', pattern: "busco_summary.txt"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", mode: 'copy', pattern: "busco_figure.pdf"
     input:
       path fasta
       path database

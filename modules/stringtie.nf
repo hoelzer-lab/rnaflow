@@ -1,8 +1,8 @@
 process stringtie {
     label 'stringtie'  
-    publishDir "${params.output}/${params.annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.gtf"
-    //publishDir "${params.output}/${name}/${params.rnaseqdir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
-    publishDir "${params.output}/${params.annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_gene_abundance.txt"
+    publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.gtf"
+    //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
+    publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_gene_abundance.txt"
 
   input:
     path genome
@@ -23,8 +23,8 @@ process stringtie {
 
 process stringtie_merge {
     label 'stringtie'  
-    publishDir "${params.output}/${params.annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.gtf"
-    publishDir "${params.output}/${params.annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.fna"
+    publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.gtf"
+    publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.fna"
 
   input:
     path(genome)
