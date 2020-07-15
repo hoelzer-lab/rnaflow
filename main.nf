@@ -200,14 +200,25 @@ multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config
 * CHECK INPUT
 */
 
-annotated_reads
-    .map{ row -> row[-2]}
-    .collect()
-    .subscribe onNext: {
-        for ( i in it ){
-        assert 2 <= it.count(i)
-        }
-    }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
+if (params.assembly) {
+    annotated_reads
+        .map{ row -> row[-2]}
+        .collect()
+        .subscribe onNext: {
+            for ( i in it ){
+            assert 0 <= it.count(i)
+            }
+        }, onError: { exit 1, 'You need at least one sample to perform an assembly.' }
+} else {
+    annotated_reads
+        .map{ row -> row[-2]}
+        .collect()
+        .subscribe onNext: {
+            for ( i in it ){
+            assert 2 <= it.count(i)
+            }
+        }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
+}
 
 if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
     exit 1, "--tpm has to be numeric"
