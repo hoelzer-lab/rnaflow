@@ -2,6 +2,9 @@ process dammitGetDB {
     label 'dammitDB'
     label 'smallTask'
 
+    errorStrategy 'retry'
+    maxRetries 2
+
     if (params.full) {
       if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/full/${params.busco}", mode: 'copy', pattern: "dbs.tar.gz" }
       else { storeDir "${params.permanentCacheDir}/databases/dammit/full/${params.busco}/" }  

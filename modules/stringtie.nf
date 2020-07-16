@@ -23,6 +23,9 @@ process stringtie {
 
 process stringtie_merge {
     label 'stringtie'  
+
+    errorStrategy { task.exitStatus = 1 ? 'ignore' :  'terminate' }
+
     publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.gtf"
     publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.fna"
 
