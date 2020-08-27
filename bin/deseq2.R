@@ -7,6 +7,7 @@ library("pheatmap")
 library("biomaRt")
 library("svglite")
 library("piano")
+library("EnhancedVolcano")
 
 ###############################################################################################
 ## FUNCTIONS
@@ -594,6 +595,12 @@ for (comparison in comparisons) {
 
   deseq2.res <- results(dds, contrast=c("condition",l2,l1))
   summary(deseq2.res)
+
+  #### volcano plot
+  volcano = EnhancedVolcano(deseq2.res, lab = rownames(deseq2.res), x = 'log2FoldChange', y = 'pvalue', xlim = c(-10,10))
+  volcano +
+    ggsave(paste(out.sub,"statistics/volcano.svg",sep="")) +
+    ggsave(paste(out.sub,"statistics/volcano.pdf",sep=""))
 
   name <- paste("deseq2_",l1,"_",l2,sep="")
 

@@ -17,3 +17,4 @@ dependencies:
   - r-svglite=1.2.3
   - bioconductor-piano
   - ruby
+  - bioconductor-enhancedvolcano
