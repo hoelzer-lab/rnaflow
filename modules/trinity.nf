@@ -1,6 +1,6 @@
 process trinity {
     label 'trinity'  
-    publishDir "${params.output}/${params.assembly_dir}/", mode: 'copy', pattern: "trinity.fasta"
+    publishDir "${params.output}/${params.assembly_dir}/trinity", mode: 'copy', pattern: "trinity.fasta"
 
   input:
     path reads 
