@@ -31,10 +31,11 @@ if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
     println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
     println " "
 }
+
 if (params.assembly) {
     println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."
-    if (params.full) {
-        params.full_dir = 'full'
+    if (params.uniref90) {
+        params.uniref90_dir = 'uniref90'
         println "Use UniRef90 instead of UniRefKB for annotation: yes\033[0m"
         println " "
     } else {
@@ -322,20 +323,15 @@ workflow download_dammit {
     busco_db_ch
     
     main:
-    if (params.full) {
-        if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
-        if (params.cloudProcess) { 
-            dammit_db_preload = file("${params.permanentCacheDir}/databases/dammit/full/${params.busco}/dbs.tar.gz")
-            if (dammit_db_preload.exists()) { database_dammit = dammit_db_preload }
-            else  { dammitGetDB(busco_db_ch); database_dammit = dammitGetDB.out }
-        }
-    } else {
-        if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
-        if (params.cloudProcess) { 
-            dammit_db_preload = file("${params.permanentCacheDir}/databases/dammit/${params.busco}/dbs.tar.gz")
-            if (dammit_db_preload.exists()) { database_dammit = dammit_db_preload }
-            else  { dammitGetDB(busco_db_ch); database_dammit = dammitGetDB.out }
-        }
+    dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco}/dbs.tar.gz"
+    if (params.uniref90) {
+        dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco}/dbs.tar.gz"
+    }
+    if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
+    if (params.cloudProcess) { 
+        dammit_db_preload = file(dammit_db_preload_path)
+        if (dammit_db_preload.exists()) { database_dammit = dammit_db_preload }
+        else  { dammitGetDB(busco_db_ch); database_dammit = dammitGetDB.out }
     }
     emit: database_dammit
 }
@@ -609,7 +605,7 @@ def helpMSG() {
 
     ${c_yellow}Options${c_reset}
     --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
-    --full                   transcriptome annotation using UniRef90 instead of UniRefKB [default $params.full]
+    --uniref90               transcriptome annotation using UniRef90 instead of UniRefKB [default $params.uniref90]
     --dge                    a CSV file following the pattern: conditionX,conditionY
                              Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
