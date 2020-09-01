@@ -1,6 +1,6 @@
 process dammit {
     label 'dammit'
-    publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.full_dir}", mode: 'copy', pattern: "${tool}"
+    publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.uniref90_dir}", mode: 'copy', pattern: "${tool}"
 
   input:
     path(transcriptome_assembly)
