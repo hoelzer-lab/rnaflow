@@ -33,14 +33,14 @@ if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
 }
 if (params.assembly) {
     println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."
-}
-if (params.full) {
-    params.full_dir = 'full'
-    println "Use UniRef90 instead of UniRefKB for annotation: yes\033[0m"
-    println " "
-} else {
-    println "Use UniRef90 instead of UniRefKB for annotation: no\033[0m"
-    println " "
+    if (params.full) {
+        params.full_dir = 'full'
+        println "Use UniRef90 instead of UniRefKB for annotation: yes\033[0m"
+        println " "
+    } else {
+        println "Use UniRef90 instead of UniRefKB for annotation: no\033[0m"
+        println " "
+    }
 }
 
 Set species = ['hsa', 'eco', 'mmu', 'mau']
