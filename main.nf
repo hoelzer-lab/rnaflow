@@ -231,25 +231,25 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 // databases
 include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
-include sortmernaGet from './modules/sortmernaGet'
-include hisat2index from './modules/hisat2'
-include buscoGetDB from './modules/buscoGetDB'
-include dammitGetDB from './modules/dammitGetDB'
+include {sortmernaGet} from './modules/sortmernaGet'
+include {hisat2index} from './modules/hisat2'
+include {buscoGetDB} from './modules/buscoGetDB'
+include {dammitGetDB} from './modules/dammitGetDB'
 
 // analysis
-include fastp from './modules/fastp'
-include sortmerna from './modules/sortmerna'
-include hisat2 from './modules/hisat2'
-include featurecounts from './modules/featurecounts'
-include tpm_filter from './modules/tpm_filter'
-include deseq2 from './modules/deseq2'
+include {fastp} from './modules/fastp'
+include {sortmerna} from './modules/sortmerna'
+include {hisat2} from './modules/hisat2'
+include {featurecounts} from './modules/featurecounts'
+include {tpm_filter} from './modules/tpm_filter'
+include {deseq2} from './modules/deseq2'
 include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
 include { multiqc; multiqc_sample_names } from './modules/multiqc'
 
 // assembly & annotation
-include trinity from './modules/trinity'
-include busco from './modules/busco'
-include dammit from './modules/dammit'
+include {trinity} from './modules/trinity'
+include {busco} from './modules/busco'
+include {dammit} from './modules/dammit'
 include {stringtie; stringtie_merge} from './modules/stringtie' 
 
 // helpers
