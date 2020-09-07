@@ -33,6 +33,12 @@ process annotationGet {
       gunzip -f Escherichia_coli_k_12.ASM80076v1.45.gtf.gz
       mv Escherichia_coli_k_12.ASM80076v1.45.gtf ${species}.gtf
       """
+    else if (species == 'mau') 
+      """
+      wget ftp://ftp.ensembl.org/pub/release-100/gtf/mesocricetus_auratus/Mesocricetus_auratus.MesAur1.0.100.gtf.gz
+      gunzip -f Mesocricetus_auratus.MesAur1.0.100.gtf.gz
+      mv Mesocricetus_auratus.MesAur1.0.100.gtf ${species}.gtf
+      """
     else
       error "Invalid species: ${species}"
 }

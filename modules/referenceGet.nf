@@ -32,6 +32,12 @@ process referenceGet {
       gunzip -f Escherichia_coli_k_12.ASM80076v1.dna.toplevel.fa.gz
       mv Escherichia_coli_k_12.ASM80076v1.dna.toplevel.fa ${species}.fa
       """
+    else if (species == 'mau')
+      """
+      wget ftp://ftp.ensembl.org/pub/release-100/fasta/mesocricetus_auratus/dna/Mesocricetus_auratus.MesAur1.0.dna.toplevel.fa.gz
+      gunzip Mesocricetus_auratus.MesAur1.0.dna.toplevel.fa.gz
+      mv Mesocricetus_auratus.MesAur1.0.dna.toplevel.fa ${species}.fa
+      """
     else
       error "Invalid species: ${species}"
 }
