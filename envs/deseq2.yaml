@@ -18,3 +18,7 @@ dependencies:
   - bioconductor-piano
   - ruby
   - bioconductor-apeglm
+  - bioconductor-enhancedvolcano
+  - bioconductor-regionreport
+  - r-sessioninfo
+  - r-magick

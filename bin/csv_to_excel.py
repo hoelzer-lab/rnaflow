@@ -8,4 +8,4 @@ assert path_in.endswith(".csv"), f"wrong input expected file to end with .csv bu
 #path_out = path_in[:-len("csv")]+"xlsx"
 path_out = sys.argv[2]
 df = pd.read_csv(path_in,sep=",")
-df.to_excel(path_out)
+df.to_excel(path_out, index=False)

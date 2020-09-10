@@ -8,13 +8,14 @@ library("biomaRt")
 library("svglite")
 library("piano")
 library("apeglm")
+library("regionReport")
 
-###############################################################################################
+#####################################################################################
 ## FUNCTIONS
-###############################################################################################
+#####################################################################################
 plot.sample2sample <- function(out, dds, col.labels, trsf_data, trsf_type) {
   ## Heat map of the sample-to-sample distances
-  
+  hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
   distsRL <- dist(t(assay(trsf_data)))
   
   mat <- as.matrix(distsRL)
@@ -26,18 +27,18 @@ plot.sample2sample <- function(out, dds, col.labels, trsf_data, trsf_type) {
   dev.off()
 }
 
-report.html <- function(out, dds, deseq2.res, l1, l2, use.contrasts, annotation_genes) {
-  ## Exporting results to HTML and CSV
-  db <- NULL
-
-  des2Report05 <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_p05', title = 'RNA-seq analysis of differential expression using DESeq2, pvalue cutoff 0.05', basePath = out, reportDirectory = "html/")
-  if (use.contrasts) {
-    publish(deseq2.res, des2Report05, pvalueCutoff=0.05, annotation.db=db, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
+reportingTools.html <- function(out, dds, deseq2.result, pvalueCutoff, condition1,condition2, annotation_genes) {
+  # Exporting results to HTML and CSV
+  if (pvalueCutoff == 1.1){
+    pvalueCutoff.str <- 'full'
   } else {
-    publish(dds, des2Report05, pvalueCutoff=0.05, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.res)), make.plots = FALSE)
+    pvalueCutoff.str <- pvalueCutoff
   }
-  finish(des2Report05)
-  system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_p05.html ', annotation_genes, ' add_plots', sep=''))
+  shortName <- paste0('RNAseq_analysis_with_DESeq2_', pvalueCutoff.str)
+  des2Report <- HTMLReport(shortName = shortName, title = paste0('RNA-seq analysis of differential expression using DESeq2, P value cutoff ', pvalueCutoff.str), basePath = out, reportDirectory = "reports/")
+  publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.result)), contrast = c("condition",condition1,condition2), make.plots = TRUE)
+  finish(des2Report)
+  system(paste('./refactor_reportingtools_table.rb', paste0(out, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', sep=" "))
 }
 
 
@@ -124,79 +125,65 @@ plot.heat.fc <- function(out, deseq2.res, resFold, dds, col.labels, count, trsf_
   }
 
 
-plot.pca.highest.variance <- function(out, vsd, Pvars, ntops, comparison) {
-  ###############
-  ## Since PCA can be slightly problematic with high dimensional data,
-  ## we first select only the 500 genes showing the highest
-  ## variance.
+# plot.pca.highest.variance <- function(out, vsd, Pvars, ntops, comparison) {
+#   ###############
+#   ## Since PCA can be slightly problematic with high dimensional data,
+#   ## we first select only the 500 genes showing the highest
+#   ## variance.
   
-  point_size = 3
-  point_stroke = 1
-  shape_default = 21
+#   point_size = 3
+#   point_stroke = 1
+#   shape_default = 21
   
-  for (ntop in ntops) {
+#   for (ntop in ntops) {
     
-    select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
+#     select <- order(Pvars, decreasing = TRUE)[seq_len(min(ntop, length(Pvars)))]
     
-    PCA <- prcomp(t(assay(vsd)[select, ]), scale = F)
-    percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
+#     PCA <- prcomp(t(assay(vsd)[select, ]), scale = F)
+#     percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
     
-    dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2], 
-                        PC3 = PCA$x[,3], PC4 = PCA$x[,4], 
-                        sampleNO = colData(vsd)$type,
-                        condition = colData(vsd)$condition)
+#     dataGG = data.frame(PC1 = PCA$x[,1], PC2 = PCA$x[,2], 
+#                         PC3 = PCA$x[,3], PC4 = PCA$x[,4], 
+#                         sampleNO = colData(vsd)$type,
+#                         condition = colData(vsd)$condition)
     
-    rownames(dataGG) = dataGG$sampleNO
+#     rownames(dataGG) = dataGG$sampleNO
     
-    cond1 <- strsplit(strsplit(comparison,":")[[1]][1],'_')[[1]][1] 
-    cond2 <- strsplit(strsplit(comparison,":")[[1]][2],'_')[[1]][1] 
-    time1 <- strsplit(strsplit(comparison,":")[[1]][1],'_')[[1]][2] 
-    time2 <- strsplit(strsplit(comparison,":")[[1]][2],'_')[[1]][2]
-    cond1 <- paste(cond1,time1,sep="_")
-    cond2 <- paste(cond2,time2,sep="_")
-    dataGG$condition <- c(cond1, cond1, cond1, cond2, cond2, cond2)
-    #dataGG$timepoint <- c(time1, time1, time1, time2, time2, time2)
-    dataGG$replicate <- c('N1','N2','N3','N1','N2','N3')
+#     cond1 <- strsplit(strsplit(comparison,":")[[1]][1],'_')[[1]][1] 
+#     cond2 <- strsplit(strsplit(comparison,":")[[1]][2],'_')[[1]][1] 
+#     time1 <- strsplit(strsplit(comparison,":")[[1]][1],'_')[[1]][2] 
+#     time2 <- strsplit(strsplit(comparison,":")[[1]][2],'_')[[1]][2]
+#     cond1 <- paste(cond1,time1,sep="_")
+#     cond2 <- paste(cond2,time2,sep="_")
+#     dataGG$condition <- c(cond1, cond1, cond1, cond2, cond2, cond2)
+#     #dataGG$timepoint <- c(time1, time1, time1, time2, time2, time2)
+#     dataGG$replicate <- c('N1','N2','N3','N1','N2','N3')
     
-#      ggplot(dataGG, aes(PC1, PC2, colour=condition, fill=timepoint, shape=replicate)) +
-    ggplot(dataGG, aes(PC1, PC2, colour=condition, shape=replicate)) +
-      geom_point(size=point_size, stroke=point_stroke) +
-        #scale_fill_manual(values = my_fillings, breaks = my_fillings_order) + 
-        #scale_shape_manual(values = my_shapes, breaks = my_shapes_order) + 
-        #scale_colour_manual(values = my_colours, breaks = my_infections_order) + 
-        xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-        ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-        ggtitle(paste("PC1 vs PC2: top", ntop, "variable genes")) +
-        guides(
-          shape = guide_legend(order = 2),
-          colour = guide_legend(order = 1, override.aes = list(shape=shape_default))
-        ) +
-        ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) + 
-        ggsave(paste(out,"statistics/pca_top",ntop,".pdf",sep=""))
-  }
-}
+# #      ggplot(dataGG, aes(PC1, PC2, colour=condition, fill=timepoint, shape=replicate)) +
+#     ggplot(dataGG, aes(PC1, PC2, colour=condition, shape=replicate)) +
+#       geom_point(size=point_size, stroke=point_stroke) +
+#         #scale_fill_manual(values = my_fillings, breaks = my_fillings_order) + 
+#         #scale_shape_manual(values = my_shapes, breaks = my_shapes_order) + 
+#         #scale_colour_manual(values = my_colours, breaks = my_infections_order) + 
+#         xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+#         ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+#         ggtitle(paste("PC1 vs PC2: top", ntop, "variable genes")) +
+#         guides(
+#           shape = guide_legend(order = 2),
+#           colour = guide_legend(order = 1, override.aes = list(shape=shape_default))
+#         ) +
+#         ggsave(paste(out,"statistics/pca_top",ntop,".svg",sep="")) + 
+#         ggsave(paste(out,"statistics/pca_top",ntop,".pdf",sep=""))
+#   }
+# }
 
 
 plot.pca <- function(out, col.labels, trsf_data, trsf_type) {
-  # Plot certain Principal Component Analyses.
-  head(colData(trsf_data))
+  # Plot certain Principal Component Analyses of 500 (default) most variable genes
   
-  ## old plot with less information
-  #pdf(paste(out,"statistics/pca_simple.pdf",sep=""))
-  #plotPCA(trsf_data, intgroup=c("condition", "type")) #"sizeFactor" worked somehow....
-  #dev.off()
-  
-  #pdf(paste(out,"statistics/pca.pdf",sep=""))
   data <- plotPCA(trsf_data, intgroup=c("condition", "type"), returnData=TRUE) 
   percentVar <- round(100 * attr(data, "percentVar"))
-  
-  #ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
-  #  scale_shape_manual(values=1:length(col.labels)) +
-  #  geom_point(size=3) +
-  #  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-  #  ylab(paste0("PC2: ",percentVar[2],"% variance"))
-  #dev.off()
-  
+   
   ggplot(data, aes(PC1, PC2, color=condition)) +
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
@@ -221,10 +208,22 @@ build.project.structure <- function(out) {
   # Build necessary project structure.
   dir.create(file.path(out, '/statistics'), showWarnings = FALSE)
   dir.create(file.path(out, '/heatmaps'), showWarnings = FALSE)
-  dir.create(file.path(out, '/html'), showWarnings = FALSE)
-  dir.create(file.path(out, '/tmp'), showWarnings = FALSE)
+  dir.create(file.path(out, '/results'), showWarnings = FALSE, recursive=TRUE)
+  dir.create(file.path(out, '/input'), showWarnings = FALSE, recursive=TRUE)
 }
 
+write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes) {
+  output.file.basename <- paste0(output.path, "/", output.name)
+  write.csv(as.data.frame.object, file=paste0(output.file.basename, ".csv"))
+  system(paste("./csv_to_excel.py", paste0(output.file.basename, ".csv"), paste0(output.file.basename, ".xlsx"), sep=" "))
+
+  if ( !missing(ensembl2genes)) {
+    output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
+    ## add real gene names and biotypes to the csv files
+    system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
+    system(paste("./csv_to_excel.py", paste0(output.file.basename.extended, ".csv" ), paste0(output.path, "/", output.name, "_extended", ".xlsx"), sep=" "))
+  }
+}
 
 plot.ma <- function(out, deseq2.res, ma.size) {
   ##############################
@@ -371,7 +370,7 @@ piano <- function(out, resBaseMean, resFold, ensembl) {
 
 
 #####################################################################################
-############################  MAIN    ###############################################
+## MAIN 
 #####################################################################################
 
 ### RUN THESE SCRIPT
@@ -404,6 +403,9 @@ patients <- eval( parse(text=args[9]) )
 #gene.files <- eval( parse(text=args[11]) ) # c("/this/is/file1","/this/is/file2",...) BEST IF THIS DOES NOT HAVE A FILE ENDING LIKE .csv, .txt, ... because used for header and plot titles
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
+regionReport_config  <- eval( parse(text=args[10]) )[1]
+regionReport_config <- normalizePath(regionReport_config)
+
 #name <- paste("deseq2_",levels[1],"_",levels[2],sep="")
 
 #####################
@@ -418,16 +420,16 @@ biotype.ids <- gene_file$V3
 #######################
 dir.create(file.path(out), showWarnings = FALSE)
 dir.create(file.path(out, 'statistics'), showWarnings = FALSE)
-dir.create(file.path(out, 'heatmaps'), showWarnings = FALSE)
-dir.create(file.path(out, 'html'), showWarnings = FALSE)
-dir.create(file.path(out, 'tmp'), showWarnings = FALSE)
+dir.create(file.path(out, 'data/input'), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(out, 'data/counts'), showWarnings = FALSE, recursive = TRUE)
 
-#######################
-## write out the input files
+#####################
+## write input
 df <- data.frame(samples = samples, columns = col.labels, conditions = conditions)
-input.csv <- paste(out,"input.csv",sep="")
-write.csv(as.data.frame(df), file=input.csv)
+write.table.to.file(df, paste0(out, "/data/input"), "input")
 
+#####################
+## 
 if (length(patients) > 0) {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design = paste(patients, conditions, sep = ':'))
     # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition) # doesn"t work with nextflow
@@ -451,33 +453,42 @@ dds <- DESeq(ddsHTSeq)
 head(dds)
 # res <- lfcShrink(dds, coef=2, type='apeglm') # if not shrik  here - dispersion has have to be estimated later
 
-## write out this table to have the size factors and normalized read
-## counts for each gene and sample
-norm.counts <- counts(dds, normalized=T)
-csv <- paste(out,"normalized_counts.csv",sep="")
-write.csv(as.data.frame(norm.counts), file=csv)
-csv <- paste(out,"sizeFactors.txt",sep="")
-write.csv(as.data.frame(dds$sizeFactor), file=csv)
+##########################################
+## Normalization and transformation
+##########################################
 
-###################################
-## Extracting transformed values
-###################################
+#####################
+## normalize counts
+norm.counts <- counts(dds, normalized=T)
+
+#####################
+## write normalized counts and size factors
+write.table.to.file(as.data.frame(norm.counts), paste0(out, "/data/counts"), "normalized_counts")
+write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), "sizeFactors")
+
+#####################
+## transform counts
 rld <- rlog(dds, blind=FALSE)
 vsd <- vst(dds, blind=FALSE)
-rlogMat <- assay(rld)
-vstMat <- assay(vsd)
 
+### stuff
+# rlogMat <- assay(rld)
+# vstMat <- assay(vsd)
 #par(mfrow=c(1,3))
 #notAllZero <- (rowSums(counts(dds))>0)
-
 ## write out the full transformed table, we want to load them later for pathway heatmap in additional script
+###end stuff
+
+#####################
+## collect transformed counts for easy iterating
 transformed.counts = vector(mode="list", length=2)
 names(transformed.counts) = c("vsd", "rld")
 transformed.counts[[1]] <- vsd; transformed.counts[[2]] <- rld
 
+#####################
+## write transformed counts 
 for (i in 1:length(transformed.counts)) {
-  csv <- paste(out,"/normalized_counts.",names(transformed.counts)[[i]],".csv",sep="")
-  write.csv(as.data.frame(assay(transformed.counts[[i]])), file=csv)
+  write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]))
 }
 
 ## BIOMART OBJECT
@@ -525,64 +536,9 @@ for (i in 1:length(transformed.counts)) {
   }
 }
 
-#########################
-## Heat map sample to sample
-#########################
-
-## Heat map of the sample-to-sample distances
-hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-#hmcol <- colorRampPalette(brewer.pal(9, "RdBu"))(100) # this is a red/blue color map
-
-for (i in 1:length(transformed.counts)) {
-  distsRL <- dist(t(assay(transformed.counts[[i]])))
-
-  mat <- as.matrix(distsRL)
-  rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
-  hc <- hclust(distsRL)
-
-  pdf(paste(out,"heatmaps/heatmap_sample2sample_",names(transformed.counts)[[i]],".pdf",sep=""))
-  heatmap.2(mat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = rev(hmcol), margin=c(13, 13))
-  dev.off()
-}
-
-
-#########################
-## Heat map of the count matrix
-#########################
-
-select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:50]
-selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
-
-## read in gene and sample names for replacement
-row_names = c()
-for (gene in selected.ensembl.ids) {
-  index = which(ensembl.ids == gene)
-  gene_name <- toString(gene.ids[index])
-  biotype <- toString(biotype.ids[index])
-  row_names <- c(row_names, paste(gene_name, biotype, sep=", "))
-}
-
-### LOG STABILIZED
-for (i in 1:length(transformed.counts)) {
-  file <- paste(out,"heatmaps/heatmap_count_matrix_row-scaled_",names(transformed.counts)[[i]],".pdf",sep="")
-  pheatmap(assay(transformed.counts[[i]])[select,], cluster_cols = FALSE, cluster_rows = TRUE,
-          labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
-          height = 12, width = 8, file = file)
-}
-
-## REPORT TO HTML
-db <- NULL
-
-des2Report.full <- HTMLReport(shortName = 'RNAseq_analysis_with_DESeq2_full', title = 'RNA-seq analysis of differential expression using DESeq2, no pvalue cutoff', basePath = out, reportDirectory = "html/")
-publish(dds, des2Report.full, pvalueCutoff=1.1, annotation.db=db, factor = colData(dds)$condition, reportDir=out, n = length(row.names(dds)))
-finish(des2Report.full)
-system(paste('./refactor_reportingtools_table.rb ', out, '/html/', 'RNAseq_analysis_with_DESeq2_full.html ', annotation_genes, sep=''))
-
-
-
-###################################
+#####################################################################################
 ## PERFORM PAIRWISE COMPARISONS
-###################################
+#####################################################################################
 
 for (comparison in comparisons) {
 
@@ -590,7 +546,6 @@ for (comparison in comparisons) {
   l2 <- strsplit(comparison, ':')[[1]][2]
 
   out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
-  dir.create(file.path(out.sub), showWarnings = FALSE)
   build.project.structure(out.sub)
 
   rld.sub <- rld[ , rld$condition %in% c(l1, l2) ]
@@ -627,8 +582,6 @@ for (comparison in comparisons) {
         coef = coef
   )
 
-  summary(deseq2.res)
-
   name <- paste("deseq2_",l1,"_",l2,sep="")
 
   Pvars.sub <- rowVars(assay(vsd.sub))
@@ -649,14 +602,6 @@ for (comparison in comparisons) {
     samples.sub <- c(samples.sub, samples[pos])
   }
 
-  summary <- paste(out.sub,"summary.txt",sep="/")
-  cat("#deseq2.res$padj < 0.1:\nFALSE\tTRUE\n", file=summary)
-  cat(table(deseq2.res$padj < 0.1), file=summary, append=TRUE)
-  cat("\n\n", file=summary, append=TRUE)
-  cat("#deseq2.res$padj < 0.05:\nFALSE\tTRUE\n", file=summary, append=TRUE)
-  cat(table(deseq2.res$padj < 0.05), file=summary, append=TRUE)
-  cat("\n", file=summary, append=TRUE)
-
   # We can order our results table by the smallest adjusted p value:
   resOrdered <<- deseq2.res[order(deseq2.res$padj),]
 
@@ -673,87 +618,145 @@ for (comparison in comparisons) {
   resFold05 <<- resFold[ resFold$padj < 0.05 , ]
   resFold01 <<- resFold[ resFold$padj < 0.01 , ]
 
-  length(rownames(resFold01))
+  ##########################################
+  ## Write input and output
+  ##########################################
 
+  #####################
+  ## input
   df.sub <- data.frame(samples = samples.sub, columns = col.labels.sub, conditions = conditions.sub)
-  input.csv.sub <- paste(out.sub,"/input.csv",sep="")
-  write.csv(as.data.frame(df.sub), file=input.csv.sub)
+  write.table.to.file(df.sub,  paste0(out.sub, "/input"), "input")
 
-  ########
-  ## write out excel sheets of the genes
-  ########
+  #####################
+  ## DESeq2 results
+  out.sub.output.dir <- paste0(out.sub, "/results/")
 
-  # 1) full result table without applied filters
-  csv <- paste(out.sub,name,"_full.csv",sep="")
-  write.csv(as.data.frame(resOrdered), file=csv)
-  ## add real gene names and biotypes to the csv files
-  tmp_out <- paste(out.sub, "tmp", sep="/")
-  dir.create(file.path(tmp_out, ''), showWarnings = FALSE)
-  #### do ruby script
-  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
-  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_full.xlsx", sep=""))
+  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), ensembl2genes)
+  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), ensembl2genes)
+  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), ensembl2genes)
+  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), ensembl2genes)
 
-  # 2) filtered (resFold) set
-  csv <- paste(out.sub,name,"_filtered.csv",sep="")
-  write.csv(as.data.frame(resFold), file=csv)
-  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv, " ", ensembl2genes, sep=""), wait=TRUE)
-  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_NA.xlsx", sep=""))
-
-  csv05 <- paste(out.sub,name,"_filtered_p05.csv",sep="")
-  write.csv(as.data.frame(resFold05), file=csv05)
-  csv01 <- paste(out.sub,name,"_filtered_p01.csv",sep="")
-  write.csv(as.data.frame(resFold01), file=csv01)
-
-  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv05, " ", ensembl2genes, sep=""), wait=TRUE)
-  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p05.xlsx", sep=""))
-  system(paste("./improve_deseq_table.rb ", tmp_out, "/tmp.csv ", csv01, " ", ensembl2genes, sep=""), wait=TRUE)
-  system(paste("./csv_to_excel.py ", tmp_out, "/tmp.csv ", out.sub, "/", name, "_filtered_p01.xlsx", sep=""))
-
-
-  #data.set <- rownames(deseq2.res)
-  #results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
+  #####################
+  ## DESeq2 results summary
+  summary <- paste(out.sub.output.dir,"summary.txt",sep="/")
+  sink(summary)
+  summary(deseq2.res)
+  sink()
+  cat("#deseq2.res$padj < 0.1:\nFALSE\tTRUE\n", file=summary, append=TRUE)
+  cat(table(deseq2.res$padj < 0.1), file=summary, append=TRUE)
+  cat("\n\n", file=summary, append=TRUE)
+  cat("#deseq2.res$padj < 0.05:\nFALSE\tTRUE\n", file=summary, append=TRUE)
+  cat(table(deseq2.res$padj < 0.05), file=summary, append=TRUE)
+  cat("\n\n", file=summary, append=TRUE)
+  cat("#deseq2.res$padj < 0.01:\nFALSE\tTRUE\n", file=summary, append=TRUE)
+  cat(table(deseq2.res$padj < 0.01), file=summary, append=TRUE)
+  cat("\n", file=summary, append=TRUE)
   
-  ## MA plotting
+  ##########################################
+  ## Plots
+  ##########################################
+
+  #####################
+  ## MA plots
   ma.size <- c(-7,7)
   plot.ma(out.sub, deseq2.res, ma.size)
 
+  #####################
+  ## Heatmap: sample2sample
   for (i in 1:length(transformed.counts.sub)) {
-    # nice extension for later to color genes that belong to specific GO terms
-    if (length(go.terms) > 0) {
-      plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
-    }
+    plot.sample2sample(out.sub, dds.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+  }
 
-    ## PCAs
-    plot.pca(out.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
-
-    # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
-    #plot.pca.highest.variance(out.sub, transformed.counts.sub[[i]], Pvars.sub, ntops, comparison)
-
+  #####################
+  ## Heatmap: count and fc
+  for (i in 1:length(transformed.counts.sub)) {
     ## HEATMAPs
     #TODO PHEATMAP REBUILD!!!
     #TODO AND BUILD HEATMAP BASED ON GENE LIST
     hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
     plot.heat.countmatrix(out.sub, dds.sub, col.labels.sub, 50, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
     plot.heat.fc(out.sub, deseq2.res, resFold, dds.sub, col.labels.sub, 50, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
-    plot.sample2sample(out.sub, dds.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+  }
+  #########################
+  # ## Heat map of the count matrix
+  # #########################
+
+  # select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:50]
+  # selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
+
+  # ## read in gene and sample names for replacement
+  # row_names = c()
+  # for (gene in selected.ensembl.ids) {
+  #   index = which(ensembl.ids == gene)
+  #   gene_name <- toString(gene.ids[index])
+  #   biotype <- toString(biotype.ids[index])
+  #   row_names <- c(row_names, paste(gene_name, biotype, sep=", "))
+  # }
+
+  # ### LOG STABILIZED
+  # for (i in 1:length(transformed.counts)) {
+  #   file <- paste(out,"heatmaps/heatmap_count_matrix_row-scaled_",names(transformed.counts)[[i]],".pdf",sep="")
+  #   pheatmap(assay(transformed.counts[[i]])[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+  #           labels_row = row_names, labels_col = col.labels, scale = "row", border_color = NA,
+  #           height = 12, width = 8, file = file)
+  # }
+
+  #####################
+  ## PCA
+  for (i in 1:length(transformed.counts.sub)) {
+    plot.pca(out.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
+    #plot.pca.highest.variance(out.sub, transformed.counts.sub[[i]], Pvars.sub, ntops, comparison)
   }
 
-  ## Report HTML
-  if (length(rownames(resFold05)) > 0) {
-    report.html(out.sub, dds, deseq2.res, l2, l1, TRUE, annotation_genes)
-    # copy PDF and PNG plots
-    dir.create(file.path(out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full'), showWarnings = FALSE)
-    for (id in rownames(resFold05)) {
-      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/boxplot.', id, '.pdf ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
-      system(paste('cp $PWD/html/figuresRNAseq_analysis_with_DESeq2_full/mini.', id, '.png ', out.sub, '/html/figuresRNAseq_analysis_with_DESeq2_full/', sep=''))
-    }
-  }
+  ##########################################
+  ## Further analysis
+  ##########################################
+  #data.set <- rownames(deseq2.res)
+  #results.gene <- getBM(attributes = c("ensembl_gene_id","external_gene_name","go_id","name_1006"),  filters="ensembl_gene_id",values = data.set, mart=mart)
 
   ## piano
   #piano(out.sub, resBaseMean, resFold, ensembl)
 
+  # nice extension for later to color genes that belong to specific GO terms
+  # if (length(go.terms) > 0) {
+  #   plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+  # }
+
+  ##########################################
+  ## Reports
+  ##########################################
+
+  #####################
+  ## regionReport report
+  # set output
+  report.project.name <- paste(l1, "vs", l2, sep=" ")
+  report.dir <- paste(out.sub, "reports", sep="")
+  report.output <- paste("summary", name, sep="_")
+
+  # create html
+  report_html <- DESeq2Report(dds, project = report.project.name,
+    intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
+    outdir = report.dir, output = report.output, theme = theme_bw())
+
+  # and also pfd
+  report_pdf <- DESeq2Report(dds, project = report.project.name,
+    intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
+    outdir = report.dir, output = report.output, theme = theme_bw(),
+    output_format = 'pdf_document', device = 'pdf')
+
+  #####################
+  ## ReportingTools
+  reportingTools.html(out.sub, dds, deseq2.res, 1.1, l1, l2, annotation_genes)
+  if (length(rownames(resFold05)) > 0) {
+    reportingTools.html(out.sub, dds, deseq2.res, 0.05, l1, l2, annotation_genes)
+  }
+  if (length(rownames(resFold01)) > 0) {
+    reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes)
+  }
+
 }
-##################################################
+#####################################################################################
 ## END PAIRWISE COMPARISONS
-###################################################
+#####################################################################################
 

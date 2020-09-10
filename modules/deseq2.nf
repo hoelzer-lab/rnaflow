@@ -8,6 +8,7 @@ process deseq2 {
     else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
     input:
+    path(regionReport_config)
     path(fc_counts_formated)
     val(condition)
     val(col_labels)
@@ -35,9 +36,8 @@ process deseq2 {
     } else {
         patients = patients.collect { "\"${it}\"" }.join(",")
     }
-
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${regionReport_config}")' ${script}
     """
 }
 /*
