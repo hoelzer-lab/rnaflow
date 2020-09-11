@@ -8,40 +8,84 @@ library("biomaRt")
 library("svglite")
 library("piano")
 library("apeglm")
+library("EnhancedVolcano")
 library("regionReport")
 
 #####################################################################################
 ## FUNCTIONS
 #####################################################################################
-plot.sample2sample <- function(out, dds, col.labels, trsf_data, trsf_type) {
-  ## Heat map of the sample-to-sample distances
-  hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-  distsRL <- dist(t(assay(trsf_data)))
-  
-  mat <- as.matrix(distsRL)
-  rownames(mat) <- colnames(mat) <- with(colData(dds), col.labels)
-  hc <- hclust(distsRL)
-  
-  pdf(paste(out,"/heatmaps/heatmap_sample2sample_",trsf_type,".pdf",sep=""))
-  heatmap.2(mat, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = rev(hmcol), margin=c(13, 13))
+build.project.structure <- function(out) {
+  dir.create(file.path(out), showWarnings = FALSE)
+  # Build necessary project structure
+  dir.create(file.path(out, '/statistics'), showWarnings = FALSE)
+  dir.create(file.path(out, '/heatmaps'), showWarnings = FALSE)
+  dir.create(file.path(out, '/results'), showWarnings = FALSE)
+  dir.create(file.path(out, '/input'), showWarnings = FALSE)
+  for (plot.type in c('volcano', 'PCA', 'heatmaps', 'MA', 'sample2sample')) {
+    dir.create(file.path(out, paste0('/plots/', plot.type)), showWarnings = FALSE, recursive = TRUE)
+  }
+}
+
+write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes) {
+  output.file.basename <- paste0(output.path, "/", output.name)
+  write.csv(as.data.frame.object, file=paste0(output.file.basename, ".csv"))
+  system(paste("./csv_to_excel.py", paste0(output.file.basename, ".csv"), paste0(output.file.basename, ".xlsx"), sep=" "))
+
+  if ( !missing(ensembl2genes)) {
+    output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
+    ## add real gene names and biotypes to the csv files
+    system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
+    system(paste("./csv_to_excel.py", paste0(output.file.basename.extended, ".csv" ), paste0(output.path, "/", output.name, "_extended", ".xlsx"), sep=" "))
+  }
+}
+
+plot.sample2sample <- function(out, col.labels, trsf_data, trsf_type, colors) {
+  ## get sample-to-sample distances
+  sampleDists <- dist(t(assay(trsf_data)))
+  sampleDistMatrix <- as.matrix(sampleDists)
+  ## add names
+  rownames(sampleDistMatrix) <- with(colData(trsf_data), col.labels)
+  colnames(sampleDistMatrix) <- with(colData(trsf_data), col.labels)
+
+
+  pdf(paste(out, paste0("sample2sample_", trsf_type, ".pdf"), sep="/"))
+  pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_distance_cols = sampleDists, color = colors)
+  dev.off()
+  svg(paste(out, paste0("sample2sample_", trsf_type, ".svg"), sep="/"))
+  pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_distance_cols = sampleDists, color = colors)
+  dev.off()
+
+  # sample2sample heatmap with color key and histogram
+  # hc <- hclust(sampleDists)
+  # heatmap.2(sampleDistMatrix, Rowv=as.dendrogram(hc), symm=TRUE, trace="none", col = colors, margin=c(13, 13))
+}
+
+plot.ma <- function(output.dir, deseq2.res, alpha) {
+  pdf(paste(output.dir, paste0("MA_alpha", alpha, ".pdf"), sep="/"))
+  plotMA(deseq2.res, alpha = alpha, main = paste('MA plot with alpha =', alpha))
+  dev.off()
+  svg(paste(output.dir, paste0("MA_alpha", alpha, ".svg"), sep="/"))
+  plotMA(deseq2.res, alpha = alpha, main = paste('MA plot with alpha =', alpha))
   dev.off()
 }
 
 reportingTools.html <- function(out, dds, deseq2.result, pvalueCutoff, condition1,condition2, annotation_genes) {
   # Exporting results to HTML and CSV
   if (pvalueCutoff == 1.1){
-    pvalueCutoff.str <- 'full'
+    shortName <- 'RNAseq_analysis_with_DESeq2_full'
+    title <- paste0('RNA-seq analysis of differential expression using DESeq2, no P value cutoff')
   } else {
-    pvalueCutoff.str <- pvalueCutoff
+    shortName <- paste0('RNAseq_analysis_with_DESeq2_p', pvalueCutoff)
+    title <- paste0('RNA-seq analysis of differential expression using DESeq2, P value cutoff ', pvalueCutoff)
   }
-  shortName <- paste0('RNAseq_analysis_with_DESeq2_', pvalueCutoff.str)
-  des2Report <- HTMLReport(shortName = shortName, title = paste0('RNA-seq analysis of differential expression using DESeq2, P value cutoff ', pvalueCutoff.str), basePath = out, reportDirectory = "reports/")
+  des2Report <- HTMLReport(shortName = shortName, title = title, basePath = out, reportDirectory = "reports/")
   publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor = colData(dds)$condition, reportDir=out, n = length(row.names(deseq2.result)), contrast = c("condition",condition1,condition2), make.plots = TRUE)
   finish(des2Report)
   system(paste('./refactor_reportingtools_table.rb', paste0(out, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', sep=" "))
 }
 
 
+##################### HEATMAPS TODO
 plot.heat.countmatrix <- function(out, dds, col.labels, count, trsf_data, trsf_type) {
   # Plot a heat map of the count matrix, top basemeans
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:count]
@@ -124,7 +168,7 @@ plot.heat.fc <- function(out, deseq2.res, resFold, dds, col.labels, count, trsf_
            height = 12, width = 8, file = file)
   }
 
-
+##################### PCA TODO
 # plot.pca.highest.variance <- function(out, vsd, Pvars, ntops, comparison) {
 #   ###############
 #   ## Since PCA can be slightly problematic with high dimensional data,
@@ -177,193 +221,196 @@ plot.heat.fc <- function(out, deseq2.res, resFold, dds, col.labels, count, trsf_
 #   }
 # }
 
-
-plot.pca <- function(out, col.labels, trsf_data, trsf_type) {
-  # Plot certain Principal Component Analyses of 500 (default) most variable genes
+# plot.pca <- function(out, col.labels, trsf_data, trsf_type) {
+#   # Plot certain Principal Component Analyses of 500 (default) most variable genes
   
-  data <- plotPCA(trsf_data, intgroup=c("condition", "type"), returnData=TRUE) 
-  percentVar <- round(100 * attr(data, "percentVar"))
+#   data <- plotPCA(trsf_data, intgroup=c("condition", "type"), returnData=TRUE) 
+#   percentVar <- round(100 * attr(data, "percentVar"))
    
-  ggplot(data, aes(PC1, PC2, color=condition)) +
-    geom_point(size=3) +
-    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    ggtitle(paste("PC1 vs PC2: 500 genes")) + # 500 default
-    ggsave(paste(out,"statistics/pca_simple_",trsf_type,".svg",sep=""))
+#   ggplot(data, aes(PC1, PC2, color=condition)) +
+#     geom_point(size=3) +
+#     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+#     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+#     ggtitle(paste("PC1 vs PC2: 500 genes")) + # 500 default
+#     ggsave(paste(out,"statistics/pca_simple_",trsf_type,".svg",sep=""))
+#     ggsave(paste(out,"statistics/pca_simple_",trsf_type,".svg",sep=""))
   
-  ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
-    scale_shape_manual(values=1:length(col.labels)) +
-    geom_point(size=3) +
-    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    coord_fixed() + 
-    theme(legend.box = "horizontal") +
-    ggtitle(paste("PC1 vs PC2: 500 genes"))  +
-    ggsave(paste(out,"statistics/pca_ggsave_bigger_fixed_",trsf_type,".svg",sep=""), width=10, height=10)
-}
+#   ggplot(data, aes(PC1, PC2, color=condition, shape=col.labels)) +
+#     scale_shape_manual(values=1:length(col.labels)) +
+#     geom_point(size=3) +
+#     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+#     ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+#     coord_fixed() + 
+#     theme(legend.box = "horizontal") +
+#     ggtitle(paste("PC1 vs PC2: 500 genes"))  +
+#     ggsave(paste(out,"statistics/pca_ggsave_bigger_fixed_",trsf_type,".svg",sep=""), width=10, height=10)
+# }
 
-
-build.project.structure <- function(out) {
-  dir.create(file.path(out), showWarnings = FALSE)
-  # Build necessary project structure.
-  dir.create(file.path(out, '/statistics'), showWarnings = FALSE)
-  dir.create(file.path(out, '/heatmaps'), showWarnings = FALSE)
-  dir.create(file.path(out, '/results'), showWarnings = FALSE, recursive=TRUE)
-  dir.create(file.path(out, '/input'), showWarnings = FALSE, recursive=TRUE)
-}
-
-write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes) {
-  output.file.basename <- paste0(output.path, "/", output.name)
-  write.csv(as.data.frame.object, file=paste0(output.file.basename, ".csv"))
-  system(paste("./csv_to_excel.py", paste0(output.file.basename, ".csv"), paste0(output.file.basename, ".xlsx"), sep=" "))
-
-  if ( !missing(ensembl2genes)) {
-    output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
-    ## add real gene names and biotypes to the csv files
-    system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
-    system(paste("./csv_to_excel.py", paste0(output.file.basename.extended, ".csv" ), paste0(output.path, "/", output.name, "_extended", ".xlsx"), sep=" "))
+plot.pca <- function(out, col.labels, trsf_data, trsf_type, ntop) {
+  # calculate the variance for each gene
+  rv <- rowVars(assay(trsf_data))
+  # select the ntop genes by variance
+  select <- order(rv, decreasing=TRUE)[seq_len(min(ntop, length(rv)))]
+  # Extract the data 
+  X <- t(assay(trsf_data)[select,]) # Transpose this as our read count matrix as R has dimensions as columns and not as rows (thanks, R!!!)
+  
+  # Using R's internal function for improved speed (and accuracy as they use SDV)
+  # Caution: R will not consider all eigenvectors (there are thousands of genes)
+  # Theoretically, we need to calculate ALL of them (we then obtain PC1, PC2, ... PCm with m dimensions = genes)
+  # But R will truncate it to PC1, PC2, ... PCn with n data points (if n < m), which is fast.
+  # Don't let this confuse you
+  pca <- prcomp(X, center = TRUE, scale = FALSE) # default: center = TRUE, scale = FALSE
+  
+  # the contribution to the total variance for each component
+  percentVar <- pca$sdev^2 / sum( pca$sdev^2 )
+  
+  intgroup <- c("condition")
+  if (!all(intgroup %in% names(colData(trsf_data)))) {
+    stop("the argument 'intgroup' should specify columns of colData(dds)")
   }
-}
+  intgroup.df <- as.data.frame(colData(trsf_data)[, intgroup, drop=FALSE])
 
-plot.ma <- function(out, deseq2.res, ma.size) {
-  ##############################
-  ## MA plot
-  ############################## 
-  # These plots show the log2 fold changes from the treatment over the
-  # mean of normalized counts, i.e. the average of counts normalized by
-  # size factors. The left plot shows the “unshrunken” log2 fold changes,
-  # while the right plot, produced by the code above, shows the shrinkage
-  # of log2 fold changes resulting from the incorporation of zero-centered
-  # normal prior. The shrinkage is greater for the log2 fold change
-  # estimates from genes with low counts and high dispersion, as can be
-  # seen by the narrowing of spread of leftmost points in the right plot.
-  ##################
-  
-  pdf(paste(out,"statistics/ma.pdf",sep=""))
-  plotMA(deseq2.res, main="DESeq2", ylim=ma.size)
-  dev.off()
-}
-
-plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
-  ## We can also make an MA-plot for the results table in which we raised
-  ## the log2 fold change threshold (Figure below). We can label individual
-  ## points on the MA-plot as well. Here we use the with R function to plot
-  ## a circle and text for a selected row of the results object. Within the
-  ## with function, only the baseMean and log2FoldChange values for the
-  ## selected rows of res are used.
-  ##-----------------------------
-  for (go.term.ma in go.terms) {
-    #go.term.ma <- "GO:0009615"
-    pdf(paste(out,"statistics/ma_",trsf_type,"_", gsub(":", "", go.term.ma), ".pdf",sep=""))
-    plotMA(deseq2.res, main=paste("DESeq2, ", go.term.ma, sep=''), ylim=ma.size)
-    results.gene.GO.ma <- grep(go.term.ma, results.gene$go_id, fixed=TRUE)  ### e.g. GO:0002376, immune system process in mice
-    trsf_data.go.ma <- rownames(assay(trsf_data)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
-    for (gene in trsf_data.go.ma) {
-      index = which(ensembl.ids == gene)
-      gene.name <- toString(gene.ids[index])
-      with(deseq2.res[gene, ], {
-        if (gene %in% rownames(resFold05)) {
-          points(baseMean, log2FoldChange, col="dodgerblue", cex=0.8, lwd=2, bg="dodgerblue")
-          text(baseMean, log2FoldChange, gene.name, pos=2, col="dodgerblue")
-        }
-      })
-    }
-    dev.off()
+  # add the intgroup factors together to create a new grouping factor
+  group <- if (length(intgroup) > 1) {
+    factor(apply( intgroup.df, 1, paste, collapse=":"))
+  } else {
+    colData(trsf_data)[[intgroup]]
   }
+
+  d <- data.frame(PC1=pca$x[,1], PC2=pca$x[,2], group=group, intgroup.df, name=col.labels)
+
+  ggplot(data=d, aes_string(x="PC1", y="PC2", colour="condition")) +
+    geom_point(size=3) + 
+    xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
+    ylab(paste0("PC2: ",round(percentVar[2] * 100),"% variance")) +
+    ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
+    coord_fixed() +
+    ggsave(paste(out, paste0("PCA_simple_", trsf_type, "_top", ntop, ".pdf"), sep="/"))
+    ggsave(paste(out, paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), sep="/"))
+
 }
 
-piano <- function(out, resBaseMean, resFold, ensembl) {
-  piano.out <- paste(out,'/piano',sep='')
-  dir.create(piano.out, showWarnings = FALSE)
+##################### TODO
+# plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
+#   ## We can also make an MA-plot for the results table in which we raised
+#   ## the log2 fold change threshold (Figure below). We can label individual
+#   ## points on the MA-plot as well. Here we use the with R function to plot
+#   ## a circle and text for a selected row of the results object. Within the
+#   ## with function, only the baseMean and log2FoldChange values for the
+#   ## selected rows of res are used.
+#   ##-----------------------------
+#   for (go.term.ma in go.terms) {
+#     #go.term.ma <- "GO:0009615"
+#     pdf(paste(out,"statistics/ma_",trsf_type,"_", gsub(":", "", go.term.ma), ".pdf",sep=""))
+#     plotMA(deseq2.res, main=paste("DESeq2, ", go.term.ma, sep=''), ylim=ma.size)
+#     results.gene.GO.ma <- grep(go.term.ma, results.gene$go_id, fixed=TRUE)  ### e.g. GO:0002376, immune system process in mice
+#     trsf_data.go.ma <- rownames(assay(trsf_data)[results.gene[results.gene.GO.ma,]$ensembl_gene_id,]) # get the ensembl ids corresponding to this go term
+#     for (gene in trsf_data.go.ma) {
+#       index = which(ensembl.ids == gene)
+#       gene.name <- toString(gene.ids[index])
+#       with(deseq2.res[gene, ], {
+#         if (gene %in% rownames(resFold05)) {
+#           points(baseMean, log2FoldChange, col="dodgerblue", cex=0.8, lwd=2, bg="dodgerblue")
+#           text(baseMean, log2FoldChange, gene.name, pos=2, col="dodgerblue")
+#         }
+#       })
+#     }
+#     dev.off()
+#   }
+# }
 
-  resFold <-resBaseMean[rev(order(abs(resBaseMean$log2FoldChange))),]
-  resSig <- resFold[resFold$padj <= 0.05,]
-  length(rownames(resSig))
+# piano <- function(out, resBaseMean, resFold, ensembl) {
+#   piano.out <- paste(out,'/piano',sep='')
+#   dir.create(piano.out, showWarnings = FALSE)
 
-  mapGO <- getBM(attributes = c("ensembl_gene_id","go_id"), # name_1006
-               filters = "ensembl_gene_id",
-               values = rownames(resSig),###resOrdered
-               mart = ensembl)
+#   resFold <-resBaseMean[rev(order(abs(resBaseMean$log2FoldChange))),]
+#   resSig <- resFold[resFold$padj <= 0.05,]
+#   length(rownames(resSig))
 
-  mapGO <- mapGO[mapGO[,2]!="",]
-  write.csv(mapGO, file = paste(piano.out,"/ENSG_GOterm.csv",sep=''), quote = FALSE, row.names = FALSE)
+#   mapGO <- getBM(attributes = c("ensembl_gene_id","go_id"), # name_1006
+#                filters = "ensembl_gene_id",
+#                values = rownames(resSig),###resOrdered
+#                mart = ensembl)
 
-  head(mapGO)
+#   mapGO <- mapGO[mapGO[,2]!="",]
+#   write.csv(mapGO, file = paste(piano.out,"/ENSG_GOterm.csv",sep=''), quote = FALSE, row.names = FALSE)
 
-  ### filter for go terms that are in biological processes and 20 <= # of genes in go terms < 300
-  #load("/mnt/dessertlocal/mono_pmn_hg_fungi_vit_a_d_deseq/globalData_go_human_resource.RData") # loads gene2descrtiption and gene2go
-  #head(mapGO_new)
-  #mapGO_new <- merge(mapGO, gene2go, by.x = 'go_id', by.y = 'go_term')
-  #mapGO_new$go_id <- NULL
-  #mapGO_new$gene <- NULL
-  mapGO_new <- mapGO
+#   head(mapGO)
 
-  myGsc <- loadGSC(mapGO_new)
-  myTval <- resSig$stat
-  names(myTval) <- rownames(resSig)
+#   ### filter for go terms that are in biological processes and 20 <= # of genes in go terms < 300
+#   #load("/mnt/dessertlocal/mono_pmn_hg_fungi_vit_a_d_deseq/globalData_go_human_resource.RData") # loads gene2descrtiption and gene2go
+#   #head(mapGO_new)
+#   #mapGO_new <- merge(mapGO, gene2go, by.x = 'go_id', by.y = 'go_term')
+#   #mapGO_new$go_id <- NULL
+#   #mapGO_new$gene <- NULL
+#   mapGO_new <- mapGO
 
-  myPval <- resSig$padj
-  names(myPval) <- rownames(resSig)
+#   myGsc <- loadGSC(mapGO_new)
+#   myTval <- resSig$stat
+#   names(myTval) <- rownames(resSig)
 
-  myFC <- resSig$log2FoldChange
-  names(myFC) <- rownames(resSig)
+#   myPval <- resSig$padj
+#   names(myPval) <- rownames(resSig)
 
-  perm <- 10000
-  cpus <- 5
-  gene.set.min <- 20
-  gene.set.max <- 100 # 9999999999999
-  gsaRes1 <- runGSA(myTval,geneSetStat="mean", gsc=myGsc, nPerm=perm, 
-                  gsSizeLim=c(gene.set.min,gene.set.max), adjMethod="fdr", ncpus=cpus)
-  gsaRes2 <- runGSA(myTval,geneSetStat="wilcoxon", gsc=myGsc, nPerm=perm, 
-                  gsSizeLim=c(gene.set.min,gene.set.max), adjMethod="fdr", ncpus=cpus)
+#   myFC <- resSig$log2FoldChange
+#   names(myFC) <- rownames(resSig)
 
-  gsaRes3 <- runGSA(myTval,geneSetStat="median",gsc=myGsc,
-                  nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes4 <- runGSA(myTval,geneSetStat="sum",gsc=myGsc,
-                  nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  #gsaRes5 <- runGSA(myTval,geneSetStat="maxmean",gsc=myGsc,
-  #                nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes6 <- runGSA(myPval,myFC,geneSetStat="fisher",gsc=myGsc,
-                  nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes7 <- runGSA(myPval,myFC,geneSetStat="stouffer",gsc=myGsc,
-                  nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes8 <- runGSA(myPval,myFC,geneSetStat="tailStrength",gsc=myGsc,
-                  nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   perm <- 10000
+#   cpus <- 5
+#   gene.set.min <- 20
+#   gene.set.max <- 100 # 9999999999999
+#   gsaRes1 <- runGSA(myTval,geneSetStat="mean", gsc=myGsc, nPerm=perm, 
+#                   gsSizeLim=c(gene.set.min,gene.set.max), adjMethod="fdr", ncpus=cpus)
+#   gsaRes2 <- runGSA(myTval,geneSetStat="wilcoxon", gsc=myGsc, nPerm=perm, 
+#                   gsSizeLim=c(gene.set.min,gene.set.max), adjMethod="fdr", ncpus=cpus)
 
-  resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes6,gsaRes7,gsaRes8)
-  #resList <- list(gsaRes1,gsaRes2)
-  names(resList) <- c("mean", "wilcoxon","median","sum","fisher","stouffer","tailStrength")
-  #names(resList) <- c("mean", "wilcoxon")
-  old.par <- par(mar = c(0, 0, 0, 0))
-  par(old.par)
+#   gsaRes3 <- runGSA(myTval,geneSetStat="median",gsc=myGsc,
+#                   nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   gsaRes4 <- runGSA(myTval,geneSetStat="sum",gsc=myGsc,
+#                   nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   #gsaRes5 <- runGSA(myTval,geneSetStat="maxmean",gsc=myGsc,
+#   #                nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   gsaRes6 <- runGSA(myPval,myFC,geneSetStat="fisher",gsc=myGsc,
+#                   nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   gsaRes7 <- runGSA(myPval,myFC,geneSetStat="stouffer",gsc=myGsc,
+#                   nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+#   gsaRes8 <- runGSA(myPval,myFC,geneSetStat="tailStrength",gsc=myGsc,
+#                   nPerm=perm,gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
 
-  if (length(rownames(resSig)) > 150) {
-    pdf(paste(piano.out,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
-    dev.off()
-    svg(paste(piano.out,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
-    dev.off()
-  }
+#   resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes6,gsaRes7,gsaRes8)
+#   #resList <- list(gsaRes1,gsaRes2)
+#   names(resList) <- c("mean", "wilcoxon","median","sum","fisher","stouffer","tailStrength")
+#   #names(resList) <- c("mean", "wilcoxon")
+#   old.par <- par(mar = c(0, 0, 0, 0))
+#   par(old.par)
+
+#   if (length(rownames(resSig)) > 150) {
+#     pdf(paste(piano.out,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
+#     ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
+#     dev.off()
+#     svg(paste(piano.out,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
+#     ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
+#     dev.off()
+#   }
   
-  downregulated_paths <- ch$pMat[,1][ch$pMat[,1] < 0.05]
-  upregulated_paths <- ch$pMat[,5][ch$pMat[,5] < 0.05]
+#   downregulated_paths <- ch$pMat[,1][ch$pMat[,1] < 0.05]
+#   upregulated_paths <- ch$pMat[,5][ch$pMat[,5] < 0.05]
 
-  write.table(downregulated_paths, file = paste(piano.out,"/paths_sigdown.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
-  write.table(upregulated_paths, file = paste(piano.out,"/paths_sigup.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
-  system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(piano.out,"/paths_sigdown.csv",sep=''),sep=""))
-  system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(piano.out,"/paths_sigup.csv",sep=''),sep=""))
+#   write.table(downregulated_paths, file = paste(piano.out,"/paths_sigdown.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
+#   write.table(upregulated_paths, file = paste(piano.out,"/paths_sigup.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
+#   system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(piano.out,"/paths_sigdown.csv",sep=''),sep=""))
+#   system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(piano.out,"/paths_sigup.csv",sep=''),sep=""))
   
-  #new_ch <- data.frame(up = ch$pMat[,1], dn = ch$pMat[,5])
-  #sig_path <- apply(new_ch, 1, min)
-  #new_ch <- new_ch[sig_path < 0.05,]
-  #new_ch_lod <- -log10(new_ch)
-  #new_ch_lod$up[new_ch_lod$up == Inf] <- 4.5
-  #new_ch_lod$dn[new_ch_lod$dn == Inf] <- 4.5
+#   #new_ch <- data.frame(up = ch$pMat[,1], dn = ch$pMat[,5])
+#   #sig_path <- apply(new_ch, 1, min)
+#   #new_ch <- new_ch[sig_path < 0.05,]
+#   #new_ch_lod <- -log10(new_ch)
+#   #new_ch_lod$up[new_ch_lod$up == Inf] <- 4.5
+#   #new_ch_lod$dn[new_ch_lod$dn == Inf] <- 4.5
 
-  #library("pheatmap")
-  #pheatmap(new_ch_lod, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
-}
+#   #library("pheatmap")
+#   #pheatmap(new_ch_lod, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
+# }
 #####################################################################################
 ## END FUNCTIONS
 #####################################################################################
@@ -373,85 +420,93 @@ piano <- function(out, resBaseMean, resFold, ensembl) {
 ## MAIN 
 #####################################################################################
 
-### RUN THESE SCRIPT
-# R CMD BATCH --no-save --no-restore '--args c("project_dir") c("a","b","c","d","e","f","g") c(1,2,3)' /home/hoelzer/scripts/R/deseq2.R test.out
-#R CMD BATCH --no-save --no-restore '--args c("/home/hoelzer/git/nanozoo/wf_gene_expression/results/") c("results/03-Counting/mock_rep1.counts.formated","results/03-Counting/mock_rep2.counts.formated","results/03-Counting/mock_rep3.counts.formated","results/03-Counting/treated_rep1.counts.formated","results/03-Counting/treated_rep2.counts.formated","results/03-Counting/treated_rep3.counts.formated") c("mock","mock","mock","treated","treated","treated") c("mock_rep1","mock_rep2","mock_rep3","treated_rep1","treated_rep2","treated_rep3") c("mock","treated") c("mock:treated") c("data/db/Rattus_norvegicus.Rnor_6.0.91.chr.id2name") c("rno") c()' scripts/deseq2.R
+##########################################
+## Preparation
+##########################################
 
-#######################
-# This just reads the two arguments passed from the command line
-# and assigns them to a vector of characters.
-args <- commandArgs(TRUE)
- 
-# Parse the arguments (in characters) and evaluate them
+#####################
+## Parse arguments
+
+args <- commandArgs(TRUE) # Read the arguments passed from the command line and assigns them to a vector of characters
+
+## Parse the arguments (in characters) and evaluate them
 project_dir <- eval( parse(text=args[1]) )[1] 
 samples <- eval( parse(text=args[2]) )
 conditions <- eval( parse(text=args[3]) )
 col.labels <- eval( parse(text=args[4]) )
 levels <- eval( parse(text=args[5]) )
 comparisons <- eval( parse(text=args[6]) )
-# out <- paste(project_dir,'deseq2/',sep='/')
-out <- paste(project_dir,'/',sep='') # deseq2 dir is created by nextflow in the results dir ()
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
-# species <- eval( parse(text=args[9]) )[1]
-
-go.terms <- c()
-
-ntops <- c(500)
 patients <- eval( parse(text=args[9]) )
-# patients <- eval( parse(text=args[10]) ) # patients is a vector like c("1","1","1","2","2","2"), so if we have samples from the same patient we want to use as replicates, and not all vs all
+regionReport_config  <- eval( parse(text=args[10]) )[1]
+regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
 #gene.files <- eval( parse(text=args[11]) ) # c("/this/is/file1","/this/is/file2",...) BEST IF THIS DOES NOT HAVE A FILE ENDING LIKE .csv, .txt, ... because used for header and plot titles
+#go.terms <- c()
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
-regionReport_config  <- eval( parse(text=args[10]) )[1]
-regionReport_config <- normalizePath(regionReport_config)
-
-#name <- paste("deseq2_",levels[1],"_",levels[2],sep="")
-
 #####################
-## read in ensembl ids and gene names, as well as biotypes
+## Read in ensembl ids, gene names and biotypes from a tab seperated table
 gene_file <- read.table(ensembl2genes, header=FALSE, sep="\t")
 ensembl.ids <- gene_file$V1
 gene.ids <- gene_file$V2
 biotype.ids <- gene_file$V3
 
-#######################
-## build project dirs
-#######################
+#####################
+## Build project structure
+out <- paste(project_dir,'/',sep='') # deseq2 dir is created by nextflow in the results dir ()
 dir.create(file.path(out), showWarnings = FALSE)
 dir.create(file.path(out, 'statistics'), showWarnings = FALSE)
+dir.create(file.path(out, 'plots'), showWarnings = FALSE)
+dir.create(file.path(out, 'plots/PCA'), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(out, 'plots/heatmaps'), showWarnings = FALSE, recursive = TRUE)
 dir.create(file.path(out, 'data/input'), showWarnings = FALSE, recursive = TRUE)
 dir.create(file.path(out, 'data/counts'), showWarnings = FALSE, recursive = TRUE)
 
-#####################
-## write input
-df <- data.frame(samples = samples, columns = col.labels, conditions = conditions)
-write.table.to.file(df, paste0(out, "/data/input"), "input")
+##########################################
+## DESeq2 stuff
+##########################################
 
 #####################
-## 
+## Create input object
 if (length(patients) > 0) {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design = paste(patients, conditions, sep = ':'))
-    # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ patients + condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
 } else {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design = conditions)
-    # ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = "", design= ~ condition) # doesn"t work with nextflow
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
 }
-
-### IMPORTANT STEP< OTHERWIESE DESEQ WILL DO THE COMPARISON IN ALPHABETICAL ORDER!!!!
-#ddsHTSeq$condition <- relevel(ddsHTSeq$condition, ref=levels[1]) ## this is enough if we only have two conditions,
-#but for more conditions we need factor() to order every level according to input files
+## adjust DESeq2 object to avoid comparision in alphabetical order(!!!1!1):
+## order factor() in every level according to input files
 ddsHTSeq$condition <- factor(ddsHTSeq$condition, levels=levels)
 ddsHTSeq$type <- factor(ddsHTSeq$type, levels=col.labels)
-print(ddsHTSeq)
-print(ddsHTSeq$condition)
 
-print("DESeq Data Object:")
+#####################
+## Create DESeqDataSet object by running DESeq2 on the input object
 dds <- DESeq(ddsHTSeq)
-head(dds)
-# res <- lfcShrink(dds, coef=2, type='apeglm') # if not shrik  here - dispersion has have to be estimated later
+
+##########################################
+## Write input
+##########################################
+
+## raw input
+df <- data.frame(samples = samples, columns = col.labels, conditions = conditions)
+write.table.to.file(df, paste0(out, "/data/input"), "input")
+
+## DESeq2 input
+input.summary <- paste(out, "/data/input/", "DESeq2_input_summary.txt", sep="/") 
+cat("Count input object:\n", file=input.summary, append=TRUE)
+sink(input.summary, append=TRUE)
+print(ddsHTSeq)
+sink()
+cat("\n\nCondition of count input object:\n", file=input.summary, append=TRUE)
+sink(input.summary, append=TRUE)
+print(ddsHTSeq$condition)
+sink()
+cat("\n\nDESeqDataSet object:\n", file=input.summary, append=TRUE)
+sink(input.summary, append=TRUE)
+print(dds)
+sink()
 
 ##########################################
 ## Normalization and transformation
@@ -491,25 +546,28 @@ for (i in 1:length(transformed.counts)) {
   write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]))
 }
 
+##########################################
+## Visualisation
+##########################################
+
 ## BIOMART OBJECT
 # the below code works actually. But we need to know the reference species. But for example not for ecoli because I think that's a different ensembl db
 # we can use this for hsapiens, mmusculus, mlucifugus, ... 
 #ensembl = useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl", host = "apr2020.archive.ensembl.org")
 #mart <- useDataset("mmusculus_gene_ensembl", ensembl)
 
-###################################
-## PCAs
-###################################
-for (i in 1:length(transformed.counts)) {
-  simple_PCA <- plotPCA(transformed.counts[[i]], intgroup=c("design"), returnData=TRUE)
-  percentVar <- round(100 * attr(simple_PCA, "percentVar"))
-  ggplot(data=simple_PCA, aes_string(x="PC1", y="PC2", color="group")) + geom_point(size=3) + 
-    xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    coord_fixed()
-    ggsave(paste(out,"statistics/pca_simple_",names(transformed.counts)[[i]],".pdf",sep=""))
+##########################################
+## Visualisation
+##########################################
 
-  for (ntop in c(500,50)){
+#####################
+## PCA
+for (i in 1:length(transformed.counts)) { 
+  for (ntop in c(500, 100, 50)){
+    output.pca.dir <- paste(out, "plots/PCA/", sep="/")
+
+    plot.pca(output.pca.dir, col.labels, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
+
     if (length(patients) > 0) {
       pcaData <- plotPCA(transformed.counts[[i]], intgroup=c("condition", "type", "patients"), ntop=ntop, returnData=TRUE)
       percentVar <- round(100 * attr(pcaData, "percentVar"))
@@ -536,10 +594,14 @@ for (i in 1:length(transformed.counts)) {
   }
 }
 
+#####################
+## Heatmap
+
+## TODO
+
 #####################################################################################
 ## PERFORM PAIRWISE COMPARISONS
 #####################################################################################
-
 for (comparison in comparisons) {
 
   l1 <- strsplit(comparison, ':')[[1]][1]
@@ -548,45 +610,30 @@ for (comparison in comparisons) {
   out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
   build.project.structure(out.sub)
 
-  rld.sub <- rld[ , rld$condition %in% c(l1, l2) ]
-  vsd.sub <- vsd[ , vsd$condition %in% c(l1, l2) ]
+  name <- paste("deseq2_",l1,"_",l2,sep="")
+
+  ##########################################
+  ## Adjust data, count data, levles and valiables to current pairwise comparison
+  ##########################################
+
   dds.sub <- dds[ , dds$condition %in% c(l1, l2) ]
-  
+  dds.sub$condition <- droplevels(dds.sub$condition)
+  dds.sub$type <- droplevels(dds.sub$type)
+
+  ## transformed count data
+  rld.sub <- rld[ , rld$condition %in% c(l1, l2) ]
+  rld.sub$condition <- droplevels(rld.sub$condition)
+  rld.sub$type <- droplevels(rld.sub$type)
+
+  vsd.sub <- vsd[ , vsd$condition %in% c(l1, l2) ]
+  vsd.sub$condition <- droplevels(vsd.sub$condition)
+  vsd.sub$type <- droplevels(vsd.sub$type)
+
   transformed.counts.sub = vector(mode="list", length=2)
   names(transformed.counts.sub) = c("vsd", "rld")
   transformed.counts.sub[[1]] <- vsd; transformed.counts.sub[[2]] <- rld
 
-  ## adapt the levels
-  dds.sub$condition <- droplevels(dds.sub$condition)
-  dds.sub$type <- droplevels(dds.sub$type)
-  rld.sub$condition <- droplevels(rld.sub$condition)
-  rld.sub$type <- droplevels(rld.sub$type)
-  vsd.sub$condition <- droplevels(vsd.sub$condition)
-  vsd.sub$type <- droplevels(vsd.sub$type)
-
-  factor <- "condition"
-  numerator <- l2
-  denominator <- l1
-  group <- colData(dds)[[factor]]
-  group <- relevel(x = group, ref = denominator)
-  colData(dds)[[factor]] <- group
-  # dds <- nbinomWaldTest(dds)
-  dds <- DESeq(dds) # nbinomWaldTest() via DESeq(), but the dispersion does not have to be estimated again | was not done before
-  resultsNames <- resultsNames(dds)
-  coef <- match(
-    x = paste(factor, numerator, "vs", denominator, sep = "_"),
-    table = resultsNames )
-  deseq2.res <- lfcShrink(
-        dds = dds,
-        type = "apeglm",
-        coef = coef
-  )
-
-  name <- paste("deseq2_",l1,"_",l2,sep="")
-
-  Pvars.sub <- rowVars(assay(vsd.sub))
-
-  #adjust variabels
+  ## adjust variabels
   conditions.sub <- c()
   col.labels.sub <- c()
   samples.sub <- c()
@@ -602,19 +649,46 @@ for (comparison in comparisons) {
     samples.sub <- c(samples.sub, samples[pos])
   }
 
-  # We can order our results table by the smallest adjusted p value:
+  ##########################################
+  ## Perform the pairwise comparison 
+  ## code inspiration: https://github.com/acidgenomics/DESeqAnalysis/blob/master/R/apeglmResults-methods.R#L95
+  ##########################################
+
+  factor <- "condition"
+  numerator <- l2
+  denominator <- l1
+  group <- colData(dds)[[factor]]
+  group <- relevel(x = group, ref = denominator)
+  colData(dds)[[factor]] <- group
+  dds <- DESeq(dds) # nbinomWaldTest() via DESeq(), but the dispersion does not have to be estimated again | was not done before
+  resultsNames <- resultsNames(dds)
+  coef <- match(
+    x = paste(factor, numerator, "vs", denominator, sep = "_"),
+    table = resultsNames )
+  deseq2.res <- lfcShrink(
+        dds = dds,
+        type = "apeglm",
+        coef = coef
+  )
+
+  ##########################################
+  ## Order and filter output
+  ##########################################
+
+  ## ordered by smallest adjusted p value
   resOrdered <<- deseq2.res[order(deseq2.res$padj),]
 
-  # filter NA values in fc and padj
+  ## filter NA values in fc and padj
   resNA = deseq2.res[ !is.na(deseq2.res$log2FoldChange) , ]
   resNA = resNA[ !is.na(resNA$padj) , ]
 
-  # filter 0 baseMean
+  ## filter 0 baseMean
   resBaseMean = resNA[ resNA$baseMean > 0.0 , ]
 
-  # resFold is now sorted by abs(foldchange) and all NA entries are removed as well as all zero baseMean values
+  ## resFold is now sorted by abs(foldchange) and all NA entries are removed as well as all zero baseMean values
   resFold <<-resBaseMean[rev(order(abs(resBaseMean$log2FoldChange))),]
 
+  ## filter for specific adjusted P value
   resFold05 <<- resFold[ resFold$padj < 0.05 , ]
   resFold01 <<- resFold[ resFold$padj < 0.01 , ]
 
@@ -655,16 +729,25 @@ for (comparison in comparisons) {
   ##########################################
   ## Plots
   ##########################################
+  
+  #####################
+  ## Volcano plot
+  volcano = EnhancedVolcano(deseq2.res, lab = rownames(deseq2.res), x = 'log2FoldChange', y = 'padj', 
+    legendLabels = c('NS', expression(Log[2]~FC), "adj. p-value", expression(adj.~p-value~and~log[2]~FC)))
+  volcano + 
+    ggsave(paste(out.sub,"/plots/volcano/volcano.svg", sep='/')) +
+    ggsave(paste(out.sub,"/plots/volcano/volcano.pdf", sep='/'))
 
   #####################
   ## MA plots
-  ma.size <- c(-7,7)
-  plot.ma(out.sub, deseq2.res, ma.size)
+  plot.ma(paste(out.sub, "/plots/MA/", sep="/"), deseq2.res, metadata(deseq2.res)$alpha)
+  plot.ma(paste(out.sub, "/plots/MA/", sep="/"), deseq2.res, metadata(deseq2.res)$alpha / 2)
 
   #####################
-  ## Heatmap: sample2sample
+  ## Heatmap of sample2sample distances
   for (i in 1:length(transformed.counts.sub)) {
-    plot.sample2sample(out.sub, dds.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    plot.sample2sample(paste(out.sub, "/plots/sample2sample/", sep="/"), col.labels.sub, 
+      transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], colorRampPalette( rev(brewer.pal(9, "Blues")) )(255))
   }
 
   #####################
@@ -703,9 +786,13 @@ for (comparison in comparisons) {
 
   #####################
   ## PCA
+
   for (i in 1:length(transformed.counts.sub)) {
-    plot.pca(out.sub, col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
+    for (ntop in c(500, 100, 50)) {
+      plot.pca(paste(out.sub, "/plots/PCA/", sep="/"), col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+    }
     # below would generate a nice PCA, but we need to generlize this first. And maybe re-think the way we are providing information about replicates, timepoints, patients, ...
+    # Pvars.sub <- rowVars(assay(vsd.sub))
     #plot.pca.highest.variance(out.sub, transformed.counts.sub[[i]], Pvars.sub, ntops, comparison)
   }
 
@@ -729,17 +816,18 @@ for (comparison in comparisons) {
 
   #####################
   ## regionReport report
-  # set output
-  report.project.name <- paste(l1, "vs", l2, sep=" ")
-  report.dir <- paste(out.sub, "reports", sep="")
-  report.output <- paste("summary", name, sep="_")
 
-  # create html
+  ## set output
+  report.project.name <- paste(l1, "vs", l2, sep=" ")
+  report.dir <- paste(out.sub, "reports", sep="/")
+  report.output <- paste0('DESeq2_results_exploration')
+
+  ## create html
   report_html <- DESeq2Report(dds, project = report.project.name,
     intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
     outdir = report.dir, output = report.output, theme = theme_bw())
 
-  # and also pfd
+  ## and also pfd
   report_pdf <- DESeq2Report(dds, project = report.project.name,
     intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
     outdir = report.dir, output = report.output, theme = theme_bw(),

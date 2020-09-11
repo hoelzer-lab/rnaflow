@@ -336,7 +336,7 @@ plotMDS(dge)
 # Volcano plot
 
 ```{r volcanoPlot}
-EnhancedVolcano(res, lab = rownames(res), x = 'log2FoldChange', y = 'padj')
+EnhancedVolcano(res, lab = rownames(res), x = 'log2FoldChange', y = 'padj', legendLabels = c('NS', expression(Log[2]~FC), "adj. p-value", expression(adj.~p-value~and~log[2]~FC)))
 ```
 
 The above plot shows a volcano plot (see [Wikipedia](https://en.wikipedia.org/wiki/Volcano_plot_(statistics))) that compares the log2 fold change against the adjusted P value. The plot was created with [EnhancedVolcano](https://github.com/kevinblighe/EnhancedVolcano).
