@@ -33,7 +33,7 @@ This section contains the code for setting up the rest of the report.
 ```{r docSetup, bootstrap.show.code = FALSE, dev = device, bootstrap.show.message=FALSE}
 ## knitrBoostrap and device chunk options
 library('knitr')
-opts_chunk$set(bootstrap.show.code = FALSE, dev = device)
+opts_chunk$set(bootstrap.show.code = FALSE, dev = device, crop = NULL)
 if(!outputIsHTML) opts_chunk$set(bootstrap.show.code = FALSE, dev = device, echo = FALSE)
 ```
 
@@ -255,9 +255,7 @@ if(!is.null(searchURL) & outputIsHTML) {
     res.df$Feature <- paste0('<a href="', searchURL, res.df$Feature, '">',
         res.df$Feature, '</a>')
 }
-
 for(i in which(colnames(res.df) %in% c('pvalue', 'padj'))) res.df[, i] <- format(res.df[, i], scientific = TRUE)
-
 if(outputIsHTML) {
     datatable(head(res.df, n = nBest), options = list(pagingType='full_numbers', pageLength=10, scrollX='100%'), escape = FALSE, rownames = FALSE) %>% formatRound(which(!colnames(res.df) %in% c('pvalue', 'padj', 'Feature')), digits)
 } else {
@@ -300,7 +298,6 @@ plotCounts_gg <- function(i, dds, intgroup) {
     } else {
         data <- cbind(data, data.frame('group' = group))
     }
-
     ggplot(data, aes(x = group, y = count)) + geom_point() + ylab('Normalized count') + ggtitle(i) + coord_trans(y = "log10") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
 for(i in head(features, nBestFeatures)) {
@@ -380,7 +377,6 @@ Pandoc version used: `r rmarkdown::pandoc_version()`.
 This report was created with `regionReport` `r citep(bib[['regionReport']])` using `rmarkdown` `r citep(bib[['rmarkdown']])` while `knitr` `r citep(bib[['knitr']])` and  `DT` `r citep(bib[['DT']])` were running behind the scenes. `pheatmap` `r citep(bib[['pheatmap']])` was used to create the sample distances heatmap. Several plots were made with `ggplot2` `r citep(bib[['ggplot2']])`. The volcano plot was create with `EnhancedVolcano` ([Blighe, Rana, and Lewis, 2018](https://github.com/kevinblighe/EnhancedVolcano)).
 
 Citations made with `knitcitations` `r citep(bib[['knitcitations']])`. The [BibTeX](http://www.bibtex.org/) file can be found [here](`r paste0(output, '.bib')`).
-
 ```{r bibliography, results='asis', echo=FALSE, warning = FALSE}
 ## Print bibliography
 bibliography()
