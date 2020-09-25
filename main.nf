@@ -234,11 +234,8 @@ include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
 include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
-<<<<<<< HEAD
-=======
 include {buscoGetDB} from './modules/buscoGetDB'
 include {dammitGetDB} from './modules/dammitGetDB'
->>>>>>> 54fdcdabef489fbad352423396bcf7be741f4dd7
 
 // analysis
 include {fastp} from './modules/fastp'
@@ -247,13 +244,8 @@ include {hisat2} from './modules/hisat2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
 include {deseq2} from './modules/deseq2'
-<<<<<<< HEAD
 include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
 include {multiqc; multiqc_sample_names} from './modules/multiqc'
-=======
-include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
-include { multiqc; multiqc_sample_names } from './modules/multiqc'
->>>>>>> 54fdcdabef489fbad352423396bcf7be741f4dd7
 
 // assembly & annotation
 include {trinity} from './modules/trinity'
