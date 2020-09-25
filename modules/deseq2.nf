@@ -16,6 +16,7 @@ process deseq2 {
     path(ensembl2id)
     path(annotation_genes)
     val(patients)
+    val(species)
     path(script)
     path(script_refactor_reportingtools_table)
     path(script_improve_deseq_table)
@@ -37,7 +38,7 @@ process deseq2 {
         patients = patients.collect { "\"${it}\"" }.join(",")
     }
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${regionReport_config}")' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${species}") c("${regionReport_config}")' ${script}
     """
 }
 /*

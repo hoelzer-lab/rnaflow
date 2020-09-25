@@ -210,16 +210,16 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 // databases
 include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
-include sortmernaGet from './modules/sortmernaGet'
-include hisat2index from './modules/hisat2'
+include {sortmernaGet} from './modules/sortmernaGet'
+include {hisat2index} from './modules/hisat2'
 
 // analysis
-include fastp from './modules/fastp'
-include sortmerna from './modules/sortmerna'
-include hisat2 from './modules/hisat2'
-include featurecounts from './modules/featurecounts'
-include tpm_filter from './modules/tpm_filter'
-include deseq2 from './modules/deseq2'
+include {fastp} from './modules/fastp'
+include {sortmerna} from './modules/sortmerna'
+include {hisat2} from './modules/hisat2'
+include {featurecounts} from './modules/featurecounts'
+include {tpm_filter} from './modules/tpm_filter'
+include {deseq2} from './modules/deseq2'
 include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
 include { multiqc; multiqc_sample_names } from './modules/multiqc'
 
@@ -363,7 +363,10 @@ workflow analysis_reference_based {
             .map { it.join(",") }
 
         // run DEseq2
-        deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
+        deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
+            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
+            annotated_sample.patient.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
+            deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
 
         // run MultiQC
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
