@@ -174,7 +174,6 @@ if (params.dge) {
 deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIfExists: true )
 deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
-deseq2_script_csv2xlsx = Channel.fromPath( workflow.projectDir + '/bin/csv_to_excel.py', checkIfExists: true )
 
 /*
 * MultiQC config
@@ -294,7 +293,6 @@ workflow analysis_reference_based {
         deseq2_script
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
-        deseq2_script_csv2xlsx
         multiqc_config
 
     main:
@@ -366,7 +364,7 @@ workflow analysis_reference_based {
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
             annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
             annotated_sample.patient.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
-            deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
+            deseq2_script_improve_deseq_table)
 
         // run MultiQC
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
@@ -414,7 +412,7 @@ workflow {
     sortmerna_db = download_sortmerna.out
 
     // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx, multiqc_config)
+    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, multiqc_config)
 }
 
 
