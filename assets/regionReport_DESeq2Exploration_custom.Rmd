@@ -347,14 +347,14 @@ The input for this report was generated with `r software` `r if(software == 'edg
 theCall
 ```
 
-Date the report was generated.
+Date the report was generated:
 
 ```{r reproducibility1, echo=FALSE}
 ## Date the report was generated
 Sys.time()
 ```
 
-Wallclock time spent generating the report.
+Wallclock time spent generating the report:
 
 ```{r reproducibility2, echo=FALSE}
 ## Processing time in seconds
