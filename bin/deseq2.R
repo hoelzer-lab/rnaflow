@@ -12,6 +12,8 @@ library("EnhancedVolcano")
 library("regionReport")
 library("stringr")
 library("WebGestaltR")
+library("snowfall")
+library("openxlsx")
 
 #####################################################################################
 ## FUNCTIONS
@@ -31,16 +33,20 @@ build.project.structure <- function(out.dir) {
   }
 }
 
-write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes) {
+write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes, row.names=TRUE, col.names=TRUE) {
   output.file.basename <- paste0(output.path, "/", output.name)
-  write.csv(as.data.frame.object, file=paste0(output.file.basename, ".csv"))
-  system(paste("./csv_to_excel.py", paste0(output.file.basename, ".csv"), paste0(output.file.basename, ".xlsx"), sep=" "))
+  write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row.names, col.names=col.names)
+  if( is.na(col.names) ){
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=TRUE)
+  } else {
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names)
+  }
 
   if ( !missing(ensembl2genes)) {
     output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
     ## add real gene names and biotypes to the csv files
     system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
-    system(paste("./csv_to_excel.py", paste0(output.file.basename.extended, ".csv" ), paste0(output.path, "/", output.name, "_extended", ".xlsx"), sep=" "))
+    write.xlsx(read.csv(paste0(output.file.basename.extended, ".csv" )), paste0(output.file.basename.extended, ".xlsx" ))
   }
 }
 
@@ -157,6 +163,60 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, sa
           height = 12, width = 8, file = file)
   }
 
+piano <- function(out.dir, resFold, mapGO) {
+  mapGO <- mapGO[mapGO[,2]!="",]
+  write.table.to.file(mapGO, out.dir, "ENSG_GOterm", row.names = FALSE)
+
+  myGsc <- loadGSC(mapGO)
+
+  myPval <- resFold$padj
+  names(myPval) <- rownames(resFold)
+  myFC <- resFold$log2FoldChange
+  names(myFC) <- rownames(resFold)
+
+  cpus <- 20
+  gene.set.min <- 20
+  gene.set.max <- 'inf' # 9999999999999
+  gsaRes1 <- runGSA(myFC, geneSetStat="maxmean", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes2 <- runGSA(myFC, geneSetStat="gsea", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes3 <- runGSA(myFC, geneSetStat="fgsea", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes4 <- runGSA(myFC, geneSetStat="page", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes5 <- runGSA(myPval, myFC, geneSetStat="fisher", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes6 <- runGSA(myPval, myFC, geneSetStat="stouffer", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes7 <- runGSA(myPval, myFC, geneSetStat="reporter", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+  gsaRes8 <- runGSA(myPval, myFC, geneSetStat="tailStrength", gsc=myGsc,
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+
+  resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
+  names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
+
+  pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
+  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
+  dev.off()
+  svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
+  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
+  dev.off()
+  
+  downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
+  upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
+
+  write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
+  write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+
+  # for (i in 1:length(resList)){
+  #   svg(paste(out.dir, paste0(names(resList)[i], '.svg'), sep='/'), width = 10, height = 10)
+  #   networkPlot(resList[[i]], class="non")
+  #   dev.off()
+  # }
+}
+
 ##################### TODO
 # plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
 #   ## We can also make an MA-plot for the results table in which we raised
@@ -185,61 +245,6 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, sa
 #     dev.off()
 #   }
 # }
-
-piano <- function(out.dir, resFold, mapGO) {
-  mapGO <- mapGO[mapGO[,2]!="",]
-  write.csv(mapGO, file = paste(out.dir,"/ENSG_GOterm.csv",sep=''), quote = FALSE, row.names = FALSE)
-
-  myGsc <- loadGSC(mapGO)
-
-  myPval <- resFold$padj
-  names(myPval) <- rownames(resFold)
-
-  myFC <- resFold$log2FoldChange
-  names(myFC) <- rownames(resFold)
-
-  cpus <- 5
-  gene.set.min <- 20
-  gene.set.max <- 100 # 9999999999999
-
-  gsaRes6 <- runGSA(myPval, myFC, geneSetStat="fisher", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes7 <- runGSA(myPval, myFC, geneSetStat="stouffer", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-  gsaRes8 <- runGSA(myPval, myFC, geneSetStat="tailStrength", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
-
-  resList <- list(gsaRes6,gsaRes7,gsaRes8)
-  names(resList) <- c("fisher","stouffer","tailStrength")
-  old.par <- par(mar = c(0, 0, 0, 0))
-  par(old.par)
-
-  if (length(rownames(resFold)) > 150) {
-    pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
-    dev.off()
-    svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
-    dev.off()
-  }
-  
-  downregulated_paths <- ch$pMat[,1][ch$pMat[,1] < 0.05]
-  upregulated_paths <- ch$pMat[,5][ch$pMat[,5] < 0.05]
-
-  write.table(downregulated_paths, file = paste(out.dir,"/paths_sigdown.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
-  write.table(upregulated_paths, file = paste(out.dir,"/paths_sigup.csv",sep=''), sep = ";", quote = F, col.names = F, row.names = T)
-  # system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(out.dir,"/paths_sigdown.csv",sep=''),sep=""))
-  # system(paste('ruby /mnt/fass2/projects/mh_myotis_rnaseq_weber/scripts/go.rb ',paste(out.dir,"/paths_sigup.csv",sep=''),sep=""))
-  
-  #new_ch <- data.frame(up = ch$pMat[,1], dn = ch$pMat[,5])
-  #sig_path <- apply(new_ch, 1, min)
-  #new_ch <- new_ch[sig_path < 0.05,]
-  #new_ch_lod <- -log10(new_ch)
-  #new_ch_lod$up[new_ch_lod$up == Inf] <- 4.5
-  #new_ch_lod$dn[new_ch_lod$dn == Inf] <- 4.5
-
-  #pheatmap(new_ch_lod, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers = TRUE)
-}
 #####################################################################################
 ## END FUNCTIONS
 #####################################################################################
@@ -326,7 +331,7 @@ if (length(patients) > 0) {
 }
 rownames(df.samples.info) <- df.samples.info$samples
 df.samples.info$samples <- NULL
-write.table.to.file(df.samples.info, paste0(out, "/data/input"), "input")
+write.table.to.file(df.samples.info, paste0(out, "/data/input"), "input", col.names=NA)
 
 ## DESeq2 input
 input.summary <- paste(out, "/data/input/", "DESeq2_input_summary.txt", sep="/") 
@@ -353,8 +358,8 @@ norm.counts <- counts(dds, normalized=T)
 
 #####################
 ## write normalized counts and size factors
-write.table.to.file(as.data.frame(norm.counts), paste0(out, "/data/counts"), "normalized_counts")
-write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), "sizeFactors")
+write.table.to.file(as.data.frame(norm.counts), paste0(out, "/data/counts"), "normalized_counts", col.names=NA)
+write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), "sizeFactors", col.names=NA)
 
 #####################
 ## transform counts
@@ -371,7 +376,7 @@ transformed.counts[[1]] <- vsd; transformed.counts[[2]] <- rld; transformed.coun
 #####################
 ## write transformed counts 
 for (i in 1:length(transformed.counts)) {
-  write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]))
+  write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]), col.names=NA)
 }
 
 ##########################################
@@ -511,16 +516,16 @@ for (comparison in comparisons) {
   #####################
   ## input
   df.samples.info.sub <- df.samples.info[samples.sub,]
-  write.table.to.file(df.samples.info.sub,  paste0(out.sub, "/input"), "input")
+  write.table.to.file(df.samples.info.sub,  paste0(out.sub, "/input"), "input", col.names=NA)
 
   #####################
   ## DESeq2 results
   out.sub.output.dir <- paste0(out.sub, "/results/")
 
-  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), ensembl2genes)
-  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), ensembl2genes)
-  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), ensembl2genes)
-  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), ensembl2genes)
+  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), ensembl2genes, col.names=NA)
+  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), ensembl2genes, col.names=NA)
+  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), ensembl2genes, col.names=NA)
+  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), ensembl2genes, col.names=NA)
 
   #####################
   ## DESeq2 results summary
@@ -602,15 +607,10 @@ for (comparison in comparisons) {
 
   #####################
   ## Piano
-  # does not work in Nextflow, but works in conda env itself
-  ## Calculating gene set significance...Error in setDefaultClusterOptions(type = .sfOption$type) : 
-  ## could not find function "setDefaultClusterOptions"
-  ## Calls: piano ... suppressMessages -> withCallingHandlers -> <Anonymous>
-  ## Execution halted
-  # if (exists("biomart.ensembl")) {
-  #   results.gene <- getBM(attributes =  c("ensembl_gene_id", "go_id"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
-  #   piano(out.sub, resFold05, results.gene)
-  # }
+  if (exists("biomart.ensembl")) {
+    results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
+    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene)
+  }
 
   #####################
   ## Webgestalt
@@ -637,22 +637,22 @@ for (comparison in comparisons) {
 
   #####################
   ## regionReport report
-  ## does not work with updated conda env
-  # ## set output
-  # report.project.name <- paste(l1, "vs", l2, sep=" ")
-  # report.dir <- paste(out.sub, "reports", sep="/")
-  # report.output <- paste0('DESeq2_results_exploration')
+  ## needs knitr version 1.29. Some bug seems not to be fixed in 1.30 Anaconda version
+  ## set output
+  report.project.name <- paste(l1, "vs", l2, sep=" ")
+  report.dir <- paste(out.sub, "reports", sep="/")
+  report.output <- paste0('DESeq2_results_exploration')
 
-  # ## create html
-  # report_html <- DESeq2Report(dds, project = report.project.name,
-  #   intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
-  #   outdir = report.dir, output = report.output, theme = theme_bw())
+  ## create html
+  report_html <- DESeq2Report(dds, project = report.project.name,
+    intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
+    outdir = report.dir, output = report.output, theme = theme_bw())
 
-  # # ## and also pfd
-  # report_pdf <- DESeq2Report(dds, project = report.project.name,
-  #   intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
-  #   outdir = report.dir, output = report.output, theme = theme_bw(),
-  #   output_format = 'pdf_document', device = 'pdf')
+  ## and also pfd
+  report_pdf <- DESeq2Report(dds, project = report.project.name,
+    intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
+    outdir = report.dir, output = report.output, theme = theme_bw(),
+    output_format = 'pdf_document', device = 'pdf')
 
   #####################
   ## ReportingTools

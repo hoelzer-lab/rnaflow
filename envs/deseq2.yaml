@@ -12,15 +12,16 @@ dependencies:
   - r-pheatmap
   - bioconductor-reportingtools
   - openpyxl
-  - pandas
   - r-xml2
   - r-svglite
   - bioconductor-piano
   - ruby
   - bioconductor-apeglm
   - bioconductor-enhancedvolcano
-  - bioconductor-regionreport
+  - bioconductor-regionreport==1.22.0
   - r-sessioninfo
   - r-magick
   - r-webgestaltr
   - r-snowfall
+  - r-knitr==1.29
+  - r-openxlsx
