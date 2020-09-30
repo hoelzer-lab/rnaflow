@@ -37,16 +37,16 @@ write.table.to.file <- function(as.data.frame.object, output.path, output.name, 
   output.file.basename <- paste0(output.path, "/", output.name)
   write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row.names, col.names=col.names)
   if( is.na(col.names) ){
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=TRUE)
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=TRUE, asTable=TRUE)
   } else {
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names)
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names, asTable=TRUE)
   }
 
   if ( !missing(ensembl2genes)) {
     output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
     ## add real gene names and biotypes to the csv files
     system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
-    write.xlsx(read.csv(paste0(output.file.basename.extended, ".csv" )), paste0(output.file.basename.extended, ".xlsx" ))
+    write.xlsx(read.csv(paste0(output.file.basename.extended, ".csv" )), paste0(output.file.basename.extended, ".xlsx" ), asTable=TRUE)
   }
 }
 
@@ -80,7 +80,7 @@ plot.ma <- function(output.dir, deseq2.res, alpha) {
   dev.off()
 }
 
-reportingTools.html <- function(out.dir, dds, deseq2.result, pvalueCutoff, condition1, condition2, annotation_genes) {
+reportingTools.html <- function(out.dir, dds, deseq2.result, pvalueCutoff, condition1, condition2, annotation_genes, make.plots=TRUE) {
   # Exporting results to HTML and CSV
   if (pvalueCutoff == 1.1){
     shortName <- 'RNAseq_analysis_with_DESeq2_full'
@@ -89,8 +89,15 @@ reportingTools.html <- function(out.dir, dds, deseq2.result, pvalueCutoff, condi
     shortName <- paste0('RNAseq_analysis_with_DESeq2_p', pvalueCutoff)
     title <- paste0('RNA-seq analysis of differential expression using DESeq2, P value cutoff ', pvalueCutoff)
   }
+  if (make.plots == FALSE) {
+    dir.create(file.path(paste0(out.sub, '/reports/figures', shortName)), showWarnings = FALSE)
+    for ( id in rownames(deseq2.result[ !is.na(deseq2.result$padj) & deseq2.result$padj < pvalueCutoff, ]) ) {
+      system(paste0('cp ', out.dir, '/reports/figuresRNAseq_analysis_with_DESeq2_full/boxplot.', id, '.pdf ', out.sub, '/reports/figures', shortName))
+      system(paste0('cp ', out.dir, '/reports/figuresRNAseq_analysis_with_DESeq2_full/mini.', id, '.png ', out.sub, '/reports/figures', shortName))
+    }
+  }
   des2Report <- HTMLReport(shortName=shortName, title=title, basePath=out.dir, reportDirectory="reports/")
-  publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor=colData(dds)$condition, reportDir=out.dir, n=length(row.names(deseq2.result)), contrast=c("condition",condition1,condition2), make.plots=TRUE)
+  publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor=colData(dds)$condition, reportDir=out.dir, n=length(row.names(deseq2.result)), contrast=c("condition",condition1,condition2), make.plots=make.plots)
   finish(des2Report)
   system(paste('./refactor_reportingtools_table.rb', paste0(out.dir, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', sep=" "))
 }
@@ -618,8 +625,10 @@ for (comparison in comparisons) {
     organism <- "hsapiens"
   } else if (species == 'mmu') {
      organism <- "mmusculus"
+  } else {
+    organism <- NA
   }
-  if (exists("organism")) {
+  if (! is.na(organism)) {
     interestGene <- as.data.frame(resFold05)[, 'log2FoldChange', drop=FALSE]
     interestGene$id <- rownames(interestGene)
     rownames(interestGene) <- NULL
@@ -658,10 +667,10 @@ for (comparison in comparisons) {
   ## ReportingTools
   reportingTools.html(out.sub, dds, deseq2.res, 1.1, l1, l2, annotation_genes)
   if (length(rownames(resFold05)) > 0) {
-    reportingTools.html(out.sub, dds, deseq2.res, 0.05, l1, l2, annotation_genes)
+    reportingTools.html(out.sub, dds, deseq2.res, 0.05, l1, l2, annotation_genes, make.plots=FALSE)
   }
   if (length(rownames(resFold01)) > 0) {
-    reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes)
+    reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes, make.plots=FALSE)
   }
 
 }
