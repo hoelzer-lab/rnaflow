@@ -27,10 +27,6 @@ build.project.structure <- function(out.dir) {
   for (plot.type in c('volcano', 'PCA', 'heatmaps', 'MA', 'sample2sample')) {
     dir.create(file.path(out.dir, paste0('/plots/', plot.type)), showWarnings = FALSE, recursive = TRUE)
   }
-  dir.create(file.path(out.dir, '/downstream_analysis'), showWarnings = FALSE)
-  for (ana.type in c('piano', 'WebGestalt')) {
-    dir.create(file.path(out.dir, paste0('/downstream_analysis/', ana.type)), showWarnings = FALSE, recursive = TRUE)
-  }
 }
 
 write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes, row.names=TRUE, col.names=TRUE) {
@@ -410,12 +406,13 @@ for (i in 1:length(transformed.counts)) {
 ## BiomaRt object
 ##########################################
 if (species == 'mmu'){
-  biomart.ensembl = useMart('ensembl', dataset='mmusculus_gene_ensembl')
+  biomart.ensembl <- useMart('ensembl', dataset='mmusculus_gene_ensembl')
 } else if (species == 'hsa') {
-  biomart.ensembl = useMart('ensembl', dataset='hsapiens_gene_ensembl')
+  biomart.ensembl <- useMart('ensembl', dataset='hsapiens_gene_ensembl')
 } else if (species == 'mau') {
-  biomart.ensembl = useMart('ensembl', dataset='mauratus_gene_ensembl')
+  biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
 } else {
+  biomart.ensembl <- NA
   print('SKIPPING: BiomaRt. Species not accasible with BiomaRt.')
 }
 
@@ -607,14 +604,15 @@ for (comparison in comparisons) {
   #####################
   ## MA plots with genes colored by GO terms
   # go.terms <- eval( c("GO:004563","GO:0011231") )
-  # if (exists("biomart.ensembl") && length(go.terms) > 0) {
+  # if ( ! is.na(biomart.ensembl)  && length(go.terms) > 0) {
   #   results.gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id","name_1006"), filters = "ensembl_gene_id", values = rownames(deseq2.res), mart=biomart.ensembl)
   #   #   plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
   # }
 
   #####################
   ## Piano
-  if (exists("biomart.ensembl")) {
+  if ( ! is.na(biomart.ensembl) ) {
+    dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
     piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene)
   }
@@ -629,6 +627,7 @@ for (comparison in comparisons) {
     organism <- NA
   }
   if (! is.na(organism)) {
+    dir.create(file.path(out.sub, '/downstream_analysis/WebGestalt'), showWarnings = FALSE, recursive = TRUE)
     interestGene <- as.data.frame(resFold05)[, 'log2FoldChange', drop=FALSE]
     interestGene$id <- rownames(interestGene)
     rownames(interestGene) <- NULL
