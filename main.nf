@@ -32,7 +32,19 @@ if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
     println " "
 }
 
-Set species = ['hsa', 'eco', 'mmu']
+if (params.assembly) {
+    println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."
+    if (params.uniref90) {
+        params.uniref90_dir = 'uniref90'
+        println "Use UniRef90 instead of UniRefKB for annotation: yes\033[0m"
+        println " "
+    } else {
+        println "Use UniRef90 instead of UniRefKB for annotation: no\033[0m"
+        println " "
+    }
+}
+
+Set species = ['hsa', 'eco', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
@@ -44,8 +56,8 @@ if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported sp
 
 if ( params.dge ) { comparison = params.dge } else { comparison = 'all' }
 log.info """\
-    D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
-    = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
+    R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
+    = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
     Output path:          $params.output
     Mode:                 $params.mode
     Strandness:           $params.strand
@@ -189,14 +201,25 @@ regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionRep
 * CHECK INPUT
 */
 
-annotated_reads
-    .map{ row -> row[-2]}
-    .collect()
-    .subscribe onNext: {
-        for ( i in it ){
-        assert 2 <= it.count(i)
-        }
-    }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
+if (params.assembly) {
+    annotated_reads
+        .map{ row -> row[-2]}
+        .collect()
+        .subscribe onNext: {
+            for ( i in it ){
+            assert 0 <= it.count(i)
+            }
+        }, onError: { exit 1, 'You need at least one sample to perform an assembly.' }
+} else {
+    annotated_reads
+        .map{ row -> row[-2]}
+        .collect()
+        .subscribe onNext: {
+            for ( i in it ){
+            assert 2 <= it.count(i)
+            }
+        }, onError: { exit 1, 'You need at least 2 samples per condition to perform a differential gene expression analysis.' }
+}
 
 if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lang.Float || params.tpm instanceof java.lang.Integer) ) {
     exit 1, "--tpm has to be numeric"
@@ -211,6 +234,8 @@ include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
 include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
+include {buscoGetDB} from './modules/buscoGetDB'
+include {dammitGetDB} from './modules/dammitGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
@@ -219,8 +244,14 @@ include {hisat2} from './modules/hisat2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
 include {deseq2} from './modules/deseq2'
-include { fastqc as fastqcPre; fastqc as fastqcPost } from './modules/fastqc'
-include { multiqc; multiqc_sample_names } from './modules/multiqc'
+include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
+include {multiqc; multiqc_sample_names} from './modules/multiqc'
+
+// assembly & annotation
+include {trinity} from './modules/trinity'
+include {busco} from './modules/busco'
+include {dammit} from './modules/dammit'
+include {stringtie; stringtie_merge} from './modules/stringtie' 
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
@@ -276,24 +307,48 @@ workflow download_sortmerna {
         sortmerna
 }
 
+workflow download_busco {
+    main:
+        if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out }
+        else if (params.cloudProcess) { 
+            busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco}/${params.busco}.tar.gz")
+            if (busco_db_preload.exists()) { database_busco = busco_db_preload }
+            else  { buscoGetDB(); database_busco = buscoGetDB.out }
+        }
+    emit: database_busco
+}
+
+workflow download_dammit {
+    take: 
+    busco_db_ch
+    
+    main:
+    dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco}/dbs.tar.gz"
+    if (params.uniref90) {
+        dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco}/dbs.tar.gz"
+    }
+    if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
+    if (params.cloudProcess) { 
+        dammit_db_preload = file(dammit_db_preload_path)
+        if (dammit_db_preload.exists()) { database_dammit = dammit_db_preload }
+        else  { dammitGetDB(busco_db_ch); database_dammit = dammitGetDB.out }
+    }
+    emit: database_dammit
+}
+
+
 /************************** 
 * SUB WORKFLOWS
 **************************/
 
-/* Comment section: */
-
-
-workflow analysis_reference_based {
+/***************************************
+Preprocess RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
+*/
+workflow preprocess {
     take:
         illumina_input_ch
         reference
-        annotation
         sortmerna_db
-        dge_comparisons_input_ch
-        deseq2_script
-        deseq2_script_refactor_reportingtools_table
-        deseq2_script_improve_deseq_table
-        multiqc_config
 
     main:
         // initial QC of raw reads
@@ -320,8 +375,39 @@ workflow analysis_reference_based {
         // map with HISAT2
         hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.histat2_additional_params)
 
+    emit:
+        sample_bam_ch = hisat2.out.sample_bam
+        fastp_json_report = fastp.out.json_report
+        sortmerna_log
+        hisat2_log = hisat2.out.log  
+        fastqcPre = fastqcPre.out.zip  
+        fastqcPost = fastqcPost.out.zip
+        cleaned_reads_ch = sortmerna_no_rna_fastq
+} 
+
+
+/******************************************
+Differential gene expression analysis using a genome reference
+*/
+workflow expression_reference_based {
+    take:
+        sample_bam_ch
+        fastp_json_report
+        sortmerna_log
+        hisat2_log
+        fastqcPre
+        fastqcPost
+        annotation
+        dge_comparisons_input_ch
+        deseq2_script
+        deseq2_script_refactor_reportingtools_table
+        deseq2_script_improve_deseq_table
+        deseq2_script_csv2xlsx
+        multiqc_config
+
+    main:
         // count with featurecounts
-        featurecounts(hisat2.out.sample_bam, annotation)
+        featurecounts(sample_bam_ch, annotation)
 
         // prepare annotation for R input
         format_annotation_gene_rows(annotation)
@@ -370,20 +456,65 @@ workflow analysis_reference_based {
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
         multiqc(multiqc_config, 
                 multiqc_sample_names.out,
-                fastp.out.json_report.collect(), 
+                fastp_json_report.collect(), 
                 sortmerna_log.collect().ifEmpty([]), 
-                hisat2.out.log.collect(), 
+                hisat2_log.collect(), 
                 featurecounts.out.log.collect(), 
-                fastqcPre.out.zip.collect(),
-                fastqcPost.out.zip.collect(),
+                fastqcPre.collect(),
+                fastqcPost.collect(),
                 tpm_filter.out.stats,
                 params.tpm
         )
 } 
 
-workflow analysis_de_novo {
-/*WIP. maybe later...*/
+/*****************************************
+De novo assembly of the preprocessed RNA-Seq reads. For now do co-assembly of all samples. 
+ToDo: also do co-assembly of samples belonging to the same condition. 
+*/
+workflow assembly_denovo {
+    take:
+        cleaned_reads_ch
+        busco_db
+        dammit_db
+
+    main:
+        reads_ch = cleaned_reads_ch.map {sample, reads -> tuple reads}.collect()
+        reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
+ 
+        // co-assembly
+        trinity(reads_ch, reads_input_csv)
+
+        // qc check
+        busco(trinity.out.assembly, busco_db, 'trinity')    
+
+        // transcript annotation 
+        dammit(trinity.out.assembly, dammit_db, 'trinity')
 } 
+
+/*****************************************
+Reference-based assembly of the preprocessed RNA-Seq reads. 
+*/
+workflow assembly_reference {
+    take:
+        genome_reference
+        annotation_reference
+        bams
+        busco_db
+        dammit_db
+
+    main:
+        // StringTie2 GTF-guided transcript prediction
+        stringtie(genome_reference, annotation_reference, bams)
+
+        // Merge each single GTF-guided StringTie2 GTF file 
+        stringtie_merge(genome_reference, stringtie.out.gtf.collect(), 'stringtie')
+
+        // qc check
+        busco(stringtie_merge.out.transcripts, busco_db, 'stringtie')    
+
+        // transcript annotation 
+        dammit(stringtie_merge.out.transcripts, dammit_db, 'stringtie')
+}
 
 
 /************************** 
@@ -411,8 +542,35 @@ workflow {
     download_sortmerna()
     sortmerna_db = download_sortmerna.out
 
-    // start reference-based analysis
-    analysis_reference_based(illumina_input_ch, reference, annotation, sortmerna_db, dge_comparisons_input_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, multiqc_config)
+    // preprocess RNA-Seq reads
+    preprocess(illumina_input_ch, reference, sortmerna_db)
+
+    // perform assembly & annotation
+    if (params.assembly) {
+        // dbs
+        busco_db = download_busco()
+        dammit_db = download_dammit(busco_db)
+        // de novo
+        assembly_denovo(preprocess.out.cleaned_reads_ch, busco_db, dammit_db)
+        // reference-based
+        assembly_reference(reference, annotation, preprocess.out.sample_bam_ch, busco_db, dammit_db)
+    } else {
+    // perform expression analysis
+        // start reference-based differential gene expression analysis
+        expression_reference_based(preprocess.out.sample_bam_ch,
+                                preprocess.out.fastp_json_report,
+                                preprocess.out.sortmerna_log,
+                                preprocess.out.hisat2_log,
+                                preprocess.out.fastqcPre,
+                                preprocess.out.fastqcPost,
+                                annotation,
+                                dge_comparisons_input_ch, 
+                                deseq2_script, 
+                                deseq2_script_refactor_reportingtools_table, 
+                                deseq2_script_improve_deseq_table, 
+                                deseq2_script_csv2xlsx, 
+                                multiqc_config)
+    }
 }
 
 
@@ -427,6 +585,8 @@ def helpMSG() {
 
     ${c_yellow}Usage example:${c_reset}
     nextflow run main.nf --cores 4 --reads input.csv --species eco
+    or
+    nextflow run main.nf --cores 4 --reads input.csv --species eco --assembly
     or
     nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
     or
@@ -447,6 +607,8 @@ def helpMSG() {
     ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files (one path in each line)
 
     ${c_yellow}Options${c_reset}
+    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
+    --uniref90               transcriptome annotation using UniRef90 instead of UniRefKB [default $params.uniref90]
     --dge                    a CSV file following the pattern: conditionX,conditionY
                              Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
@@ -457,6 +619,8 @@ def helpMSG() {
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
     --skip_sortmerna         Skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    --busco                 the database used with BUSCO [default: $params.busco]
+                ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
 
     ${c_dim}Computing options:
     --cores                  max cores per process for local use [default $params.cores]

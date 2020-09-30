@@ -1,0 +1,6 @@
+name: stringtie
+channels:
+  - bioconda
+dependencies:
+  - stringtie=2.1.1
+  - gffread=0.11.7
