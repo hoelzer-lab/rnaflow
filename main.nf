@@ -402,7 +402,6 @@ workflow expression_reference_based {
         deseq2_script
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
-        deseq2_script_csv2xlsx
         multiqc_config
 
     main:
@@ -568,7 +567,6 @@ workflow {
                                 deseq2_script, 
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
-                                deseq2_script_csv2xlsx, 
                                 multiqc_config)
     }
 }
