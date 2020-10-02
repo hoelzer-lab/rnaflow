@@ -27,17 +27,17 @@ process deseq2 {
     script:
 
     sample_files = fc_counts_formated.collect { "\"${it}\"" }.join(",")
-    col_labels = col_labels.collect { "\"${it}\"" }.join(",")
+    col_labels_in = col_labels.collect { "\"${it}\"" }.join(",")
     conditions = condition.collect { "\"${it}\"" }.join(",")
     levels = condition.collect { "\"${it}\"" }.toSet().join(",")
     if ( patients.toSet().size() == 1 && ! patients.toSet()[0] ) {
         // patients is a list with empty emlements ([, , , ])
-        patients = ''
+        patients_in = ''
     } else {
-        patients = patients.collect { "\"${it}\"" }.join(",")
+        patients_in = patients.collect { "\"${it}\"" }.join(",")
     }
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${species}") c("${regionReport_config}")' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients_in}) c("${species}") c("${regionReport_config}")' ${script}
     """
 }
 /*
