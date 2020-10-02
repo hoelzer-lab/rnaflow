@@ -4,6 +4,8 @@
 process deseq2 {
     label 'deseq2'
 
+    container 'nanozoo/deseq2:1.28.0--0df1612'
+
     if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
     else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
@@ -37,6 +39,7 @@ process deseq2 {
         patients = patients.collect { "\"${it}\"" }.join(",")
     }
     """
+    echo "${col_labels}"
     R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${species}") c("${regionReport_config}")' ${script}
     """
 }

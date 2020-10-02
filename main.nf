@@ -438,7 +438,7 @@ workflow expression_reference_based {
                 patient: it[2]
             }
             .set { annotated_sample }
-
+        
         deseq2_comparisons = dge_comparisons_input_ch
             .map { it.join(":") }
             .map { "\"${it}\"" }
