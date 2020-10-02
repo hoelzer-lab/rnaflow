@@ -186,12 +186,12 @@ if (params.dge) {
 deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIfExists: true )
 deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
-deseq2_script_csv2xlsx = Channel.fromPath( workflow.projectDir + '/bin/csv_to_excel.py', checkIfExists: true )
 
 /*
 * MultiQC config
 */
 multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
+regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionReport_DESeq2Exploration_custom.Rmd', checkIfExists: true )
 
 //if (params.index) {
 //  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
@@ -402,7 +402,6 @@ workflow expression_reference_based {
         deseq2_script
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
-        deseq2_script_csv2xlsx
         multiqc_config
 
     main:
@@ -439,7 +438,7 @@ workflow expression_reference_based {
                 patient: it[2]
             }
             .set { annotated_sample }
-
+        
         deseq2_comparisons = dge_comparisons_input_ch
             .map { it.join(":") }
             .map { "\"${it}\"" }
@@ -447,7 +446,10 @@ workflow expression_reference_based {
             .map { it.join(",") }
 
         // run DEseq2
-        deseq2(tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, annotated_sample.patient.collect(), deseq2_script, deseq2_script_refactor_reportingtools_table, deseq2_script_improve_deseq_table, deseq2_script_csv2xlsx)
+        deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
+            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
+            annotated_sample.patient.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
+            deseq2_script_improve_deseq_table)
 
         // run MultiQC
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
@@ -565,7 +567,6 @@ workflow {
                                 deseq2_script, 
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
-                                deseq2_script_csv2xlsx, 
                                 multiqc_config)
     }
 }

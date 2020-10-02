@@ -5,16 +5,23 @@ channels:
   - r
   - bioconda
 dependencies:
-  - bioconductor-deseq2=1.24.0   
-  - libopenblas=0.3.7
-  - r-gplots=3.0.1.1
-  - r-ggplot2=3.2.1
-  - r-pheatmap=1.0.12
-  - bioconductor-reportingtools=2.24.0
+  - bioconductor-deseq2==1.28.0   
+  - libopenblas
+  - r-gplots
+  - r-ggplot2
+  - r-pheatmap
+  - bioconductor-reportingtools
   - openpyxl
-  - pandas=1.0.3
-  - r-xml2=1.2.0
-  - r-svglite=1.2.3
+  - r-xml2
+  - r-svglite
   - bioconductor-piano
   - ruby
+  - bioconductor-apeglm
   - bioconductor-enhancedvolcano
+  - bioconductor-regionreport==1.22.0
+  - r-sessioninfo
+  - r-magick
+  - r-webgestaltr
+  - r-snowfall
+  - r-knitr==1.29
+  - r-openxlsx
