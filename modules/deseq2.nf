@@ -37,7 +37,6 @@ process deseq2 {
         patients = patients.collect { "\"${it}\"" }.join(",")
     }
     """
-    echo "${col_labels}"
     R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients}) c("${species}") c("${regionReport_config}")' ${script}
     """
 }
