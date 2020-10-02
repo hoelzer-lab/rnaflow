@@ -658,10 +658,11 @@ for (comparison in comparisons) {
     outdir = report.dir, output = report.output, theme = theme_bw())
 
   ## and also pfd
-  report_pdf <- DESeq2Report(dds, project = report.project.name,
+  try( report_pdf <- DESeq2Report(dds, project = report.project.name,
     intgroup = c('condition', 'type'), res = deseq2.res, template = regionReport_config,
     outdir = report.dir, output = report.output, theme = theme_bw(),
-    output_format = 'pdf_document', device = 'pdf')
+    output_format = 'pdf_document', device = 'pdf') )
+
 
   #####################
   ## ReportingTools
