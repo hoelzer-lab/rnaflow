@@ -4,8 +4,6 @@
 process deseq2 {
     label 'deseq2'
 
-    container 'nanozoo/deseq2:1.28.0--0df1612'
-
     if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
     else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
 
