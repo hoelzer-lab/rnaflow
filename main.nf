@@ -25,7 +25,10 @@ println "  $workflow.launchDir"
 println "Permanent cache directory:"
 println "  $params.permanentCacheDir"
 println "Configuration files:"
-println "  $workflow.configFiles\u001B[0m"
+println "  $workflow.configFiles"
+println "Cmd line:"
+println "  $workflow.commandLine\u001B[0m"
+if (workflow.repository != null){ println "\033[2mGit info: $workflow.repository - $workflow.revision [$workflow.commitId]\u001B[0m" }
 println " "
 if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
     println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
