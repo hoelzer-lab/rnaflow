@@ -406,15 +406,21 @@ for (i in 1:length(transformed.counts)) {
 ##########################################
 ## BiomaRt object
 ##########################################
-if (species == 'mmu'){
-  biomart.ensembl <- useMart('ensembl', dataset='mmusculus_gene_ensembl')
-} else if (species == 'hsa') {
-  biomart.ensembl <- useMart('ensembl', dataset='hsapiens_gene_ensembl')
-} else if (species == 'mau') {
-  biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
-} else {
+try.biomart <- try(
+  if (species == 'mmu'){
+    biomart.ensembl <- useMart('ensembl', dataset='mmusculus_gene_ensembl')
+  } else if (species == 'hsa') {
+    biomart.ensembl <- useMart('ensembl', dataset='hsapiens_gene_ensembl')
+  } else if (species == 'mau') {
+    biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
+  } else {
+    biomart.ensembl <- NA
+    print('SKIPPING: BiomaRt. Species not accasible with BiomaRt.')
+  }
+)
+if (class(try.biomart) == "try-error") {
   biomart.ensembl <- NA
-  print('SKIPPING: BiomaRt. Species not accasible with BiomaRt.')
+  print('SKIPPING: BiomaRt. BiomaRt is not accessible.')
 }
 
 #####################################################################################
