@@ -672,12 +672,12 @@ for (comparison in comparisons) {
 
   #####################
   ## ReportingTools
-  reportingTools.html(out.sub, dds, deseq2.res, 1.1, l1, l2, annotation_genes)
+  reportingTools.html(out.sub, dds, deseq2.res, 1.1, l2, l1, annotation_genes)
   if (length(rownames(resFold05)) > 0) {
-    reportingTools.html(out.sub, dds, deseq2.res, 0.05, l1, l2, annotation_genes, make.plots=FALSE)
+    reportingTools.html(out.sub, dds, deseq2.res, 0.05, l2, l1, annotation_genes, make.plots=FALSE)
   }
   if (length(rownames(resFold01)) > 0) {
-    reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes, make.plots=FALSE)
+    reportingTools.html(out.sub, dds, deseq2.res, 0.01, l2, l1, annotation_genes, make.plots=FALSE)
   }
 
 }
