@@ -57,7 +57,7 @@ if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported sp
 //if (params.reference == '') {exit 1, "--reference is a required parameter"}
 //if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
 
-if ( params.dge ) { comparison = params.dge } else { comparison = 'all' }
+if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
     R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
@@ -156,9 +156,9 @@ annotated_reads
 /*
 * read in comparisons
 */
-if (params.dge) {
-    dge_comparisons_input_ch = Channel
-        .fromPath( params.dge, checkIfExists: true )
+if (params.deg) {
+    deg_comparisons_input_ch = Channel
+        .fromPath( params.deg, checkIfExists: true )
         .splitCsv( header: true, sep: ',' )
         .map{ row ->
             def condition1 = row['Condition1']
@@ -166,17 +166,17 @@ if (params.dge) {
             return [ condition1, condition2 ]
         } // no further processing, in case other tools need this formatted in another way
 
-        // check if conditions form dge and reads file match
-        dge_comparisons_input_ch
+        // check if conditions form deg and reads file match
+        deg_comparisons_input_ch
             .collect()
             .flatten()
             .combine(sample_conditions)
             .subscribe onNext: {
                 assert it[1].contains(it[0])
-            }, onError: { exit 1, "The comparisons from ${params.dge} do not match the sample conditions in ${params.reads}." }
+            }, onError: { exit 1, "The comparisons from ${params.deg} do not match the sample conditions in ${params.reads}." }
 } else {
     // automatically use all possible comparisons
-    dge_comparisons_input_ch = sample_conditions
+    deg_comparisons_input_ch = sample_conditions
         .flatten()
         .combine(sample_conditions2.flatten())
         .filter{ it[0] != it[1] }
@@ -401,7 +401,7 @@ workflow expression_reference_based {
         fastqcPre
         fastqcPost
         annotation
-        dge_comparisons_input_ch
+        deg_comparisons_input_ch
         deseq2_script
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
@@ -442,7 +442,7 @@ workflow expression_reference_based {
             }
             .set { annotated_sample }
         
-        deseq2_comparisons = dge_comparisons_input_ch
+        deseq2_comparisons = deg_comparisons_input_ch
             .map { it.join(":") }
             .map { "\"${it}\"" }
             .collect()
@@ -566,7 +566,7 @@ workflow {
                                 preprocess.out.fastqcPre,
                                 preprocess.out.fastqcPost,
                                 annotation,
-                                dge_comparisons_input_ch, 
+                                deg_comparisons_input_ch, 
                                 deseq2_script, 
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
@@ -597,7 +597,7 @@ def helpMSG() {
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}         a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
-                                        In default all possible comparisons of conditions are made. Use --dge to change this.${c_reset}
+                                        In default all possible comparisons of conditions are made. Use --deg to change this.${c_reset}
     ${c_green}--species${c_reset}       reference genome and annotation with automatic download.
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
@@ -610,7 +610,7 @@ def helpMSG() {
     ${c_yellow}Options${c_reset}
     --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
     --uniref90               transcriptome annotation using UniRef90 instead of UniRefKB [default $params.uniref90]
-    --dge                    a CSV file following the pattern: conditionX,conditionY
+    --deg                    a CSV file following the pattern: conditionX,conditionY
                              Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
                              If provided, no new index will be build. Must be named 'index.*.ht2'.  
