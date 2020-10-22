@@ -597,12 +597,13 @@ def helpMSG() {
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}         a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
-                                        In default all possible comparisons of conditions are made. Use --deg to change this.${c_reset}
+                                        In default all possible comparisons of conditions in one direction are made. Use --deg to change this.${c_reset}
     ${c_green}--species${c_reset}       reference genome and annotation with automatic download.
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
-                                        - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]${c_reset}
+                                        - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                        - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]${c_reset}
     ${c_green}--genome${c_reset}        CSV file with genome reference FASTA files (one path in each line).
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}    CSV file with genome annotation GTF files (one path in each line)
