@@ -6,12 +6,12 @@ process dammitGetDB {
     maxRetries 2
 
     if (params.uniref90) {
-      if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco}", mode: 'copy', pattern: "dbs.tar.gz" }
-      else { storeDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco}/" }  
+      if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
+      else { storeDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}/" }  
     }
     else {
-      if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/${params.busco}", mode: 'copy', pattern: "dbs.tar.gz" }
-      else { storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco}/" }  
+      if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
+      else { storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/" }  
     }
 
   input:
@@ -23,7 +23,7 @@ process dammitGetDB {
   script:
     if (params.uniref90)
     """
-    BUSCO=\$(echo ${params.busco} | awk 'BEGIN{FS="_"};{print \$1}')
+    BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit databases --install --database-dir \${PWD}/dbs --busco-group \${BUSCO} --full
     # the busco download fails so use the busco db we anyway already downloaded
     tar -zxvf ${busco_db} -C dbs/busco2db/
@@ -37,7 +37,7 @@ process dammitGetDB {
     """
   else
     """
-    BUSCO=\$(echo ${params.busco} | awk 'BEGIN{FS="_"};{print \$1}')
+    BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit databases --install --database-dir \${PWD}/dbs --busco-group \${BUSCO}
     # the busco download fails so use the busco db we anyway already downloaded
     tar -zxvf ${busco_db} -C dbs/busco2db/

@@ -314,7 +314,7 @@ workflow download_busco {
     main:
         if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out }
         else if (params.cloudProcess) { 
-            busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco}/${params.busco}.tar.gz")
+            busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}/${params.busco_db}.tar.gz")
             if (busco_db_preload.exists()) { database_busco = busco_db_preload }
             else  { buscoGetDB(); database_busco = buscoGetDB.out }
         }
@@ -326,9 +326,9 @@ workflow download_dammit {
     busco_db_ch
     
     main:
-    dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco}/dbs.tar.gz"
+    dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
     if (params.uniref90) {
-        dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco}/dbs.tar.gz"
+        dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}/dbs.tar.gz"
     }
     if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
     if (params.cloudProcess) { 
@@ -620,9 +620,10 @@ def helpMSG() {
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --skip_sortmerna         Skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
-    --busco                 the database used with BUSCO [default: $params.busco]
-                ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
+    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    --busco_db               the database used with BUSCO [default: $params.busco_db]
+                             ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
+    --dammit_uniref90        add UniRef90 to the dammit databases  [default: $params.dammit_uniref90]
 
     ${c_dim}Computing options:
     --cores                  max cores per process for local use [default $params.cores]

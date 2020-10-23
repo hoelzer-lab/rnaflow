@@ -14,7 +14,7 @@ process busco {
       tar -zxf ${database}
 
       # run busco
-      run_BUSCO.py -i ${fasta} -o results -l ${params.busco} -m tran -c ${task.cpus} -t ./ -z
+      run_BUSCO.py -i ${fasta} -o results -l ${params.busco_db} -m tran -c ${task.cpus} -t ./ -z
       cp run_results/short_summary_results.txt busco_${tool}_summary.txt
 
       # generate Plot and rehack Rscript
