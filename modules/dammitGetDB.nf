@@ -5,7 +5,7 @@ process dammitGetDB {
     errorStrategy 'retry'
     maxRetries 2
 
-    if (params.uniref90) {
+    if (params.dammit_uniref90) {
       if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
       else { storeDir "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}/" }  
     }
@@ -21,7 +21,7 @@ process dammitGetDB {
     path("dbs.tar.gz")
 
   script:
-    if (params.uniref90)
+    if (params.dammit_uniref90)
     """
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit databases --install --database-dir \${PWD}/dbs --busco-group \${BUSCO} --full

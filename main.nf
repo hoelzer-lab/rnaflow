@@ -37,7 +37,7 @@ if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
 
 if (params.assembly) {
     println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."
-    if (params.uniref90) {
+    if (params.dammit_uniref90) {
         params.uniref90_dir = 'uniref90'
         println "Use UniRef90 instead of UniRefKB for annotation: yes\033[0m"
         println " "
@@ -327,7 +327,7 @@ workflow download_dammit {
     
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
-    if (params.uniref90) {
+    if (params.dammit_uniref90) {
         dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}/dbs.tar.gz"
     }
     if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
@@ -610,7 +610,6 @@ def helpMSG() {
 
     ${c_yellow}Options${c_reset}
     --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
-    --uniref90               transcriptome annotation using UniRef90 instead of UniRefKB [default $params.uniref90]
     --deg                    a CSV file following the pattern: conditionX,conditionY
                              Each line stands for one differential gene expression comparison.
     --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
