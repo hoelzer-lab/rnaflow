@@ -48,3 +48,20 @@ process hisat2 {
 }
 
 
+process index_bam {
+    label 'hisat2'
+    
+    if (params.cloudProcess) { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.bai" }
+    else { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.bai" }
+
+    input:
+    tuple val(sample_name), path(bam_file)
+
+    output:
+    path("${bam_file}.bai")
+
+    script:
+    """
+    samtools index ${bam_file}
+    """
+}

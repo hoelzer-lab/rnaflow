@@ -243,7 +243,7 @@ include {dammitGetDB} from './modules/dammitGetDB'
 // analysis
 include {fastp} from './modules/fastp'
 include {sortmerna} from './modules/sortmerna'
-include {hisat2} from './modules/hisat2'
+include {hisat2; index_bam} from './modules/hisat2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
 include {deseq2} from './modules/deseq2'
@@ -377,6 +377,8 @@ workflow preprocess {
         hisat2index(reference)
         // map with HISAT2
         hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.histat2_additional_params)
+        // index BAM files
+        index_bam(hisat2.out.sample_bam)
 
     emit:
         sample_bam_ch = hisat2.out.sample_bam
