@@ -5,8 +5,8 @@ process multiqc {
     label 'multiqc'
     label 'smallTask'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy' }
-    else { publishDir "${params.output}/${params.multiqc_dir}" }
+    if (params.cloudProcess) { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html' }
+    else { publishDir "${params.output}/${params.multiqc_dir}", pattern: 'multiqc_report.html' }
 
     input:
     path(config)
@@ -21,7 +21,7 @@ process multiqc {
     val(tpm_threshold)
 
     output:
-    path "*multiqc_report.html"
+    path "multiqc_report.html"
     path "multiqc_data"
 
     script:

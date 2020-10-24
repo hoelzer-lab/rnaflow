@@ -7,11 +7,9 @@ process sortmerna {
     label 'sortmerna'
     
     if (params.cloudProcess) {
-        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq.gz"
-        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.aligned.log" }
+        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq.gz" }
     else {
         publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.other.fastq.gz"
-        publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.aligned.log" 
     }
 
     input:
