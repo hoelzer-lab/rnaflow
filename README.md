@@ -6,8 +6,10 @@
 
 ## Quick installation
 
+The pipeline is written in `Nextflow`, which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+
 1. Install  [`nextflow`](https://nf-co.re/usage/installation)
-    <details><summary>click</summary>
+    <details><summary>click here for a bash one-liner </summary>
 
     ```bash
     wget -qO- https://get.nextflow.io | bash
@@ -15,55 +17,55 @@
 
     </details>
 1. Install [`conda`](https://conda.io/miniconda.html)
-    <details><summary>click</summary>
+    <details><summary>click here for a bash two-liner for Miniconda3 Linux 64-bit</summary>
 
     ```bash
-    # for Linux users
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh | bash 
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
     ```
 
     </details>
-2. For transcriptome assembly: install [`docker`](https://docs.docker.com/engine/installation/)
+1. For transcriptome assembly: install [`docker`](https://docs.docker.com/engine/installation/)
 
-All other dependencies and tools will be installed within the pipline via `conda` or `docker`.
+All other dependencies and tools will be installed within the pipeline via `conda` or `docker`.
 
 ## Quick start
 
 - Start a test run
 
 ```bash
-nextflow run hoelzer/rnaseq --reads input.se.eco_small.csv --species eco
+nextflow run hoelzer/rnaseq -profile test,conda,local
 ```
 
 - Call help
 
 ```bash
-nextflow run main.nf --help
+nextflow run hoelzer/rnaseq --help
 ```
 
 ## Usage
 
 ```bash
-nextflow run main.nf --max_cores 6 --cores 2 --reads input.se.eco.csv --species eco
+nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --species hsa --max_cores 6 --cores 2
 ```
 
 with `hsa`, `mmu`, `mau` or `eco` [build-in species](###-Build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
-nextflow run main.nf --max_cores 6 --cores 2 --reads input.se.eco.csv --genome fastas.csv --annotation gtf.csv
+nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --genome fastas.csv --annotation gtf.csv --max_cores 6 --cores 2
 ```
 
 Genomes and annotations from `--genome` and `--annotation` (and `--species`) are concatenated.
-By default, all possible comparisons are performed. Use `--dge` to change this.
+By default, all possible comparisons are performed. Use `--deg` to change this.
 
 ### Build-in species
 
-|Species|three-letter shortcut|Genome|Annotation|
-|-|-|-|-|
-|Homo sapiens|`hsa`|Homo_sapiens.GRCh38.98|Homo_sapiens.GRCh38.dna.primary_assembly|
-|Mus musculus|`mmu`|Mus_musculus.GRCm38.99|Mus_musculus.GRCm38.dna.primary_assembly|
-|Homo sapiens|`mau`|Mesocricetus_auratus.MesAur1.0.100|Mesocricetus_auratus.MesAur1.0.dna.toplevel|
-|Homo sapiens|`eco`|Escherichia_coli_k_12.ASM80076v1.45|Escherichia_coli_k_12.ASM80076v1.dna.toplevel|
+| Species      | three-letter shortcut | Genome                              | Annotation                                    |
+| ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
+| Homo sapiens | `hsa`                 | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
+| Mus musculus | `mmu`                 | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
+| Homo sapiens | `mau`                 | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
+| Homo sapiens | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
 
 ## Help message
 
