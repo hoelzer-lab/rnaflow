@@ -1,5 +1,0 @@
-Sample,R,Condition,Patient
-mock_rep1,data/eco/SRR2932639.fastq.gz,mock,a,
-mock_rep2,data/eco/SRR2932638.fastq.gz,mock,b,
-treat_rep1,data/eco/SRR2932644.fastq.gz,treat,a,
-treat_rep2,data/eco/SRR2932645.fastq.gz,treat,b,

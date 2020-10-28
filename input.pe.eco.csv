@@ -1,5 +1,0 @@
-Sample,R1,R2,Condition,Patient
-mock_rep1,data/eco/SRR5043291_sub_1.fastq,data/eco/SRR5043291_sub_2.fastq,mock,,
-mock_rep2,data/eco/SRR5043290_sub_1.fastq,data/eco/SRR5043290_sub_2.fastq,mock,,
-treat_rep1,data/eco/ERR2686025_sub_1.fastq,data/eco/ERR2686025_sub_2.fastq,treat,,
-treat_rep2,data/eco/ERR2686034_sub_1.fastq,data/eco/ERR2686034_sub_2.fastq,treat,,
