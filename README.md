@@ -49,7 +49,7 @@ nextflow run hoelzer/rnaseq --help
 nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --species hsa --max_cores 6 --cores 2
 ```
 
-with `hsa`, `mmu`, `mau` or `eco` [build-in species](###-Build-in-species), or define your own genome reference and annotation files in CSV files:
+with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --genome fastas.csv --annotation gtf.csv --max_cores 6 --cores 2
