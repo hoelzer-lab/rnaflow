@@ -1,14 +1,15 @@
 
 ![](https://img.shields.io/badge/nextflow-20.07.1-brightgreen)
+![](https://img.shields.io/badge/uses-conda-yellow.svg)
 <!--![](https://img.shields.io/badge/uses-docker-blue.svg)-->
 
 # RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
 
 ## Quick installation
 
-The pipeline is written in `Nextflow`, which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
 
-1. Install  [`nextflow`](https://nf-co.re/usage/installation)
+1. Install  `Nextflow`
     <details><summary>click here for a bash one-liner </summary>
 
     ```bash
@@ -25,7 +26,29 @@ The pipeline is written in `Nextflow`, which can be used on any POSIX compatible
     ```
 
     </details>
-1. For transcriptome assembly: install [`docker`](https://docs.docker.com/engine/installation/)
+
+OR
+
+1. Install [`conda`](https://conda.io/miniconda.html)
+    <details><summary>click here for a bash two-liner for Miniconda3 Linux 64-bit</summary>
+
+    ```bash
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    bash Miniconda3-latest-Linux-x86_64.sh
+    ```
+
+    </details>
+1. Install `Nextflow` via `conda`
+    <details><summary>click here to see how to do that</summary>
+
+    ```bash
+    conda create -n nextflow -c bioconda nextflow
+    conda active nextflow
+    ```
+
+    </details>
+
+For transcriptome assembly, please install also [`docker`](https://docs.docker.com/engine/installation/).
 
 All other dependencies and tools will be installed within the pipeline via `conda` or `docker`.
 
@@ -34,6 +57,7 @@ All other dependencies and tools will be installed within the pipeline via `cond
 - Start a test run
 
 ```bash
+# conda active nextflow
 nextflow run hoelzer/rnaseq -profile test,conda,local
 ```
 
