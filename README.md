@@ -70,19 +70,65 @@ nextflow run hoelzer/rnaseq --help
 ## Usage
 
 ```bash
-nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --species hsa --max_cores 6 --cores 2
+nextflow run hoelzer/rnaseq --reads input.csv --species hsa --max_cores 6 --cores 2
 ```
 
 with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
-nextflow run hoelzer/rnaseq --reads test-data/input.se.hsa_small.csv --genome fastas.csv --annotation gtf.csv --max_cores 6 --cores 2
+nextflow run hoelzer/rnaseq --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
 ```
 
 Genomes and annotations from `--genome` and `--annotation` (and `--species`) are concatenated.
 By default, all possible comparisons are performed. Use `--deg` to change this.
 
-### Build-in species
+### Input files
+
+#### Read files (required)
+
+Specify your read files in `FASTQ` format with `--reads input.csv`. The files `input.csv` has to look like this for single-end reads:
+
+```
+Sample,R,Condition,Patient
+mock_rep1,/path/to/reads/mock1.fastq.gz,mock,,
+mock_rep2,/path/to/reads/mock2.fastq.gz,mock,,
+mock_rep3,/path/to/reads/mock3.fastq.gz,mock,,
+treated_rep1,/path/to/reads/treat1.fastq.gz,treated,,
+treated_rep2,/path/to/reads/treat2.fastq.gz,treated,,
+treated_rep3,/path/to/reads/treat3.fastq.gz,treated,,
+```
+
+and for paired-end reads, like this:
+
+```
+Sample,R1,R2,Condition,Patient
+mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A
+mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B
+mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C
+treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A
+treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B
+treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
+```
+
+Read files can be compressed (`.bz`). You need at least two replicates for each condition to run the pipeline. Patient labels are optional.
+
+#### Genomes and annotation
+
+If you don't use one of the [build-in species](#build-in-species), specify your genomes via `--genome fastas.csv`, with `fastas.csv` looking like this:
+
+```
+/path/to/reference_genome1.fasta
+/path/to/reference_genome2.fasta
+```
+
+and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
+
+```
+/path/to/reference_annotation_1.gtf
+/path/to/reference_annotation_2.gtf
+```
+
+## Build-in species
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
