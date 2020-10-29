@@ -50,18 +50,10 @@ if (params.assembly) {
 Set species = ['hsa', 'eco', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
-if ( workflow.profile.contains('test') ) {
-    if ( workflow.repository == null ){
-        params.reads = "$workflow.projectDir/test-data/input.se.hsa_small.csv"
-    } else {
-        params.reads = "$workflow.homeDir/.nextflow/assets/hoelzer-lab/rnaseq/test-data/input.se.hsa_small.csv"
-    }
-} else {
-    if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
-    if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
-    if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
-    if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
-}
+if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
+if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
