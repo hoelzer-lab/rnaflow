@@ -81,7 +81,7 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read = file(row['R'], checkIfExists: true)
+            def read = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read, condition, patient ]
@@ -98,8 +98,8 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read1 = file(row['R1'], checkIfExists: true)
-            def read2 = file(row['R2'], checkIfExists: true)
+            def read1 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
+            def read2 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read1, read2, condition, patient ]
