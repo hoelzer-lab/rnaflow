@@ -30,8 +30,8 @@ println "Cmd line:"
 println "  $workflow.commandLine\u001B[0m"
 if (workflow.repository != null){ println "\033[2mGit info: $workflow.repository - $workflow.revision [$workflow.commitId]\u001B[0m" }
 println " "
-if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
-    println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
+if (workflow.profile.contains('standard') || workflow.profile.contains('local')) {
+    println "\033[2mCPUs to use: $params.cores, maximal CPUs to use: $params.max_cores\u001B[0m"
     println " "
 }
 

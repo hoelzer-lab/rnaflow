@@ -67,7 +67,7 @@ nextflow run hoelzer/rnaseq -profile test,conda,local
 ... performs 
 - a differential gene expression analysis with sub-sampled human read data,
 - comparing two conditions, 
-- with a local execution (uses max. 4 cores and 8GB) and 
+- with a local execution (uses max. 4 cores in total and 8GB) and 
 - `conda` dependency management. 
 
 ### Call help
