@@ -150,7 +150,7 @@ annotated_reads
     .map{row -> row[-2]}
     .toList()
     .toSet()
-    .into { sample_conditions; sample_conditions2 }
+
 /*
 * read in comparisons
 */
@@ -168,15 +168,15 @@ if (params.deg) {
         deg_comparisons_input_ch
             .collect()
             .flatten()
-            .combine(sample_conditions)
+            .combine(annotated_reads)
             .subscribe onNext: {
                 assert it[1].contains(it[0])
             }, onError: { exit 1, "The comparisons from ${params.deg} do not match the sample conditions in ${params.reads}." }
 } else {
     // automatically use all possible comparisons
-    deg_comparisons_input_ch = sample_conditions
+    deg_comparisons_input_ch = annotated_reads
         .flatten()
-        .combine(sample_conditions2.flatten())
+        .combine(annotated_reads.flatten())
         .filter{ it[0] != it[1] }
         .map{ it -> it.sort() }
         .unique()
