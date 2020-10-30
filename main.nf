@@ -608,18 +608,22 @@ def helpMSG() {
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}             CSV file with genome annotation GTF files (one path in each line)
 
-    ${c_yellow}Options:${c_reset}
-    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
-    --deg                    a CSV file following the pattern: conditionX,conditionY
-                             Each line stands for one differential gene expression comparison.
-    --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
-                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
-                             Simply provide the path like 'data/db/index'. DEPRECATED
+    ${c_yellow}Preprocessing options:${c_reset}
     --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
+    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    ${c_dim}--index                  the path to the hisat2 index prefix matching the genome provided via --species. 
+                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
+                             Simply provide the path like 'data/db/index'. DEPRECATED${c_reset}
+
+    ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    --deg                    a CSV file following the pattern: conditionX,conditionY
+                             Each line stands for one differential gene expression comparison.    
+
+    ${c_yellow}Transcriptome assembly options:${c_reset}
+    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
     --busco_db               the database used with BUSCO [default: $params.busco_db]
                              ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
     --dammit_uniref90        add UniRef90 to the dammit databases  [default: $params.dammit_uniref90]
