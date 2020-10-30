@@ -192,7 +192,7 @@ Per default, the pipeline is locally executed with `conda` dependency management
 ### Executor options...
 *... or how to schedule your workload.*
 
-Currently implemented are `local` and `slurm` executions.
+Currently implemented are `local`, `slurm` and `lsf` executions.
 
 You can customize `local` with this parameters:
 

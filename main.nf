@@ -585,13 +585,13 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --species eco
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
     or
-    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --species eco --assembly
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
     or
-    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
     or
-    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
     ${c_dim}Genomes and annotations from --genome, --annotation and --species are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
@@ -643,8 +643,23 @@ def helpMSG() {
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)
 
-    Profile:
-    -profile                 standard (local and conda),local, conda, slurm, ara (slurm, conda and customization) [default standard]
-                             ${c_reset}
+    ${c_yellow}Execution/Engine profiles:${c_reset}
+     The pipeline supports profiles to run via different ${c_green}Executers${c_reset} and ${c_blue}Engines${c_reset} e.g.:
+     -profile ${c_green}local${c_reset},${c_blue}conda${c_reset}
+      ${c_green}Executer${c_reset} (choose one):
+      local
+      slurm
+      lsf
+      ${c_blue}Engines${c_reset} (choose one):
+      conda
+      docker [not supported yet]
+      singularity [not supported yet]
+    
+    For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
+    Per default: local,conda is executed. 
+
+    We also provide some pre-configured profiles for certain HPC environments:    
+      ara (slurm, conda and parameter customization)
+    ${c_reset}
     """.stripIndent()
 }
