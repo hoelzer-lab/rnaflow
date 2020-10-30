@@ -585,13 +585,13 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --cores 4 --reads input.csv --species eco
+    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --species eco
     or
-    nextflow run main.nf --cores 4 --reads input.csv --species eco --assembly
+    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --species eco --assembly
     or
-    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
+    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
     or
-    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
+    nextflow run hoelzer/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
     ${c_dim}Genomes and annotations from --genome, --annotation and --species are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
