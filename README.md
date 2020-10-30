@@ -5,6 +5,9 @@
 
 # RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
 
+![flow-chart](figures/workflow.jpg)
+*Figure 1* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
+
 ## Quick installation
 
 The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
@@ -29,7 +32,7 @@ The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), wh
 
 OR
 
-1. Install [`conda`](https://conda.io/miniconda.html)
+1. Install `conda`
     <details><summary>click here for a bash two-liner for Miniconda3 Linux 64-bit</summary>
 
     ```bash
@@ -54,14 +57,20 @@ All other dependencies and tools will be installed within the pipeline via `cond
 
 ## Quick start
 
-- Start a test run
+### Start a test run
 
 ```bash
 # conda active nextflow
 nextflow run hoelzer/rnaseq -profile test,conda,local
 ```
 
-- Call help
+... performs 
+- a differential gene expression analysis with sub-sampled human read data,
+- comparing two conditions, 
+- with a local execution (uses max. 4 cores and 8GB) and 
+- `conda` dependency management. 
+
+### Call help
 
 ```bash
 nextflow run hoelzer/rnaseq --help
@@ -128,7 +137,7 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 /path/to/reference_annotation_2.gtf
 ```
 
-## Build-in species
+#### Build-in species
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
@@ -137,67 +146,70 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 | Homo sapiens | `mau`                 | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
 | Homo sapiens | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
 
-## Help message
+#### Comparisons for DEG analysis
+
+Per default all possible comparisons in one direction are performed. To change this, please define the needed comparison with `--deg comparisons.csv`, where each line contains a pairwise comparison:
+
+```
+conditionX,conditionY
+conditionA,conditionB
+conditionB,conditionA
+```
+
+## Workflow control
+
+### Preprocessing
 
 ```bash
-Usage example:
-nextflow run main.nf --cores 4 --reads input.csv --species eco
-or
-nextflow run main.nf --cores 4 --reads input.csv --species eco --assembly
-or
-nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
-or
-nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
-Genomes and annotations from --genome, --annotation and --species are concatenated
-
-Input:
---reads                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
-                                    (check terminal output if correctly assigned)
-                                    In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
---species                reference genome and annotation with automatic download.
-                                    Currently supported are:
-                                    - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
-                                    - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
-                                    - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
-                                    - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
---genome                 CSV file with genome reference FASTA files (one path in each line).
-                                    If set, --annotation must also be set.
---annotation             CSV file with genome annotation GTF files (one path in each line)
-
-Options:
---assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
---deg                    a CSV file following the pattern: conditionX,conditionY
-                            Each line stands for one differential gene expression comparison.
---index                  the path to the hisat2 index prefix matching the genome provided via --species. 
-                            If provided, no new index will be build. Must be named 'index.*.ht2'.  
-                            Simply provide the path like 'data/db/index'. DEPRECATED
---mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
---strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
---tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
-                            if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
---skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
---busco_db               the database used with BUSCO [default: $params.busco_db]
-                            full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
---dammit_uniref90        add UniRef90 to the dammit databases  [default: $params.dammit_uniref90]
-
-Computing options:
---cores                  max cores per process for local use [default $params.cores]
---max_cores              max cores used on the machine for local use [default $params.max_cores]
---memory                 max memory in GB for local use [default $params.memory]
---output                 name of the result folder [default $params.output]
-
---permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
---condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
---workdir                working directory for all intermediate results [default $params.workdir]
-
-Nextflow options:
--with-report rep.html    cpu / ram usage (may cause errors)
--with-dag chart.html     generates a flowchart for the process tree
--with-timeline time.html timeline (may cause errors)
-
-Profile:
--profile                 standard (local and conda),local, conda, slurm, ara (slurm, conda and customization) [default standard]
+--mode                          # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
+--skip_sortmerna                # skip rRNA removal via SortMeRNA [default false]
+--fastp_additional_params       # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
+--histat2_additional_params     # additional parameters for HISAT2
 ```
+
+###  DEG analysis
+
+```bash
+--strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
+--tpm                           # threshold for TPM (transcripts per million) filter [default 1]
+--deg                           # a CSV file following the pattern: conditionX,conditionY
+```
+
+### Transcriptome assembly
+
+```bash
+--assemly                       # switch to transcriptome assemly
+--busco_db                      # BUSCO database ['euarchontoglires_odb9']
+--dammit_uniref90               # add UniRef90to dammit databases [false]
+```
+
+## Profiles/configuration options
+
+Per default the pipeline is a local execution with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an executer option with a engine option, e.g. `-profile local,conda` or `-profile slurm,conda`.
+
+### Executor options...
+*... or how to schedule your workload.*
+
+Currently implemented are `local` and `slurm` executions.
+
+You can customize `local` with this parameters:
+
+```bash
+--cores                         # cores for one process [default 1]
+--max_cores                     # max. cores used in total [default allAvailable]
+--memory                        # max. memory in GB for local use [default 8 GB]
+```
+
+### Engine options... 
+*... or in which environment to run the tools.*
+
+Currently implemented is `conda`. For transcriptome assembly some tools need to be run with `docker`.
+
+`docker` support for all steps is coming soon!
+
+<!-- ## Help message
+```
+``` -->
 
 <!-- # Flow chart
 
