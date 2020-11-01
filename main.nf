@@ -145,8 +145,7 @@ if ( params.annotation ) {
     annotation_custom_ch = Channel.empty()
 }
 
-
-annotated_reads
+sample_conditions = annotated_reads
     .map{row -> row[-2]}
     .toList()
     .toSet()
@@ -168,15 +167,15 @@ if (params.deg) {
         deg_comparisons_input_ch
             .collect()
             .flatten()
-            .combine(annotated_reads)
+            .combine(sample_conditions)
             .subscribe onNext: {
                 assert it[1].contains(it[0])
             }, onError: { exit 1, "The comparisons from ${params.deg} do not match the sample conditions in ${params.reads}." }
 } else {
     // automatically use all possible comparisons
-    deg_comparisons_input_ch = annotated_reads
+    deg_comparisons_input_ch = sample_conditions
         .flatten()
-        .combine(annotated_reads.flatten())
+        .combine(sample_conditions.flatten())
         .filter{ it[0] != it[1] }
         .map{ it -> it.sort() }
         .unique()
