@@ -67,7 +67,8 @@ nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 ... performs
 
 - a differential gene expression analysis with sub-sampled human read data,
-- comparing two conditions,
+- on a reduced human genome and annotation (chromosome 1, 10 and 11),
+- comparing two conditions (MAQCA, MAQCB),
 - with a local execution (uses max. 4 cores in total and 8GB) and
 - `conda` dependency management.
 
@@ -80,7 +81,7 @@ nextflow run hoelzer-lab/rnaseq --help
 ## Usage
 
 ```bash
-nextflow run hoelzer-lab/rnaseq --reads input.csv --species hsa --max_cores 6 --cores 2
+nextflow run hoelzer-lab/rnaseq --reads input.csv --species hsa --include_species --max_cores 6 --cores 2
 ```
 
 with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
@@ -89,7 +90,7 @@ with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or defi
 nextflow run hoelzer-lab/rnaseq --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
 ```
 
-Genomes and annotations from `--genome` and `--annotation` (and `--species`) are concatenated.
+Genomes and annotations from `--species`, if `--include_species` is set, `--genome` and `--annotation` are concatenated.
 By default, all possible comparisons are performed. Use `--deg` to change this.
 
 ### Input files
@@ -100,12 +101,12 @@ Specify your read files in `FASTQ` format with `--reads input.csv`. The file `in
 
 ```csv
 Sample,R,Condition,Patient
-mock_rep1,/path/to/reads/mock1.fastq.gz,mock,,
-mock_rep2,/path/to/reads/mock2.fastq.gz,mock,,
-mock_rep3,/path/to/reads/mock3.fastq.gz,mock,,
-treated_rep1,/path/to/reads/treat1.fastq.gz,treated,,
-treated_rep2,/path/to/reads/treat2.fastq.gz,treated,,
-treated_rep3,/path/to/reads/treat3.fastq.gz,treated,,
+mock_rep1,/path/to/reads/mock1.fastq.gz,mock,
+mock_rep2,/path/to/reads/mock2.fastq.gz,mock,
+mock_rep3,/path/to/reads/mock3.fastq.gz,mock,
+treated_rep1,/path/to/reads/treat1.fastq.gz,treated,
+treated_rep2,/path/to/reads/treat2.fastq.gz,treated,
+treated_rep3,/path/to/reads/treat3.fastq.gz,treated,
 ```
 
 and for paired-end reads, like this:
@@ -138,9 +139,13 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 /path/to/reference_annotation_2.gtf
 ```
 
+You can add a [build-in species](#build-in-species) to your defined genomes and annotation with `--species XXX --include_species`.
+
+`--species` is also an identifier for the downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
+
 #### Build-in species
 
-We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html). Please let us know, we can easily add other species.
+We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--species XXX --include_species`. Please let us know, we can easily add other species.
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |

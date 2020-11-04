@@ -51,9 +51,10 @@ Set species = ['hsa', 'eco', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
-if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
+if ( params.include_species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
 if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
-if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
+if ( (params.include_species && params.species) && ! (params.species in species) ) { exit 1, "Unsupported species for automatic download. Suported species as: " + species}
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
@@ -115,12 +116,7 @@ if (params.reads) {
 /*
 * read in auto genome(s)
 */
-if ( params.species ) {
-    species_auto_ch = Channel.value( params.species )
-} else {
-    species_auto_ch = Channel.empty()
-}
-
+species_auto_ch = Channel.value( params.species )
 /*
 * read in genome(s)
 */
@@ -267,13 +263,17 @@ It is written for local use and cloud use via params.cloudProcess.
 
 workflow download_auto_reference {
     main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
-            if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
-            else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
+        if (params.include_species){
+            // local storage via storeDir
+            if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
+            // cloud storage file.exists()?
+            if (params.cloudProcess) {
+                reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+                if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
+                else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
+            }
+        } else {
+            reference_auto_ch = Channel.empty()
         }
     emit:
         reference_auto_ch
@@ -281,13 +281,17 @@ workflow download_auto_reference {
 
 workflow download_auto_annotation {
     main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
-            if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
-            else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
+        if (params.include_species){
+            // local storage via storeDir
+            if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
+            // cloud storage file.exists()?
+            if (params.cloudProcess) {
+                annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+                if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
+                else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
+            }
+        } else {
+            annotation_auto_ch = Channel.empty()
         }
     emit:
         annotation_auto_ch
@@ -525,7 +529,7 @@ workflow assembly_reference {
 /* Comment section: */
 
 workflow {
-    // get the reference genome and index it for hisat2
+    // get the reference genome
     download_auto_reference()
     reference_auto = download_auto_reference.out
 
@@ -588,16 +592,15 @@ def helpMSG() {
     or
     nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
     or
-    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
-    or
-    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
-    ${c_dim}Genomes and annotations from --genome, --annotation and --species are concatenated.${c_reset}
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+    ${c_dim}Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
                                         In default all possible comparisons of conditions in one direction are made. Use --deg to change this.${c_reset}
-    ${c_green}--species${c_reset}                reference genome and annotation with automatic download.
+    ${c_green}--species${c_reset}                specifies the species identifier for downstream path analysis.
+                             If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
@@ -606,6 +609,7 @@ def helpMSG() {
     ${c_green}--genome${c_reset}                 CSV file with genome reference FASTA files (one path in each line)
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}             CSV file with genome annotation GTF files (one path in each line)
+    ${c_green}--include_species${c_reset}        Use genome and annotation of supproted species in addition to --genome and --annotation [default $params.include_species]
 
     ${c_yellow}Preprocessing options:${c_reset}
     --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
