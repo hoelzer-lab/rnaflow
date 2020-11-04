@@ -95,8 +95,13 @@ In this case (`rlog` count data), the first and second principal component expla
 
 ```{r 'PCA_vsd'}
 ## Transform count data
-vsd <- tryCatch(vst(dds, blind=FALSE))
-
+# vsd <- tryCatch(vst(dds, blind=FALSE))
+try.vst <- try(
+  vsd <- vst(dds, blind=FALSE)
+)
+if (class(try.vst) == "try-error") {
+  vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
+}
 ## Get percent of variance explained
 data_pca_vsd <- plotPCA(vsd, intgroup=intgroup, returnData=TRUE) 
 percentVar_vsd <- round(100 * attr(data_pca_vsd, "percentVar"))
