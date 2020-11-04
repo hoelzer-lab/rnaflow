@@ -201,7 +201,7 @@ piano <- function(out.dir, resFold, mapGO) {
   resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
   names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
 
-  try.piano <- try(
+  try.piano <- try( {
     pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
     ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
     dev.off()
@@ -214,6 +214,7 @@ piano <- function(out.dir, resFold, mapGO) {
 
     write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
     write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+    }
   )
   if (class(try.piano) == "try-error") {
     print('SKIPPING: piano consensusHeatmap.')
