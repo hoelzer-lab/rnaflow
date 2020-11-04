@@ -71,7 +71,7 @@ rownames(res.df) <- NULL
 
 # PCA
 
-The below plots show the first two principal components that explain the variability in the data using the regularized log (`rlog`) and variance stabilizing transformed (`vsd`) count data respectively. If you are unfamiliar with principal component analysis, you might want to check the [Wikipedia entry](https://en.wikipedia.org/wiki/Principal_component_analysis) or this [interactive explanation](http://setosa.io/ev/principal-component-analysis/). 
+The below plot shows the first two principal components that explain the variability in the data using the regularized log (`rlog`) count data. If you are unfamiliar with principal component analysis, you might want to check the [Wikipedia entry](https://en.wikipedia.org/wiki/Principal_component_analysis) or this [interactive explanation](http://setosa.io/ev/principal-component-analysis/). 
 
 ```{r 'PCA_rlog'}
 ## Transform count data
@@ -92,31 +92,6 @@ ggplot(data_pca_rld, aes(PC1, PC2, color=condition, shape=col.labels)) +
 ```
 
 In this case (`rlog` count data), the first and second principal component explain `r percentVar_rld[1]` and `r percentVar_rld[2]` percent of the variance respectively. 
-
-```{r 'PCA_vsd'}
-## Transform count data
-# vsd <- tryCatch(vst(dds, blind=FALSE))
-try.vst <- try(
-  vsd <- vst(dds, blind=FALSE)
-)
-if (class(try.vst) == "try-error") {
-  vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
-}
-## Get percent of variance explained
-data_pca_vsd <- plotPCA(vsd, intgroup=intgroup, returnData=TRUE) 
-percentVar_vsd <- round(100 * attr(data_pca_vsd, "percentVar"))
-
-ggplot(data_pca_vsd, aes(PC1, PC2, color=condition, shape=col.labels)) +
-    scale_shape_manual(values=1:length(col.labels)) +
-    geom_point(size=3) +
-    xlab(paste0("PC1: ",percentVar_vsd[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar_vsd[2],"% variance")) +
-    coord_fixed() + 
-    theme(legend.box = "horizontal") +
-    ggtitle("PC1 vs PC2: 500 genes", subtitle = "variance stabilizing transformed counts")
-```
-
-In this case (`vsd` count data), the first and second principal component explain `r percentVar_vsd[1]` and `r percentVar_vsd[2]` percent of the variance respectively.
 
 # Sample-to-sample distances
 
