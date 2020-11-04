@@ -201,18 +201,23 @@ piano <- function(out.dir, resFold, mapGO) {
   resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
   names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
 
-  pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
-  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
-  dev.off()
-  svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
-  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
-  dev.off()
-  
-  downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
-  upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
+  try.piano <- try(
+    pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
+    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
+    dev.off()
+    svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
+    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
+    dev.off()
 
-  write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
-  write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+    downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
+    upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
+
+    write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
+    write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+  )
+  if (class(try.piano) == "try-error") {
+    print('SKIPPING: piano consensusHeatmap.')
+  }
 
   # for (i in 1:length(resList)){
   #   svg(paste(out.dir, paste0(names(resList)[i], '.svg'), sep='/'), width = 10, height = 10)
