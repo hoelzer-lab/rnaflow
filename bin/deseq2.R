@@ -641,8 +641,13 @@ for (comparison in comparisons) {
     colnames(interestGene) <- NULL
     interestGene <- interestGene[c(2,1)]
     webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-      enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+    try.webgestalt <- try(
+      for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
+        enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+      }
+    )
+    if (class(try.webgestalt) == "try-error") {
+      print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
     }
   }
 
