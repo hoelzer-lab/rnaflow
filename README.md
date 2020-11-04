@@ -64,11 +64,12 @@ All other dependencies and tools will be installed within the pipeline via `cond
 nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 ```
 
-... performs 
+... performs
+
 - a differential gene expression analysis with sub-sampled human read data,
-- comparing two conditions, 
-- with a local execution (uses max. 4 cores in total and 8GB) and 
-- `conda` dependency management. 
+- comparing two conditions,
+- with a local execution (uses max. 4 cores in total and 8GB) and
+- `conda` dependency management.
 
 ### Call help
 
@@ -139,7 +140,7 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 
 #### Build-in species
 
-We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html). Please let us know, we can easily add other species. 
+We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html). Please let us know, we can easily add other species.
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
@@ -169,7 +170,7 @@ conditionB,conditionA
 --histat2_additional_params     # additional parameters for HISAT2
 ```
 
-###  DEG analysis
+### DEG analysis
 
 ```bash
 --strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
@@ -190,6 +191,7 @@ conditionB,conditionA
 Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`.
 
 ### Executor options...
+
 *... or how to schedule your workload.*
 
 Currently implemented are `local`, `slurm` and `lsf` executions.
@@ -202,7 +204,8 @@ You can customize `local` with this parameters:
 --memory                        # max. memory in GB for local use [default 8 GB]
 ```
 
-### Engine options... 
+### Engine options...
+
 *... or in which environment to run the tools.*
 
 Currently implemented is `conda`. For transcriptome assembly some tools need to be run with `docker`.
