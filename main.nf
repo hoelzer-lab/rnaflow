@@ -578,8 +578,8 @@ workflow assembly_reference {
 workflow {
     if ( workflow.profile.contains('test') ){
         get_test_data()
-        reference = get_test_data.out.reference_test
-        annotation = get_test_data.out.annotation_test
+        reference = get_test_data.out.reference_test.collect()
+        annotation = get_test_data.out.annotation_test.collect()
     } else {
         // get the reference genome
         download_auto_reference()
