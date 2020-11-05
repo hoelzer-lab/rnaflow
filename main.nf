@@ -267,24 +267,13 @@ It is written for local use and cloud use via params.cloudProcess.
 
 workflow get_test_data {
     main:
-        // local storage via storeDir
-        // if (!params.cloudProcess) { 
-        //     get_reference_test( species_auto_ch ); reference_test = get_reference_test.out
-        //     get_annotation_test( species_auto_ch ); annotation_test = get_annotation_test.out
-
-
-        //     reference_test = reduce_genome_test().out
-        //     annotation_test = reduce_annotation_test().out
-        // }
-        // // cloud storage file.exists()?
-        // if (params.cloudProcess) {
         reference_test_preload = file("${params.permanentCacheDir}/genomes/${params.species}_small.fa")
         if ( reference_test_preload.exists()) { 
             reference_test = Channel.fromPath(reference_test_preload)
         } else {
             reference_complete_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
             if (reference_complete_preload.exists()) { 
-                reference_auto_ch = Channel.fromPath(reference_complete_preload)
+                reference_auto_ch = Channel.fromPath( reference_complete_preload )
                 reference_test = reduce_genome_test ( reference_auto_ch )
             } else {
                 reference_test = get_reduced_genome_test( species_auto_ch )
@@ -297,6 +286,7 @@ workflow get_test_data {
         } else {
             annotation_complete_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
             if (annotation_complete_preload.exists()) { 
+                annotation_auto_ch = Channel.fromPath( annotation_complete_preload )
                 annotation_test = reduce_annotation_test( annotation_auto_ch )
             } else { 
                 annotation_test = get_reduced_annotation_test( species_auto_ch )
