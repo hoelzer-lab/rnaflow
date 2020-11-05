@@ -82,11 +82,11 @@ process reduce_annotation_test{
     path(complete_annotation)
 
     output:
-    path("${complete_genome.baseName}_small.gtf")
+    path("${complete_annotation.baseName}_small.gtf")
 
     script:
     """
-        grep -P '^1[01]?\\s' ${complete_annotation} > ${complete_genome.baseName}_small.gtf
+        grep -P '^1[01]?\\s' ${complete_annotation} > ${complete_annotation.baseName}_small.gtf
     """
 
 }
