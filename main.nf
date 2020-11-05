@@ -117,6 +117,7 @@ if (params.reads) {
 * read in auto genome(s)
 */
 species_auto_ch = Channel.value( params.species )
+
 /*
 * read in genome(s)
 */
@@ -225,6 +226,9 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 * MODULES
 **************************/
 
+// test
+include {get_reduced_genome_test; reduce_genome_test ; get_reduced_annotation_test ; reduce_annotation_test } from './modules/get_test_data.nf'
+
 // databases
 include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
@@ -260,6 +264,49 @@ include {format_annotation; format_annotation_gene_rows} from './modules/prepare
 The Database Section is designed to "auto-get" pre prepared databases.
 It is written for local use and cloud use via params.cloudProcess.
 */
+
+workflow get_test_data {
+    main:
+        // local storage via storeDir
+        // if (!params.cloudProcess) { 
+        //     get_reference_test( species_auto_ch ); reference_test = get_reference_test.out
+        //     get_annotation_test( species_auto_ch ); annotation_test = get_annotation_test.out
+
+
+        //     reference_test = reduce_genome_test().out
+        //     annotation_test = reduce_annotation_test().out
+        // }
+        // // cloud storage file.exists()?
+        // if (params.cloudProcess) {
+        reference_test_preload = file("${params.permanentCacheDir}/genomes/${params.species}_small.fa")
+        if ( reference_test_preload.exists()) { 
+            reference_test = Channel.fromPath(reference_test_preload)
+        } else {
+            reference_complete_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+            if (reference_complete_preload.exists()) { 
+                reference_auto_ch = Channel.fromPath(reference_complete_preload)
+                reference_test = reduce_genome_test ( reference_auto_ch )
+            } else {
+                reference_test = get_reduced_genome_test( species_auto_ch )
+            }
+        }
+
+        annotation_test_reload = file("${params.permanentCacheDir}/annotations/${params.species}_small.gtf")
+        if ( annotation_test_reload.exists() ) {
+            annotation_test = Channel.fromPath(annotation_test_reload)
+        } else {
+            annotation_complete_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+            if (annotation_complete_preload.exists()) { 
+                annotation_test = reduce_annotation_test( annotation_auto_ch )
+            } else { 
+                annotation_test = get_reduced_annotation_test( species_auto_ch )
+            } 
+        }
+
+    emit:
+        reference_test
+        annotation_test
+}
 
 workflow download_auto_reference {
     main:
@@ -529,19 +576,25 @@ workflow assembly_reference {
 /* Comment section: */
 
 workflow {
-    // get the reference genome
-    download_auto_reference()
-    reference_auto = download_auto_reference.out
+    if ( workflow.profile.contains('test') ){
+        get_test_data()
+        reference = get_test_data.out.reference_test
+        annotation = get_test_data.out.annotation_test
+    } else {
+        // get the reference genome
+        download_auto_reference()
+        reference_auto = download_auto_reference.out
 
-    // get the annotation
-    download_auto_annotation()
-    annotation_auto = download_auto_annotation.out
+        // get the annotation
+        download_auto_annotation()
+        annotation_auto = download_auto_annotation.out
 
-    // concatenate genomes and annotations
-    concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
-    reference = concat_genome.out
-    concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
-    annotation = concat_annotation.out
+        // concatenate genomes and annotations
+        concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+        reference = concat_genome.out
+        concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+        annotation = concat_annotation.out
+    }
 
     // get sortmerna databases
     download_sortmerna()
