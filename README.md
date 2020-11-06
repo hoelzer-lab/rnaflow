@@ -1,4 +1,8 @@
 
+![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
+![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
+![](https://github.com/hoelzer-lab/rnaseq/workflows/Syntax_check/badge.svg)
+
 ![](https://img.shields.io/badge/nextflow-20.07.1-brightgreen)
 ![](https://img.shields.io/badge/uses-conda-yellow.svg)
 ![](https://img.shields.io/badge/uses-docker-blue.svg)
