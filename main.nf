@@ -30,8 +30,8 @@ println "Cmd line:"
 println "  $workflow.commandLine\u001B[0m"
 if (workflow.repository != null){ println "\033[2mGit info: $workflow.repository - $workflow.revision [$workflow.commitId]\u001B[0m" }
 println " "
-if (workflow.profile == 'standard' || workflow.profile.contains('local')) {
-    println "\033[2mCPUs to use: $params.cores, maximal CPS to use: $params.max_cores\u001B[0m"
+if (workflow.profile.contains('standard') || workflow.profile.contains('local')) {
+    println "\033[2mCPUs to use: $params.cores, maximal CPUs to use: $params.max_cores\u001B[0m"
     println " "
 }
 
@@ -51,11 +51,10 @@ Set species = ['hsa', 'eco', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
-if ( params.species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
+if ( params.include_species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
 if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
-if ( params.species && ! (params.species in species) ) { exit 1, "Unsupported species. Use --species with " + species + " or --genome and --annotation." }
-//if (params.reference == '') {exit 1, "--reference is a required parameter"}
-//if (params.annotation == '') {exit 1, "--annotation is a required parameter"}
+if ( (params.include_species && params.species) && ! (params.species in species) ) { exit 1, "Unsupported species for automatic download. Suported species as: " + species}
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
@@ -83,7 +82,7 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read = file(row['R'], checkIfExists: true)
+            def read = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read, condition, patient ]
@@ -100,8 +99,8 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def sample = row['Sample']
-            def read1 = file(row['R1'], checkIfExists: true)
-            def read2 = file(row['R2'], checkIfExists: true)
+            def read1 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
+            def read2 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2'], checkIfExists: true)
             def condition = row['Condition']
             def patient = row['Patient']
             return [ sample, read1, read2, condition, patient ]
@@ -117,11 +116,7 @@ if (params.reads) {
 /*
 * read in auto genome(s)
 */
-if ( params.species ) {
-    species_auto_ch = Channel.value( params.species )
-} else {
-    species_auto_ch = Channel.empty()
-}
+species_auto_ch = Channel.value( params.species )
 
 /*
 * read in genome(s)
@@ -147,12 +142,11 @@ if ( params.annotation ) {
     annotation_custom_ch = Channel.empty()
 }
 
-
-annotated_reads
+sample_conditions = annotated_reads
     .map{row -> row[-2]}
     .toList()
     .toSet()
-    .into { sample_conditions; sample_conditions2 }
+
 /*
 * read in comparisons
 */
@@ -178,7 +172,7 @@ if (params.deg) {
     // automatically use all possible comparisons
     deg_comparisons_input_ch = sample_conditions
         .flatten()
-        .combine(sample_conditions2.flatten())
+        .combine(sample_conditions.flatten())
         .filter{ it[0] != it[1] }
         .map{ it -> it.sort() }
         .unique()
@@ -232,6 +226,9 @@ if ( ! (params.tpm instanceof java.lang.Double || params.tpm instanceof java.lan
 * MODULES
 **************************/
 
+// test
+include {get_reduced_genome_test; reduce_genome_test ; get_reduced_annotation_test ; reduce_annotation_test } from './modules/get_test_data.nf'
+
 // databases
 include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
@@ -268,15 +265,52 @@ The Database Section is designed to "auto-get" pre prepared databases.
 It is written for local use and cloud use via params.cloudProcess.
 */
 
+workflow get_test_data {
+    main:
+        reference_test_preload = file("${params.permanentCacheDir}/genomes/${params.species}_small.fa")
+        if ( reference_test_preload.exists()) { 
+            reference_test = Channel.fromPath(reference_test_preload)
+        } else {
+            reference_complete_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+            if (reference_complete_preload.exists()) { 
+                reference_auto_ch = Channel.fromPath( reference_complete_preload )
+                reference_test = reduce_genome_test ( reference_auto_ch )
+            } else {
+                reference_test = get_reduced_genome_test( species_auto_ch )
+            }
+        }
+
+        annotation_test_reload = file("${params.permanentCacheDir}/annotations/${params.species}_small.gtf")
+        if ( annotation_test_reload.exists() ) {
+            annotation_test = Channel.fromPath(annotation_test_reload)
+        } else {
+            annotation_complete_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+            if (annotation_complete_preload.exists()) { 
+                annotation_auto_ch = Channel.fromPath( annotation_complete_preload )
+                annotation_test = reduce_annotation_test( annotation_auto_ch )
+            } else { 
+                annotation_test = get_reduced_annotation_test( species_auto_ch )
+            } 
+        }
+
+    emit:
+        reference_test
+        annotation_test
+}
+
 workflow download_auto_reference {
     main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
-            if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
-            else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
+        if (params.include_species){
+            // local storage via storeDir
+            if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
+            // cloud storage file.exists()?
+            if (params.cloudProcess) {
+                reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+                if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
+                else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
+            }
+        } else {
+            reference_auto_ch = Channel.empty()
         }
     emit:
         reference_auto_ch
@@ -284,13 +318,17 @@ workflow download_auto_reference {
 
 workflow download_auto_annotation {
     main:
-        // local storage via storeDir
-        if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
-        // cloud storage file.exists()?
-        if (params.cloudProcess) {
-            annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
-            if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
-            else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
+        if (params.include_species){
+            // local storage via storeDir
+            if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
+            // cloud storage file.exists()?
+            if (params.cloudProcess) {
+                annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+                if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
+                else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
+            }
+        } else {
+            annotation_auto_ch = Channel.empty()
         }
     emit:
         annotation_auto_ch
@@ -528,19 +566,25 @@ workflow assembly_reference {
 /* Comment section: */
 
 workflow {
-    // get the reference genome and index it for hisat2
-    download_auto_reference()
-    reference_auto = download_auto_reference.out
+    if ( workflow.profile.contains('test') ){
+        get_test_data()
+        reference = get_test_data.out.reference_test.collect()
+        annotation = get_test_data.out.annotation_test.collect()
+    } else {
+        // get the reference genome
+        download_auto_reference()
+        reference_auto = download_auto_reference.out
 
-    // get the annotation
-    download_auto_annotation()
-    annotation_auto = download_auto_annotation.out
+        // get the annotation
+        download_auto_annotation()
+        annotation_auto = download_auto_annotation.out
 
-    // concatenate genomes and annotations
-    concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
-    reference = concat_genome.out
-    concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
-    annotation = concat_annotation.out
+        // concatenate genomes and annotations
+        concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+        reference = concat_genome.out
+        concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+        annotation = concat_annotation.out
+    }
 
     // get sortmerna databases
     download_sortmerna()
@@ -587,20 +631,19 @@ def helpMSG() {
     ____________________________________________________________________________________________
 
     ${c_yellow}Usage example:${c_reset}
-    nextflow run main.nf --cores 4 --reads input.csv --species eco
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
     or
-    nextflow run main.nf --cores 4 --reads input.csv --species eco --assembly
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
     or
-    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv
-    or
-    nextflow run main.nf --cores 4 --reads input.csv --genome fastas.csv --annotation gtfs.csv --species eco
-    ${c_dim}Genomes and annotations from --genome, --annotation and --species are concatenated.${c_reset}
+    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+    ${c_dim}Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
                                         In default all possible comparisons of conditions in one direction are made. Use --deg to change this.${c_reset}
-    ${c_green}--species${c_reset}                reference genome and annotation with automatic download.
+    ${c_green}--species${c_reset}                specifies the species identifier for downstream path analysis.
+                             If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
@@ -609,19 +652,24 @@ def helpMSG() {
     ${c_green}--genome${c_reset}                 CSV file with genome reference FASTA files (one path in each line)
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}             CSV file with genome annotation GTF files (one path in each line)
+    ${c_green}--include_species${c_reset}        Use genome and annotation of supproted species in addition to --genome and --annotation [default $params.include_species]
 
-    ${c_yellow}Options:${c_reset}
-    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
-    --deg                    a CSV file following the pattern: conditionX,conditionY
-                             Each line stands for one differential gene expression comparison.
-    --index                  the path to the hisat2 index prefix matching the genome provided via --species. 
-                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
-                             Simply provide the path like 'data/db/index'. DEPRECATED
+    ${c_yellow}Preprocessing options:${c_reset}
     --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
+    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    ${c_dim}--index                  the path to the hisat2 index prefix matching the genome provided via --species. 
+                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
+                             Simply provide the path like 'data/db/index'. DEPRECATED${c_reset}
+
+    ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
     --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
                              if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
+    --deg                    a CSV file following the pattern: conditionX,conditionY
+                             Each line stands for one differential gene expression comparison.    
+
+    ${c_yellow}Transcriptome assembly options:${c_reset}
+    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
     --busco_db               the database used with BUSCO [default: $params.busco_db]
                              ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
     --dammit_uniref90        add UniRef90 to the dammit databases  [default: $params.dammit_uniref90]
@@ -641,8 +689,23 @@ def helpMSG() {
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)
 
-    Profile:
-    -profile                 standard (local and conda),local, conda, slurm, ara (slurm, conda and customization) [default standard]
-                             ${c_reset}
+    ${c_yellow}Execution/Engine profiles:${c_reset}
+     The pipeline supports profiles to run via different ${c_green}Executers${c_reset} and ${c_blue}Engines${c_reset} e.g.:
+     -profile ${c_green}local${c_reset},${c_blue}conda${c_reset}
+      ${c_green}Executer${c_reset} (choose one):
+      local
+      slurm
+      lsf
+      ${c_blue}Engines${c_reset} (choose one):
+      conda
+      docker [not supported yet]
+      singularity [not supported yet]
+    
+    For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
+    Per default: local,conda is executed. 
+
+    We also provide some pre-configured profiles for certain HPC environments:    
+      ara (slurm, conda and parameter customization)
+    ${c_reset}
     """.stripIndent()
 }

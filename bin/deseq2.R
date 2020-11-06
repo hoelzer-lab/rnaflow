@@ -374,7 +374,12 @@ write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), 
 #####################
 ## transform counts
 rld <- rlog(dds, blind=FALSE) # regularized log transformation
-vsd <- vst(dds, blind=FALSE) # variance stabilizing transformation (VST)
+try.vst <- try(
+  vsd <- vst(dds, blind=FALSE) # variance stabilizing transformation (VST)
+)
+if (class(try.vst) == "try-error") {
+  vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
+}
 ntd <- normTransform(dds) # log2(n + 1) transformation
 
 #####################
