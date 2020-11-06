@@ -7,6 +7,8 @@
 ![](https://img.shields.io/badge/uses-conda-yellow.svg)
 ![](https://img.shields.io/badge/uses-docker-blue.svg)
 
+<!--[![Generic badge](https://img.shields.io/badge/Publication-bioRxiv-red.svg)](https://www.)-->
+
 # RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
 
 ![flow-chart](figures/workflow.jpg)
