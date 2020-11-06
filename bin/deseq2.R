@@ -201,18 +201,24 @@ piano <- function(out.dir, resFold, mapGO) {
   resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
   names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
 
-  pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
-  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
-  dev.off()
-  svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
-  ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
-  dev.off()
-  
-  downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
-  upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
+  try.piano <- try( {
+    pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
+    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
+    dev.off()
+    svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
+    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
+    dev.off()
 
-  write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
-  write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+    downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
+    upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
+
+    write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
+    write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
+    }
+  )
+  if (class(try.piano) == "try-error") {
+    print('SKIPPING: piano consensusHeatmap.')
+  }
 
   # for (i in 1:length(resList)){
   #   svg(paste(out.dir, paste0(names(resList)[i], '.svg'), sep='/'), width = 10, height = 10)
@@ -646,8 +652,13 @@ for (comparison in comparisons) {
     colnames(interestGene) <- NULL
     interestGene <- interestGene[c(2,1)]
     webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-      enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+    try.webgestalt <- try(
+      for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
+        enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+      }
+    )
+    if (class(try.webgestalt) == "try-error") {
+      print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
     }
   }
 
