@@ -427,11 +427,13 @@ for (i in 1:length(transformed.counts)) {
   }
 }
 
-  for (i in 1:length(transformed.counts)) { 
-    for (ntop in c(50, 100)){
-      plot.heatmap.most_var(paste(out, "plots/heatmaps/", sep="/"), transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
-    }
+#####################
+## Heatmaps on counts, most variable transformed genes
+for (i in 1:length(transformed.counts)) { 
+  for (ntop in c(50, 100)){
+    plot.heatmap.most_var(paste(out, "plots/heatmaps/", sep="/"), dds, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
   }
+}
 
 ##########################################
 ## BiomaRt object
@@ -614,7 +616,7 @@ for (comparison in comparisons) {
   ## Heatmaps on counts, most variable transformed genes
   for (i in 1:length(transformed.counts.sub)) { 
     for (ntop in c(50, 100)){
-      plot.heatmap.most_var(paste(out.sub, "plots/heatmaps/", sep="/"), transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+      plot.heatmap.most_var(paste(out.sub, "plots/heatmaps/", sep="/"), dds.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
     }
   }
 
