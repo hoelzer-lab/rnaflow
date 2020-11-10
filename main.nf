@@ -685,6 +685,7 @@ def helpMSG() {
     --workdir                working directory for all intermediate results [default $params.workdir]
 
     Nextflow options:
+    -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
     -with-report rep.html    cpu / ram usage (may cause errors)
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)

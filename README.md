@@ -85,6 +85,21 @@ nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 nextflow run hoelzer-lab/rnaseq --help
 ```
 
+### Update the pipeline
+
+```bash
+nextflow pull hoelzer-lab/rnaseq
+```
+
+### Use a certain release
+
+We recommend to use a [stable release](https://github.com/hoelzer-lab/rnaseq/releases) of the pipeline:
+
+```bash
+nextflow pull hoelzer-lab/rnaseq -r <RELEASE>
+```
+
+
 ## Usage
 
 ```bash
@@ -238,7 +253,13 @@ export TOWER_ACCESS_TOKEN=<YOUR_COPIED_TOKEN>
 
 You can save this command to your `.bashrc` or `.profile` to not need to enter it again. 
 
-Now, activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:
+Now run:
+
+```bash
+nextflow run hoelzer-lab/rnaseq -profile test,conda,local -with-tower
+```
+
+Alternatively, you can also activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:
 
 ```java
 tower {
@@ -247,7 +268,8 @@ tower {
 } 
 ```
 
-You can also directly enter your access token here instead of generating the above environment variable. Every time you start the pipeline from now on, you can see details about the run and calculations in your Nextflow Tower dashboard. 
+You can also directly enter your access token here instead of generating the above environment variable. 
+
 
 
 <!-- ## Help message
