@@ -186,6 +186,16 @@ conditionA,conditionB
 conditionB,conditionA
 ```
 
+### Resume your run
+
+You can easily resume your run in case of changes to the parameters or inputs. Nextflow will try to not recalculate steps that are already done:
+
+```
+nextflow run hoelzer-lab/rnaseq -profile test,conda,local -resume
+```
+
+Nextflow will need access to the working directory where temporary calculations are stored. Per default, this is set to `/tmp/nextflow-work-$USER` but can be adjusted via `--workdir /path/to/any/workdir`. In addition, the `.nextflow.log` file is needed to resume a run, thus, this will only work if you resume the run from the same folder where you started it. 
+
 ## Workflow control
 
 ### Preprocessing
