@@ -43,7 +43,7 @@ if ( !workflow.revision ) {
 def folder = new File(params.output)
 if ( folder.exists() ) { 
     println ""
-    println "\033[0;33mWARNING: Output folder already exists. Results might be overwritten!\033[0m\n"
+    println "\033[0;33mWARNING: Output folder already exists. Results might be overwritten! You can adjust the output folder via [--output]\033[0m\n"
 }
 
 
