@@ -68,6 +68,13 @@ For transcriptome assembly you have to install also [`Docker`](https://docs.dock
     conda active singularity
     ```
 
+    or if you already have a conda environment for nextflow:
+
+    ```bash
+    conda activate nextflow
+    conda install -c conda-forge singularity
+    ```
+
     </details>
 
 
