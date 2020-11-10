@@ -60,8 +60,8 @@ OR
 
 For transcriptome assembly you have to install also [`Docker`](https://docs.docker.com/engine/installation/) or [`Singularity`](https://github.com/hpcng/singularity/blob/master/INSTALL.md).
 
-1. Install `Singularity` via `conda`
-    <details><summary>you can try to simply install Singularity via conda</summary>
+1. You can try to simply install `Singularity` via `conda` as well
+    <details><summary>click for an example command</summary>
 
     ```bash
     conda create -n singularity -c conda-forge singularity
