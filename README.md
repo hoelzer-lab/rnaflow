@@ -17,7 +17,7 @@
 
 ## Quick installation
 
-The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux). You need `Nextflow` installed and either `conda`, `Docker`, or `Singularity` to run the steps of the pipeline:
 
 1. Install  `Nextflow`
     <details><summary>click here for a bash one-liner </summary>
@@ -58,9 +58,19 @@ OR
 
     </details>
 
-For transcriptome assembly, please install also [`docker`](https://docs.docker.com/engine/installation/).
+For transcriptome assembly you have to install also [`Docker`](https://docs.docker.com/engine/installation/) or [`Singularity`](https://github.com/hpcng/singularity/blob/master/INSTALL.md).
 
-All other dependencies and tools will be installed within the pipeline via `conda` or `docker`.
+<details><summary>you can try to simply install Singularity via conda</summary>
+
+    ```bash
+    conda create -n singularity -c conda-forge singularity
+    conda active singularity
+    ```
+
+</details>
+
+
+All other dependencies and tools will be installed within the pipeline via `conda`, `Docker` or `Singularity` depending on the profile you run (see below).
 
 ## Quick start
 
@@ -225,7 +235,7 @@ Nextflow will need access to the working directory where temporary calculations 
 
 ## Profiles/configuration options
 
-Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`.
+Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`. We also provide container support, see below. 
 
 ### Executor options...
 
@@ -245,9 +255,29 @@ You can customize `local` with this parameters:
 
 *... or in which environment to run the tools.*
 
-Currently implemented is `conda`. For transcriptome assembly some tools need to be run with `docker`.
+Currently implemented are `conda`, `Docker` and `Singularity`. For transcriptome assembly some tools need to be run with `Docker` or `Singularity`.
 
-`docker` support for all steps is coming soon!
+You can switch between different engines via `-profile`, for example:
+
+```
+nextflow run hoelzer-lab/rnaseq -profile test,local,conda
+nextflow run hoelzer-lab/rnaseq -profile test,local,docker
+nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
+```
+
+You can customize where `conda` environments are sored using 
+
+```bash
+--condaCacheDir /path/to/dir
+```
+
+and where `Singularity` images are stored via
+
+```bash
+--singularityCacheDir /path/to/dir
+```
+
+`Docker` images are stored based on your system configuration. 
 
 ## Monitoring 
 
@@ -266,7 +296,7 @@ You can save this command to your `.bashrc` or `.profile` to not need to enter i
 Now run:
 
 ```bash
-nextflow run hoelzer-lab/rnaseq -profile test,conda,local -with-tower
+nextflow run hoelzer-lab/rnaseq -profile test,local,conda -with-tower
 ```
 
 Alternatively, you can also activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:

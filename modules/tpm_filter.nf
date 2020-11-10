@@ -3,6 +3,7 @@
 ***************************************************/
 process tpm_filter {
     label 'python3'
+    label 'smallTask'
 
     if (params.cloudProcess) { 
         publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated.tsv"
