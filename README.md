@@ -14,8 +14,6 @@
 ![flow-chart](figures/workflow.jpg)
 *Figure 1* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
 
-[[_TOC_]]
-
 
 ## Quick installation
 
@@ -228,7 +226,7 @@ Currently implemented is `conda`. For transcriptome assembly some tools need to 
 
 ## Monitoring 
 
-<img align="right" width="160px" src="https://github.com/hoelzer-lab/rnaseq/blob/master/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
+<img align="right" width="160px" src="https://github.com/hoelzer-lab/rnaseq/blob/tower/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
 *Figure 2* Monitoring with Nextflow Tower.
 
 To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need a user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address. "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!" 
