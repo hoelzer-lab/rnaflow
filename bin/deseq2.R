@@ -142,6 +142,19 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
     ggsave(paste(out.dir, paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), sep="/"))
 }
 
+plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
+  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
+  selected.ensembl.ids <- row.names(trsf_data[select,])
+
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
+  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+        scale = "row", border_color = NA,
+        labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
+        annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
+        labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
+        height = 12, width = 8, file = file)
+}
+
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
   selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
@@ -414,6 +427,12 @@ for (i in 1:length(transformed.counts)) {
   }
 }
 
+  for (i in 1:length(transformed.counts)) { 
+    for (ntop in c(50, 100)){
+      plot.heatmap.most_var(paste(out, "plots/heatmaps/", sep="/"), transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
+    }
+  }
+
 ##########################################
 ## BiomaRt object
 ##########################################
@@ -589,6 +608,14 @@ for (comparison in comparisons) {
   for (i in 1:length(transformed.counts.sub)) {
     plot.sample2sample(paste(out.sub, "/plots/sample2sample/", sep="/"), col.labels.sub, 
       transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], colorRampPalette( rev(brewer.pal(9, "Blues")) )(255))
+  }
+
+  #####################
+  ## Heatmaps on counts, most variable transformed genes
+  for (i in 1:length(transformed.counts.sub)) { 
+    for (ntop in c(50, 100)){
+      plot.heatmap.most_var(paste(out.sub, "plots/heatmaps/", sep="/"), transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+    }
   }
 
   #####################
