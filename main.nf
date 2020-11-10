@@ -35,6 +35,18 @@ if (workflow.profile.contains('standard') || workflow.profile.contains('local'))
     println " "
 }
 
+if ( !workflow.revision ) { 
+    println ""
+    println "\033[0;33mWARNING: not a stable execution. Please use -r for full reproducibility.\033[0m\n"
+}
+
+def folder = new File(params.output)
+if ( folder.exists() ) { 
+    println ""
+    println "\033[0;33mWARNING: Output folder already exists. Results might be overwritten!\033[0m\n"
+}
+
+
 if (params.assembly) {
     println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."
     if (params.dammit_uniref90) {
