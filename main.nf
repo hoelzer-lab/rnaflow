@@ -701,6 +701,7 @@ def helpMSG() {
 
     --permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
     --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
+    --singularityCacheDir    location for storing the singularity images [default $params.singularityCacheDir]
     --workdir                working directory for all intermediate results [default $params.workdir]
 
     Nextflow options:
