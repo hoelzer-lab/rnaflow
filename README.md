@@ -273,6 +273,8 @@ nextflow run hoelzer-lab/rnaseq -profile test,local,docker
 nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
 ```
 
+As a __best practice__, we recommand to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+
 You can customize where `conda` environments are sored using 
 
 ```bash
