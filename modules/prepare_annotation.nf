@@ -5,8 +5,7 @@ process format_annotation {
     label 'python3'
     label 'smallTask'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2ensembl" }
-    else { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.id2ensembl" }
+    publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2ensembl"
 
     input: 
     path(annotation)

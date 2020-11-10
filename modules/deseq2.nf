@@ -4,8 +4,7 @@
 process deseq2 {
     label 'deseq2'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
-    else { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
+    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
 
     input:
     path(regionReport_config)

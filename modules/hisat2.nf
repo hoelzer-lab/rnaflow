@@ -22,8 +22,7 @@ process hisat2index {
 process hisat2 {
     label 'hisat2'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
-    else { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
+    publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam"
 
     input:
     tuple val(sample_name), path(reads)
@@ -52,8 +51,7 @@ process index_bam {
     label 'hisat2'
     label 'smallTask'    
     
-    if (params.cloudProcess) { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.bai" }
-    else { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.bai" }
+    publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.bai"
 
     input:
     tuple val(sample_name), path(bam_file)
