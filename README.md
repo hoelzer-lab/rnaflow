@@ -226,7 +226,7 @@ Currently implemented is `conda`. For transcriptome assembly some tools need to 
 
 ## Monitoring 
 
-<img align="right" width="320px" src="https://github.com/hoelzer-lab/rnaseq/blob/tower/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
+<img align="right" width="400px" src="https://github.com/hoelzer-lab/rnaseq/blob/tower/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
 
 To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need an user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address. "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!" 
 
