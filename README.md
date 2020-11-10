@@ -247,7 +247,7 @@ tower {
 } 
 ```
 
-You can also directly enter your access token here instead of generating the above environment variable. Every time you start the pipeline from know on, you can see details about the run and calculations in your Nextflow Tower dashboard. 
+You can also directly enter your access token here instead of generating the above environment variable. Every time you start the pipeline from now on, you can see details about the run and calculations in your Nextflow Tower dashboard. 
 
 
 <!-- ## Help message
