@@ -14,6 +14,9 @@
 ![flow-chart](figures/workflow.jpg)
 *Figure 1* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
 
+[[_TOC_]]
+
+
 ## Quick installation
 
 The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
@@ -222,6 +225,33 @@ You can customize `local` with this parameters:
 Currently implemented is `conda`. For transcriptome assembly some tools need to be run with `docker`.
 
 `docker` support for all steps is coming soon!
+
+## Monitoring 
+
+<img align="right" width="160px" src="https://github.com/hoelzer-lab/rnaseq/blob/master/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
+*Figure 2* Monitoring with Nextflow Tower.
+
+To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need a user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address. "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!" 
+
+Once logged in, click on your avatar on the top right corner and select "Your tokens". Generate a token or copy the default one and set the environment variable:
+
+```bash
+export TOWER_ACCESS_TOKEN=<YOUR_COPIED_TOKEN>
+```
+
+You can save this command to your `.bashrc` or `.profile` to not need to enter it again. 
+
+Now, activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:
+
+```java
+tower {
+    accessToken = ''
+    enabled = true
+} 
+```
+
+You can also directly enter your access token here instead of generating the above environment variable. 
+
 
 <!-- ## Help message
 ```
