@@ -5,7 +5,8 @@
 process featurecounts {
     label 'subread'
 
-    publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "*.tsv"
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.featurecounts_dir}", pattern: "*.tsv" }
+    else { publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "*.tsv" }
 
     input:
     tuple val(name), path(bam)

@@ -683,6 +683,7 @@ def helpMSG() {
     --permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
     --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
     --workdir                working directory for all intermediate results [default $params.workdir]
+    --softlink_results       softlink result files instead of copying
 
     Nextflow options:
     -with-report rep.html    cpu / ram usage (may cause errors)

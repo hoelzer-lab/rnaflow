@@ -5,7 +5,8 @@ process format_annotation {
     label 'python3'
     label 'smallTask'
 
-    publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2ensembl"
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.id2ensembl" }
+    else { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2ensembl" }
 
     input: 
     path(annotation)
@@ -41,7 +42,9 @@ process format_annotation {
 process format_annotation_gene_rows {
     label 'python3'
     label 'smallTask'
-    publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "${annotation.baseName}.gene.gtf"
+
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.gene.gtf" }
+    else { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.gene.gtf" }
 
     input: 
     path(annotation)

@@ -5,8 +5,9 @@
 ************************************************************************/
 process fastp {
     label 'fastp'
-    
-    publishDir "${params.output}/${params.fastp_dir}", mode: 'copy', pattern: "*.trimmed.fastq.gz"
+
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.fastp_dir}", pattern: "*.trimmed.fastq.gz" }
+    else { publishDir "${params.output}/${params.fastp_dir}", mode: 'copy', pattern: "*.trimmed.fastq.gz" }
 
     input:
     tuple val(name), path(reads)

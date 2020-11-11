@@ -5,7 +5,8 @@ process multiqc {
     label 'multiqc'
     label 'smallTask'
 
-    publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html'
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.multiqc_dir}", pattern: 'multiqc_report.html' }
+    else { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html' }
 
     input:
     path(config)

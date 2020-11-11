@@ -4,7 +4,8 @@
 process deseq2 {
     label 'deseq2'
 
-    publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*"
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
+    else { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
 
     input:
     path(regionReport_config)
