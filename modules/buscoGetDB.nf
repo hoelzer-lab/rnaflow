@@ -1,5 +1,5 @@
 process buscoGetDB {
-    label 'busco'
+    label 'basic_tools'
     label 'smallTask'
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}", mode: 'copy', pattern: "${params.busco_db}.tar.gz" }
