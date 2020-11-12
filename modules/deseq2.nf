@@ -4,6 +4,9 @@
 process deseq2 {
     label 'deseq2'
 
+    errorStrategy 'retry'
+    maxRetries 1
+
     if ( params.softlink_results ) { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
     else { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
 
