@@ -227,7 +227,7 @@ Currently implemented is `conda`. For transcriptome assembly some tools need to 
 
 <details><summary>click here to see the complete help message</summary>
 
-```bash
+```
 Usage example:
 nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
 or
@@ -301,7 +301,7 @@ Execution/Engine profiles:
   singularity [not supported yet]
 
 For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
-Per default: local,conda is executed. 
+Per default: local,conda is executed.
 
 We also provide some pre-configured profiles for certain HPC environments:    
   ara (slurm, conda and parameter customization)
