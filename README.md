@@ -12,7 +12,7 @@
 # RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
 
 ![flow-chart](figures/workflow.jpg)
-*Figure 1* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
+*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
 
 ## Quick installation
 
