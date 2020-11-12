@@ -223,6 +223,92 @@ Currently implemented is `conda`. For transcriptome assembly some tools need to 
 
 `docker` support for all steps is coming soon!
 
+## Help message
+
+<details><summary>click here to see the complete help message</summary>
+
+```bash
+Usage example:
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
+or
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
+or
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.
+
+Input:
+--reads                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
+                                    (check terminal output if correctly assigned)
+                                    In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
+--species                specifies the species identifier for downstream path analysis.
+                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default hsa]
+                                    Currently supported are:
+                                    - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
+                                    - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                    - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                    - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
+--genome                 CSV file with genome reference FASTA files (one path in each line)
+                                    If set, --annotation must also be set.
+--annotation             CSV file with genome annotation GTF files (one path in each line)
+--include_species        Use genome and annotation of supproted species in addition to --genome and --annotation [default false]
+
+Preprocessing options:
+--mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
+--skip_sortmerna         skip rRNA removal via SortMeRNA [default false] 
+--index                  the path to the hisat2 index prefix matching the genome provided via --species. 
+                         If provided, no new index will be build. Must be named 'index.*.ht2'.  
+                         Simply provide the path like 'data/db/index'. DEPRECATED
+
+DEG analysis options:
+--strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
+--tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
+                         if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default 1]
+--deg                    a CSV file following the pattern: conditionX,conditionY
+                         Each line stands for one differential gene expression comparison.    
+
+Transcriptome assembly options:
+--assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default false]
+--busco_db               the database used with BUSCO [default: euarchontoglires_odb9]
+                         full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
+--dammit_uniref90        add UniRef90 to the dammit databases  [default: false]
+
+Computing options:
+--cores                  max cores per process for local use [default 10]
+--max_cores              max cores used on the machine for local use [default 30]
+--memory                 max memory in GB for local use [default 8 GB]
+--output                 name of the result folder [default results]
+
+--permanentCacheDir      location for auto-download data like databases [default nextflow-autodownload-databases]
+--condaCacheDir          location for storing the conda environments [default conda]
+--workdir                working directory for all intermediate results [default /tmp/nextflow-work-ji57pog]
+--softlink_results       softlink result files instead of copying
+
+Nextflow options:
+-with-report rep.html    cpu / ram usage (may cause errors)
+-with-dag chart.html     generates a flowchart for the process tree
+-with-timeline time.html timeline (may cause errors)
+
+Execution/Engine profiles:
+ The pipeline supports profiles to run via different Executers and Engines e.g.:
+ -profile local,conda
+  Executer (choose one):
+  local
+  slurm
+  lsf
+  Engines (choose one):
+  conda
+  docker [not supported yet]
+  singularity [not supported yet]
+
+For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
+Per default: local,conda is executed. 
+
+We also provide some pre-configured profiles for certain HPC environments:    
+  ara (slurm, conda and parameter customization)
+```
+
+</details>
+
 <!-- ## Help message
 ```
 ``` -->
