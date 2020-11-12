@@ -78,7 +78,7 @@ For transcriptome assembly you have to install also [`Docker`](https://docs.dock
     </details>
 
 
-All other dependencies and tools will be installed within the pipeline via `conda`, `Docker` or `Singularity` depending on the profile you run (see below).
+All other dependencies and tools will be installed within the pipeline via `conda`, `Docker` or `Singularity` depending on the profile you run (see [below](#profiles/configuration-options)).
 
 ## Quick start
 
@@ -243,7 +243,7 @@ Nextflow will need access to the working directory where temporary calculations 
 
 ## Profiles/configuration options
 
-Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`. We also provide container support, see below. 
+Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`. We also provide container support, see [below](#engine-options...).
 
 ### Executor options...
 
@@ -273,9 +273,9 @@ nextflow run hoelzer-lab/rnaseq -profile test,local,docker
 nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
 ```
 
-As a __best practice__, we recommand to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+As a __best practice__, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
 
-You can customize where `conda` environments are sored using 
+You can customize where `conda` environments are stored using
 
 ```bash
 --condaCacheDir /path/to/dir
@@ -287,21 +287,24 @@ and where `Singularity` images are stored via
 --singularityCacheDir /path/to/dir
 ```
 
-`Docker` images are stored based on your system configuration. 
+`Docker` images are stored based on your system configuration.
 
-## Monitoring 
+## Monitoring
 
-<img align="right" width="400px" src="https://github.com/hoelzer-lab/rnaseq/blob/tower/figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
+<img align="right" width="400px" src="figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
 
-To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need an user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address. "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!" 
+To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need an user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address.
+
+> "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!"
 
 Once logged in, click on your avatar on the top right corner and select "Your tokens". Generate a token or copy the default one and set the environment variable:
 
 ```bash
 export TOWER_ACCESS_TOKEN=<YOUR_COPIED_TOKEN>
+export NXF_VER=20.10.0
 ```
 
-You can save this command to your `.bashrc` or `.profile` to not need to enter it again. 
+You can save this command to your `.bashrc` or `.profile` to not need to enter it again.
 
 Now run:
 
@@ -318,9 +321,7 @@ tower {
 } 
 ```
 
-You can also directly enter your access token here instead of generating the above environment variable. 
-
-
+You can also directly enter your access token here instead of generating the above environment variable.
 
 <!-- ## Help message
 ```
