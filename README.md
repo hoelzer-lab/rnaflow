@@ -23,6 +23,8 @@ The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), wh
 
     ```bash
     wget -qO- https://get.nextflow.io | bash
+    # In the case you don’t have wget
+    # curl -s https://get.nextflow.io | bash
     ```
 
     </details>
