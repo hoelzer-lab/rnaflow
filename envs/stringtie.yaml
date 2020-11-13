@@ -2,5 +2,5 @@ name: stringtie
 channels:
   - bioconda
 dependencies:
-  - stringtie=2.1.1
+  - stringtie=2.1.2
   - gffread=0.11.7
