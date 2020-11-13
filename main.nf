@@ -735,7 +735,9 @@ def helpMSG() {
       docker
       singularity
     
-    For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
+    For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
+    The command will create all conda environments and download and run test data.
+
     Per default: local,conda is executed. 
 
     We also provide some pre-configured profiles for certain HPC environments:    
