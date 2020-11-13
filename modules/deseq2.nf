@@ -40,7 +40,7 @@ process deseq2 {
         patients_in = patients.collect { "\"${it}\"" }.join(",")
     }
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients_in}) c("${species}") c("${regionReport_config}")' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients_in}) c("${species}") c("${regionReport_config}") c(${task.cpus})' ${script}
     """
 }
 /*

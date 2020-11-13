@@ -180,7 +180,7 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, sa
           height = 12, width = 8, file = file)
   }
 
-piano <- function(out.dir, resFold, mapGO) {
+piano <- function(out.dir, resFold, mapGO, cpus) {
   mapGO <- mapGO[mapGO[,2]!="",]
   write.table.to.file(mapGO, out.dir, "ENSG_GOterm", row.names = FALSE)
 
@@ -191,7 +191,6 @@ piano <- function(out.dir, resFold, mapGO) {
   myFC <- resFold$log2FoldChange
   names(myFC) <- rownames(resFold)
 
-  cpus <- 20
   gene.set.min <- 20
   gene.set.max <- 'inf' # 9999999999999
   gsaRes1 <- runGSA(myFC, geneSetStat="maxmean", gsc=myGsc,
@@ -299,6 +298,7 @@ patients <- eval( parse(text=args[9]) )
 species <- eval( parse(text=args[10]) )
 regionReport_config  <- eval( parse(text=args[11]) )[1]
 regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
+cpus <- eval( parse(text=args[12]) )
 #go.terms <- c()
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
@@ -661,7 +661,7 @@ for (comparison in comparisons) {
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
-    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene)
+    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
   }
 
   #####################
@@ -669,7 +669,7 @@ for (comparison in comparisons) {
   if ( species == 'hsa' ){
     organism <- "hsapiens"
   } else if (species == 'mmu') {
-     organism <- "mmusculus"
+    organism <- "mmusculus"
   } else {
     organism <- NA
   }
