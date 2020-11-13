@@ -24,6 +24,14 @@ println "Launchdir location:"
 println "  $workflow.launchDir"
 println "Permanent cache directory:"
 println "  $params.permanentCacheDir"
+if ( workflow.profile.contains('singularity') ) {
+    println "Singularity cache directory:"
+    println "  $params.singularityCacheDir"
+}
+if ( workflow.profile.contains('conda') ) { 
+    println "Conda cache directory:"
+    println "  $params.condaCacheDir"
+}
 println "Configuration files:"
 println "  $workflow.configFiles"
 println "Cmd line:"
@@ -46,6 +54,11 @@ if ( folder.exists() ) {
     println "\033[0;33mWARNING: Output folder already exists. Results might be overwritten! You can adjust the output folder via [--output]\033[0m\n"
 }
 
+if ( workflow.profile.contains('singularity') ) {
+    println ""
+    println "\033[0;33mWARNING: Singularity image building sometimes fails!"
+    println "Multiple resumes (-resume) and --max_cores 1 --cores 1 for local execution might help.\033[0m\n"
+}
 
 if (params.assembly) {
     println "\u001B[32mPerform assembly (de novo and reference-based) instead of gene expression analysis."

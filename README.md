@@ -77,6 +77,7 @@ For transcriptome assembly you have to install also [`Docker`](https://docs.dock
 
     </details>
 
+A system admin-configured `Singularity` installation should be preferred in comparison to an own local conda installation. Please ask your sys admin!
 
 All other dependencies and tools will be installed within the pipeline via `conda`, `Docker` or `Singularity` depending on the profile you run (see [below](#profiles/configuration-options)).
 
@@ -273,7 +274,7 @@ nextflow run hoelzer-lab/rnaseq -profile test,local,docker
 nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
 ```
 
-As a __best practice__, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
 
 You can customize where `conda` environments are stored using
 
