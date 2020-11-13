@@ -225,6 +225,68 @@ Currently implemented is `conda`. For transcriptome assembly some tools need to 
 
 `docker` support for all steps is coming soon!
 
+## Output
+
+The result folder is structured by each step and tool (`results/step/tool`) as follows:
+
+```
+results/
+├── 01-Trimming
+│   └── fastp                   trimmed reads
+├── 02-rRNARemoval
+│   └── SortMeRNA               rRNA-free (and trimmed) reads
+├── 03-Mapping
+│   └── HISAT2                  mapping results in BAM format with index files (BAI)
+├── 04-Counting
+│   └── featureCounts           counting table
+├── 05-CountingFilter
+│   └── TPM                     counting table with additional TPM value; formatted counting table filtered by TPM
+├── 06-Annotation               filtered annotation; gene id, name and type mapping
+├── 07-DifferentialExpression
+│   └── DESeq2                  see below
+├── 08-Assembly
+│   └── de_novo
+│      └── Trinity              Trinity assembly  (with --assembly)
+├── 09-RNA-Seq_Annotation       BUSCO and dammit results (with --assembly)
+├── Logs                        Nextflow execution timeline and workflow report
+└── Summary                     MultiQC report
+```
+
+Please note, that `08-Assembly` and `09-RNA-Seq_Annotation` are part of the transcriptome assembly branch (`--assembly`). Here, steps `04` to `07` are not applicable.
+
+### DESeq2 results
+
+The `DESeq2` result is structured as follows:
+
+```
+07-DifferentialExpression/
+└── DESeq2
+   ├── data                         
+   │   ├── counts                   normalized, transformed counts; size factors table
+   │   └── input                    DESeq2 input summary
+   ├── deseq2.Rout                  R log file
+   ├── MAQCA_vs_MAQCB               results for pairwise comparison
+   │   ├── downstream_analysis  
+   │   │   ├── piano                piano results
+   │   │   └── WebGestalt           WebGestalt results
+   │   ├── input                    DESeq2 input summary
+   │   ├── plots
+   │   │   ├── heatmaps
+   │   │   ├── MA
+   │   │   ├── PCA
+   │   │   ├── sample2sample
+   │   │   └── volcano
+   │   ├── reports                  DESeq2 result HTML table; summary report
+   │   └── results                  raw and filtered DESeq2 result in CSV and XLSX format; DEG analysis summary
+   └── plots                        heatmaps and PCA of all samples
+```
+
+We provide `DESeq2` normalized, regularized log (rlog), variance stabilizing (vsd) and log2(n+1) (ntd) transformed count tables (`DESeq2/data/counts`).
+
+For each comparison (specified with `--deg` or per default all possible in one direction) a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
+
+Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA *Homo sapiens* and *Mus musculus*.
+
 ## Help message
 
 <details><summary>click here to see the complete help message</summary>
