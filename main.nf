@@ -732,8 +732,8 @@ def helpMSG() {
       lsf
       ${c_blue}Engines${c_reset} (choose one):
       conda
-      docker [not supported yet]
-      singularity [not supported yet]
+      docker
+      singularity
     
     For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
     Per default: local,conda is executed. 
