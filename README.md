@@ -12,7 +12,7 @@
 # RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
 
 ![flow-chart](figures/workflow.jpg)
-*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the tools.
+*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the used tools and please consider to cite them as well.
 
 ## Quick installation
 
@@ -241,7 +241,7 @@ results/
 │   └── featureCounts           counting table
 ├── 05-CountingFilter
 │   └── TPM                     counting table with additional TPM value; formatted counting table filtered by TPM
-├── 06-Annotation               filtered annotation; gene id, name and type mapping
+├── 06-Annotation               filtered annotation; gene id, name and bio type mapping
 ├── 07-DifferentialExpression
 │   └── DESeq2                  see below
 ├── 08-Assembly
@@ -252,7 +252,7 @@ results/
 └── Summary                     MultiQC report
 ```
 
-Please note, that `08-Assembly` and `09-RNA-Seq_Annotation` are part of the transcriptome assembly branch (`--assembly`). Here, steps `04` to `07` are not applicable.
+Please note, that `08-Assembly` and `09-RNA-Seq_Annotation` are part of the transcriptome assembly branch (`--assembly`). Here, steps `04` to `07` are currently not applicable.
 
 ### DESeq2 results
 
@@ -265,7 +265,7 @@ The `DESeq2` result is structured as follows:
    │   ├── counts                   normalized, transformed counts; size factors table
    │   └── input                    DESeq2 input summary
    ├── deseq2.Rout                  R log file
-   ├── MAQCA_vs_MAQCB               results for pairwise comparison
+   ├── MAQCA_vs_MAQCB               results for pairwise comparison (here exemplarily for the -profile test data set)
    │   ├── downstream_analysis  
    │   │   ├── piano                piano results
    │   │   └── WebGestalt           WebGestalt results
@@ -281,11 +281,11 @@ The `DESeq2` result is structured as follows:
    └── plots                        heatmaps and PCA of all samples
 ```
 
-We provide `DESeq2` normalized, regularized log (rlog), variance stabilizing (vsd) and log2(n+1) (ntd) transformed count tables (`DESeq2/data/counts`).
+We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd) and log2(n+1) (ntd) transformed count tables (`DESeq2/data/counts`).
 
-For each comparison (specified with `--deg` or per default all possible in one direction) a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
+For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
 
-Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA *Homo sapiens* and *Mus musculus*.
+Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
 
 ## Help message
 
@@ -372,6 +372,13 @@ We also provide some pre-configured profiles for certain HPC environments:
 ```
 
 </details>
+
+## Citation 
+
+If you use RNAflow please cite: 
+
+* [RNAflow](https://hoelzer-lab.github.io/publications)
+> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". JOURNAL. 2020. 
 
 <!-- ## Help message
 ```
