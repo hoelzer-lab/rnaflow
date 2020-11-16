@@ -14,6 +14,34 @@
 ![flow-chart](figures/workflow.jpg)
 *Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the used tools and please consider to cite them as well.
 
+<details><summary><b>Table of Contents</b></summary>
+
+- [RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow](#rnexta-seq---an-effective-and-simple-rna-seq-differential-gene-expression-pipeline-using-nextflow)
+  - [Quick installation](#quick-installation)
+  - [Quick start](#quick-start)
+    - [Start a test run](#start-a-test-run)
+    - [Call help](#call-help)
+  - [Usage](#usage)
+    - [Input files](#input-files)
+      - [Read files (required)](#read-files-required)
+      - [Genomes and annotation](#genomes-and-annotation)
+      - [Build-in species](#build-in-species)
+      - [Comparisons for DEG analysis](#comparisons-for-deg-analysis)
+  - [Workflow control](#workflow-control)
+    - [Preprocessing](#preprocessing)
+    - [DEG analysis](#deg-analysis)
+    - [Transcriptome assembly](#transcriptome-assembly)
+  - [Profiles/configuration options](#profilesconfiguration-options)
+    - [Executor options...](#executor-options)
+    - [Engine options...](#engine-options)
+  - [Output](#output)
+    - [DESeq2 results](#deseq2-results)
+  - [Working offline](#working-offline)
+  - [Help message](#help-message)
+  - [Citation](#citation)
+
+</details>
+
 ## Quick installation
 
 The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
