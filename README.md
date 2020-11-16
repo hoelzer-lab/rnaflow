@@ -247,7 +247,7 @@ results/
 ├── 08-Assembly
 │   └── de_novo
 │      └── Trinity              Trinity assembly  (with --assembly)
-├── 09-RNA-Seq_Annotation       BUSCO and dammit results (with --assembly)
+├── 09-RNA-Seq_Annotation       BUSCO, dammit and StringTie2 results (with --assembly)
 ├── Logs                        Nextflow execution timeline and workflow report
 └── Summary                     MultiQC report
 ```
@@ -286,6 +286,33 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
 
 Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+
+## Working offline
+
+In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaseq/issues/102) for manual download and copying of external recourses:
+
+- Genomes and annotation can also be specified via `--genome` and `--annotaion`, see [here](#genomes-and-annotation).
+- For `BUSCO` it is a simple download, see [here](modules/buscoGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` as default.
+- For `SortMeRNA` and `dammit` the tools must be installed. Version specifications can be found [here](envs/sortmerna.yaml) and [there](envs/dammit.yaml), the code to create the databases [here](modules/sortmernaGet.nf) and [there](modules/dammitGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` `dammit_uniref90 = false` as default.
+- Downstream analysis with `piano` and `WebGestalt` currently need an internet connection in any case. If no connection is available `piano` and `WebGestalt` are skipped.
+
+<details><summary>RNAflow looks up the files here:</summary>
+
+```
+nextflow-autodownload-databases     # default: `permanentCacheDir = 'nextflow-autodownload-databases'`
+└── databases
+    └── busco
+        └── <busco_db>.tar.gz
+    └── dammit
+        └── <busco_db>.tar.gz
+        └── uniref90                # in case of `dammit_uniref90 = true`
+            └── <busco_db>.tar.gz
+    └── sortmerna
+        └── data
+            └── rRNA_databases
+```
+
+</details>
 
 ## Help message
 
