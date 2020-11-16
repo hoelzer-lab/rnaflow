@@ -1,3 +1,4 @@
+![logo](figures/logo.png)
 
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
