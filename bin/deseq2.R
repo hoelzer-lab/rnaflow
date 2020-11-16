@@ -159,7 +159,7 @@ plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, sa
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
   selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
 
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "_row-scaled.pdf"), sep="/")
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
           scale = "row", border_color = NA,
           labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
@@ -168,10 +168,10 @@ plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, sa
           height = 12, width = 8, file = file)
 }
 
-plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
+plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
   selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
   
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC_row-scaled.pdf"), sep="/")
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
           scale = "row", border_color = NA, 
           labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
@@ -633,6 +633,8 @@ for (comparison in comparisons) {
   for (i in 1:length(transformed.counts.sub)) {
     for (ntop in c(50, 100)){
       plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+      plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold05, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-05')
+      plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold01, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-01')
     }
   }
 
