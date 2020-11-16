@@ -294,7 +294,7 @@ levels <- eval( parse(text=args[5]) )
 comparisons <- eval( parse(text=args[6]) )
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
-patients <- eval( parse(text=args[9]) )
+sources <- eval( parse(text=args[9]) )
 species <- eval( parse(text=args[10]) )
 regionReport_config  <- eval( parse(text=args[11]) )[1]
 regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
@@ -326,9 +326,9 @@ dir.create(file.path(out, 'data/counts'), showWarnings = FALSE, recursive = TRUE
 
 #####################
 ## Create input object
-if (length(patients) > 0) {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design = paste(patients, conditions, sep = ':'))
-    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
+if (length(sources) > 0) {
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, sources = sources, design = paste(sources, conditions, sep = ':'))
+    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ sources + condition)
 } else {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design = conditions)
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
@@ -347,8 +347,8 @@ dds <- DESeq(ddsHTSeq)
 ##########################################
 
 ## raw input
-if (length(patients) > 0) {
-  df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions, patients = patients)
+if (length(sources) > 0) {
+  df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions, sources = sources)
 } else {
   df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions)
 }

@@ -108,7 +108,7 @@ By default, all possible comparisons are performed. Use `--deg` to change this.
 Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads:
 
 ```csv
-Sample,R,Condition,Patient
+Sample,R,Condition,Source
 mock_rep1,/path/to/reads/mock1.fastq.gz,mock,
 mock_rep2,/path/to/reads/mock2.fastq.gz,mock,
 mock_rep3,/path/to/reads/mock3.fastq.gz,mock,
@@ -120,7 +120,7 @@ treated_rep3,/path/to/reads/treat3.fastq.gz,treated,
 and for paired-end reads, like this:
 
 ```csv
-Sample,R1,R2,Condition,Patient
+Sample,R1,R2,Condition,Source
 mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A
 mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B
 mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C
@@ -129,7 +129,7 @@ treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated
 treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
 ```
 
-Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Patient labels are optional and can be used to connect samples belonging to the same patient (or animal, origin, ...) for improved differential expression testing.
+Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional and can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation.
 
 #### Genomes and annotation
 
@@ -328,7 +328,7 @@ nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus
 Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.
 
 Input:
---reads                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
+--reads                  a CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
                                     (check terminal output if correctly assigned)
                                     In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
 --species                specifies the species identifier for downstream path analysis.

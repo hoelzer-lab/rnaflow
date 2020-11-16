@@ -18,7 +18,7 @@ process deseq2 {
     val(comparisons)
     path(ensembl2id)
     path(annotation_genes)
-    val(patients)
+    val(sources)
     val(species)
     path(script)
     path(script_refactor_reportingtools_table)
@@ -33,14 +33,14 @@ process deseq2 {
     col_labels_in = col_labels.collect { "\"${it}\"" }.join(",")
     conditions = condition.collect { "\"${it}\"" }.join(",")
     levels = condition.collect { "\"${it}\"" }.toSet().join(",")
-    if ( patients.toSet().size() == 1 && ! patients.toSet()[0] ) {
-        // patients is a list with empty emlements ([, , , ])
-        patients_in = ''
+    if ( sources.toSet().size() == 1 && ! sources.toSet()[0] ) {
+        // sources is a list with empty emlements ([, , , ])
+        sources_in = ''
     } else {
-        patients_in = patients.collect { "\"${it}\"" }.join(",")
+        sources_in = sources.collect { "\"${it}\"" }.join(",")
     }
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${patients_in}) c("${species}") c("${regionReport_config}") c(${task.cpus})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${sources_in}) c("${species}") c("${regionReport_config}") c(${task.cpus})' ${script}
     """
 }
 /*
@@ -53,5 +53,5 @@ levels <- c("mock","treated")
 comparisons <- c("mock:treated")
 ensembl2genes <- "${ensembl2id}"
 species <- "${params.}"
-patients <- c()
+sources <- c()
 */

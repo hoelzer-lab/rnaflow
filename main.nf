@@ -84,12 +84,12 @@ if (params.reads) {
             def sample = row['Sample']
             def read = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true)
             def condition = row['Condition']
-            def patient = row['Patient']
-            return [ sample, read, condition, patient ]
+            def source = row['Source']
+            return [ sample, read, condition, source ]
         }
         .tap { annotated_reads }
         .tap { illumina_input_ch }
-        .map { sample, read, condition, patient ->
+        .map { sample, read, condition, source ->
             return [ sample, [ read ] ] }
         .set { illumina_input_ch }
 
@@ -102,12 +102,12 @@ if (params.reads) {
             def read1 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
             def read2 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2'], checkIfExists: true)
             def condition = row['Condition']
-            def patient = row['Patient']
-            return [ sample, read1, read2, condition, patient ]
+            def source = row['Source']
+            return [ sample, read1, read2, condition, source ]
         }
         .tap { annotated_reads }
         .tap { illumina_input_ch }
-        .map { sample, read1, read2, condition, patient ->
+        .map { sample, read1, read2, condition, source ->
             return [ sample, [ read1, read2 ] ] }
         .set { illumina_input_ch }
     }
@@ -478,7 +478,7 @@ workflow expression_reference_based {
             .multiMap{ it ->
                 col_label: it[0]
                 condition: it[1]
-                patient: it[2]
+                source: it[2]
             }
             .set { annotated_sample }
         
@@ -491,7 +491,7 @@ workflow expression_reference_based {
         // run DEseq2
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
             annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
-            annotated_sample.patient.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
+            annotated_sample.source.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
             deseq2_script_improve_deseq_table)
 
         // run MultiQC
@@ -639,7 +639,7 @@ def helpMSG() {
     ${c_dim}Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
-    ${c_green}--reads${c_reset}                  a CSV file following the pattern: Sample,R,Condition,Patient for single-end or Sample,R1,R2,Condition,Patient for paired-end
+    ${c_green}--reads${c_reset}                  a CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
                                         In default all possible comparisons of conditions in one direction are made. Use --deg to change this.${c_reset}
     ${c_green}--species${c_reset}                specifies the species identifier for downstream path analysis.
