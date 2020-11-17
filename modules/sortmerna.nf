@@ -5,12 +5,9 @@
 ************************************************************************/
 process sortmerna {
     label 'sortmerna'
-    
-    if (params.cloudProcess) {
-        publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq.gz" }
-    else {
-        publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.other.fastq.gz"
-    }
+
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.other.fastq.gz" }
+    else { publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq.gz" }
 
     input:
     tuple val(name), path(reads)

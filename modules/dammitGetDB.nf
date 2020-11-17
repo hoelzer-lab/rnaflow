@@ -1,5 +1,5 @@
 process dammitGetDB {
-    label 'dammitDB'
+    label 'dammit'
     label 'smallTask'
 
     errorStrategy 'retry'

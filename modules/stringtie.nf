@@ -1,8 +1,15 @@
 process stringtie {
     label 'stringtie'  
-    publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.gtf"
-    //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
-    publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_gene_abundance.txt"
+
+    if ( params.softlink_results ) {
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${sample_name}_stringtie.gtf"
+      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${sample_name}_stringtie.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${sample_name}_gene_abundance.txt"
+    } else {
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.gtf"
+      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_gene_abundance.txt"
+    }
 
   input:
     path genome
@@ -26,8 +33,13 @@ process stringtie_merge {
 
     errorStrategy { task.exitStatus = 1 ? 'ignore' :  'terminate' }
 
-    publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.gtf"
-    publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.fna"
+    if ( params.softlink_results ) { 
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", pattern: "${mode}.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", pattern: "${mode}.fna"
+    } else {
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/${mode}", mode: 'copy', pattern: "${mode}.fna"
+    }
 
   input:
     path(genome)

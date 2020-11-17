@@ -5,8 +5,8 @@
 process featurecounts {
     label 'subread'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "*.tsv" }
-    else { publishDir "${params.output}/${params.featurecounts_dir}", pattern: "*.tsv" }
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.featurecounts_dir}", pattern: "*.tsv" }
+    else { publishDir "${params.output}/${params.featurecounts_dir}", mode: 'copy', pattern: "*.tsv" }
 
     input:
     tuple val(name), path(bam)

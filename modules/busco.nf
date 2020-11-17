@@ -1,8 +1,15 @@
 process busco {
     label 'busco'
-    
+
+    if ( params.softlink_results ) {
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", pattern: "busco_${tool}_summary.txt"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", pattern: "busco_${tool}_figure.pdf"
+    } else {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", mode: 'copy', pattern: "busco_${tool}_summary.txt"
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/busco", mode: 'copy', pattern: "busco_${tool}_figure.pdf"
+    }
+
+
     input:
       path fasta
       path database

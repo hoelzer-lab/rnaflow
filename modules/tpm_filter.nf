@@ -5,12 +5,12 @@ process tpm_filter {
     label 'python3'
     label 'smallTask'
 
-    if (params.cloudProcess) { 
+    if ( params.softlink_results ) { 
+        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv"
+        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.tpm.tsv"
+    } else {
         publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.filtered.formated.tsv"
         publishDir "${params.output}/${params.tpm_filter_dir}", mode: 'copy', pattern: "**.counts.tpm.tsv"
-    } else { 
-        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv" 
-        publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.tpm.tsv"
     }
 
     input:

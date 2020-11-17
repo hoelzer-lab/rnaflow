@@ -142,11 +142,24 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
     ggsave(paste(out.dir, paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), sep="/"))
 }
 
+plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
+  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
+  selected.ensembl.ids <- row.names(trsf_data[select,])
+
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
+  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+        scale = "row", border_color = NA,
+        labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
+        annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
+        labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
+        height = 12, width = 8, file = file)
+}
+
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
   selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
 
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "_row-scaled.pdf"), sep="/")
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
           scale = "row", border_color = NA,
           labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
@@ -155,10 +168,10 @@ plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, sa
           height = 12, width = 8, file = file)
 }
 
-plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
+plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
   selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
   
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC_row-scaled.pdf"), sep="/")
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
           scale = "row", border_color = NA, 
           labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
@@ -167,7 +180,7 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, sa
           height = 12, width = 8, file = file)
   }
 
-piano <- function(out.dir, resFold, mapGO) {
+piano <- function(out.dir, resFold, mapGO, cpus) {
   mapGO <- mapGO[mapGO[,2]!="",]
   write.table.to.file(mapGO, out.dir, "ENSG_GOterm", row.names = FALSE)
 
@@ -178,7 +191,6 @@ piano <- function(out.dir, resFold, mapGO) {
   myFC <- resFold$log2FoldChange
   names(myFC) <- rownames(resFold)
 
-  cpus <- 20
   gene.set.min <- 20
   gene.set.max <- 'inf' # 9999999999999
   gsaRes1 <- runGSA(myFC, geneSetStat="maxmean", gsc=myGsc,
@@ -282,10 +294,11 @@ levels <- eval( parse(text=args[5]) )
 comparisons <- eval( parse(text=args[6]) )
 ensembl2genes <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
-patients <- eval( parse(text=args[9]) )
+sources <- eval( parse(text=args[9]) )
 species <- eval( parse(text=args[10]) )
 regionReport_config  <- eval( parse(text=args[11]) )[1]
 regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
+cpus <- eval( parse(text=args[12]) )
 #go.terms <- c()
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
@@ -313,9 +326,9 @@ dir.create(file.path(out, 'data/counts'), showWarnings = FALSE, recursive = TRUE
 
 #####################
 ## Create input object
-if (length(patients) > 0) {
-    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, patients = patients, design = paste(patients, conditions, sep = ':'))
-    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ patients + condition)
+if (length(sources) > 0) {
+    sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, sources = sources, design = paste(sources, conditions, sep = ':'))
+    ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ sources + condition)
 } else {
     sampleTable <- data.frame(sampleName = samples, fileName = samples, condition = conditions, type = col.labels, design = conditions)
     ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, design= ~ condition)
@@ -334,8 +347,8 @@ dds <- DESeq(ddsHTSeq)
 ##########################################
 
 ## raw input
-if (length(patients) > 0) {
-  df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions, patients = patients)
+if (length(sources) > 0) {
+  df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions, sources = sources)
 } else {
   df.samples.info <- data.frame(samples = samples, columns = col.labels, conditions = conditions)
 }
@@ -411,6 +424,14 @@ for (i in 1:length(transformed.counts)) {
 for (i in 1:length(transformed.counts)) { 
   for (ntop in c(50, 100)){
     plot.heatmap.top_counts(paste(out, "plots/heatmaps/", sep="/"), dds, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
+  }
+}
+
+#####################
+## Heatmaps on counts, most variable transformed genes
+for (i in 1:length(transformed.counts)) { 
+  for (ntop in c(50, 100)){
+    plot.heatmap.most_var(paste(out, "plots/heatmaps/", sep="/"), dds, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
   }
 }
 
@@ -592,6 +613,14 @@ for (comparison in comparisons) {
   }
 
   #####################
+  ## Heatmaps on counts, most variable transformed genes
+  for (i in 1:length(transformed.counts.sub)) { 
+    for (ntop in c(50, 100)){
+      plot.heatmap.most_var(paste(out.sub, "plots/heatmaps/", sep="/"), dds.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+    }
+  }
+
+  #####################
   ## Heatmaps on counts, top count genes
   for (i in 1:length(transformed.counts.sub)) { 
     for (ntop in c(50, 100)){
@@ -604,6 +633,8 @@ for (comparison in comparisons) {
   for (i in 1:length(transformed.counts.sub)) {
     for (ntop in c(50, 100)){
       plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+      plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold05, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-05')
+      plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold01, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-01')
     }
   }
 
@@ -632,7 +663,7 @@ for (comparison in comparisons) {
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
-    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene)
+    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
   }
 
   #####################
@@ -640,7 +671,7 @@ for (comparison in comparisons) {
   if ( species == 'hsa' ){
     organism <- "hsapiens"
   } else if (species == 'mmu') {
-     organism <- "mmusculus"
+    organism <- "mmusculus"
   } else {
     organism <- NA
   }

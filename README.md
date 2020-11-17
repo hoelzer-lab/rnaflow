@@ -1,3 +1,4 @@
+![logo](figures/logo.png)
 
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
@@ -9,10 +10,41 @@
 
 <!--[![Generic badge](https://img.shields.io/badge/Publication-bioRxiv-red.svg)](https://www.)-->
 
-# RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow
+# RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow<!-- omit in toc -->
 
 ![flow-chart](figures/workflow.jpg)
-*Figure 1* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species.
+*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the used tools and please consider to cite them as well.
+
+<details><summary><b>Table of Contents</b></summary>
+
+- [Quick installation](#quick-installation)
+- [Quick start](#quick-start)
+  - [Start a test run](#start-a-test-run)
+  - [Call help](#call-help)
+  - [Update the pipeline](#update-the-pipeline)
+  - [Use a certain release](#use-a-certain-release)
+- [Usage](#usage)
+  - [Input files](#input-files)
+    - [Read files (required)](#read-files-required)
+    - [Genomes and annotation](#genomes-and-annotation)
+    - [Build-in species](#build-in-species)
+    - [Comparisons for DEG analysis](#comparisons-for-deg-analysis)
+  - [Resume your run](#resume-your-run)
+- [Workflow control](#workflow-control)
+  - [Preprocessing](#preprocessing)
+  - [DEG analysis](#deg-analysis)
+  - [Transcriptome assembly](#transcriptome-assembly)
+- [Profiles/configuration options](#profilesconfiguration-options)
+  - [Executor options...](#executor-options)
+  - [Engine options...](#engine-options)
+- [Monitoring](#monitoring)
+- [Output](#output)
+  - [DESeq2 results](#deseq2-results)
+- [Working offline](#working-offline)
+- [Help message](#help-message)
+- [Citation](#citation)
+
+</details>
 
 
 ## Quick installation
@@ -24,6 +56,8 @@ The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), wh
 
     ```bash
     wget -qO- https://get.nextflow.io | bash
+    # In the case you don’t have wget
+    # curl -s https://get.nextflow.io | bash
     ```
 
     </details>
@@ -141,7 +175,7 @@ By default, all possible comparisons are performed. Use `--deg` to change this.
 Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads:
 
 ```csv
-Sample,R,Condition,Patient
+Sample,R,Condition,Source
 mock_rep1,/path/to/reads/mock1.fastq.gz,mock,
 mock_rep2,/path/to/reads/mock2.fastq.gz,mock,
 mock_rep3,/path/to/reads/mock3.fastq.gz,mock,
@@ -153,7 +187,7 @@ treated_rep3,/path/to/reads/treat3.fastq.gz,treated,
 and for paired-end reads, like this:
 
 ```csv
-Sample,R1,R2,Condition,Patient
+Sample,R1,R2,Condition,Source
 mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A
 mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B
 mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C
@@ -162,7 +196,7 @@ treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated
 treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
 ```
 
-Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Patient labels are optional and can be used to connect samples belonging to the same patient (or animal, origin, ...) for improved differential expression testing.
+Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional and can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation.
 
 #### Genomes and annotation
 
@@ -323,6 +357,192 @@ tower {
 ```
 
 You can also directly enter your access token here instead of generating the above environment variable.
+
+## Output
+
+The result folder is structured by each step and tool (`results/step/tool`) as follows:
+
+```
+results/
+├── 01-Trimming
+│   └── fastp                   trimmed reads
+├── 02-rRNARemoval
+│   └── SortMeRNA               rRNA-free (and trimmed) reads
+├── 03-Mapping
+│   └── HISAT2                  mapping results in BAM format with index files (BAI)
+├── 04-Counting
+│   └── featureCounts           counting table
+├── 05-CountingFilter
+│   └── TPM                     counting table with additional TPM value; formatted counting table filtered by TPM
+├── 06-Annotation               filtered annotation; gene id, name and bio type mapping
+├── 07-DifferentialExpression
+│   └── DESeq2                  see below
+├── 08-Assembly
+│   └── de_novo
+│      └── Trinity              Trinity assembly  (with --assembly)
+├── 09-RNA-Seq_Annotation       BUSCO, dammit and StringTie2 results (with --assembly)
+├── Logs                        Nextflow execution timeline and workflow report
+└── Summary                     MultiQC report
+```
+
+Please note, that `08-Assembly` and `09-RNA-Seq_Annotation` are part of the transcriptome assembly branch (`--assembly`). Here, steps `04` to `07` are currently not applicable.
+
+### DESeq2 results
+
+The `DESeq2` result is structured as follows:
+
+```
+07-DifferentialExpression/
+└── DESeq2
+   ├── data                         
+   │   ├── counts                   normalized, transformed counts; size factors table
+   │   └── input                    DESeq2 input summary
+   ├── deseq2.Rout                  R log file
+   ├── MAQCA_vs_MAQCB               results for pairwise comparison (here exemplarily for the -profile test data set)
+   │   ├── downstream_analysis  
+   │   │   ├── piano                piano results
+   │   │   └── WebGestalt           WebGestalt results
+   │   ├── input                    DESeq2 input summary
+   │   ├── plots
+   │   │   ├── heatmaps
+   │   │   ├── MA
+   │   │   ├── PCA
+   │   │   ├── sample2sample
+   │   │   └── volcano
+   │   ├── reports                  DESeq2 result HTML table; summary report
+   │   └── results                  raw and filtered DESeq2 result in CSV and XLSX format; DEG analysis summary
+   └── plots                        heatmaps and PCA of all samples
+```
+
+We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd) and log2(n+1) (ntd) transformed count tables (`DESeq2/data/counts`).
+
+For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
+
+Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+
+## Working offline
+
+In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaseq/issues/102) for manual download and copying of external recourses:
+
+- Genomes and annotation can also be specified via `--genome` and `--annotaion`, see [here](#genomes-and-annotation).
+- For `BUSCO` it is a simple download, see [here](modules/buscoGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` as default.
+- For `SortMeRNA` and `dammit` the tools must be installed. Version specifications can be found [here](envs/sortmerna.yaml) and [there](envs/dammit.yaml), the code to create the databases [here](modules/sortmernaGet.nf) and [there](modules/dammitGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` `dammit_uniref90 = false` as default.
+- Downstream analysis with `piano` and `WebGestalt` currently need an internet connection in any case. If no connection is available `piano` and `WebGestalt` are skipped.
+
+<details><summary>RNAflow looks up the files here:</summary>
+
+```
+nextflow-autodownload-databases     # default: `permanentCacheDir = 'nextflow-autodownload-databases'`
+└── databases
+    └── busco
+        └── <busco_db>.tar.gz
+    └── dammit
+        └── <busco_db>.tar.gz
+        └── uniref90                # in case of `dammit_uniref90 = true`
+            └── <busco_db>.tar.gz
+    └── sortmerna
+        └── data
+            └── rRNA_databases
+```
+
+</details>
+
+## Help message
+
+<details><summary>click here to see the complete help message</summary>
+
+```
+Usage example:
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
+or
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
+or
+nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.
+
+Input:
+--reads                  a CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+                                    (check terminal output if correctly assigned)
+                                    In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
+--species                specifies the species identifier for downstream path analysis.
+                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default ]
+                                    Currently supported are:
+                                    - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
+                                    - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                    - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                    - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
+--genome                 CSV file with genome reference FASTA files (one path in each line)
+                                    If set, --annotation must also be set.
+--annotation             CSV file with genome annotation GTF files (one path in each line)
+--include_species        Use genome and annotation of supproted species in addition to --genome and --annotation [default true]
+
+Preprocessing options:
+--mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
+--skip_sortmerna         skip rRNA removal via SortMeRNA [default false] 
+--index                  the path to the hisat2 index prefix matching the genome provided via --species. 
+                         If provided, no new index will be build. Must be named 'index.*.ht2'.  
+                         Simply provide the path like 'data/db/index'. DEPRECATED
+
+DEG analysis options:
+--strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
+--tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
+                         if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default 1]
+--deg                    a CSV file following the pattern: conditionX,conditionY
+                         Each line stands for one differential gene expression comparison.    
+
+Transcriptome assembly options:
+--assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default false]
+--busco_db               the database used with BUSCO [default: euarchontoglires_odb9]
+                         full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
+--dammit_uniref90        add UniRef90 to the dammit databases  [default: false]
+
+Computing options:
+--cores                  max cores per process for local use [default 1]
+--max_cores              max cores used on the machine for local use [default Runtime.runtime.availableProcessors()]
+--memory                 max memory in GB for local use [default 8 GB]
+--output                 name of the result folder [default results]
+
+--permanentCacheDir      location for auto-download data like databases [default nextflow-autodownload-databases]
+--condaCacheDir          location for storing the conda environments [default conda]
+--singularityCacheDir    location for storing the singularity images [default singularity]
+--workdir                working directory for all intermediate results [default /tmp/nextflow-work-marie]
+--softlink_results       softlink result files instead of copying
+
+Nextflow options:
+-with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
+-with-report rep.html    cpu / ram usage (may cause errors)
+-with-dag chart.html     generates a flowchart for the process tree
+-with-timeline time.html timeline (may cause errors)
+
+Execution/Engine profiles:
+ The pipeline supports profiles to run via different Executers and Engines e.g.:
+ -profile local,conda
+  Executer (choose one):
+  local
+  slurm
+  lsf
+  Engines (choose one):
+  conda
+  docker
+  singularity
+
+For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
+The command will create all conda environments and download and run test data.
+
+Per default: local,conda is executed. 
+
+We also provide some pre-configured profiles for certain HPC environments:    
+  ara (slurm, conda and parameter customization)
+```
+
+</details>
+
+## Citation 
+
+If you use RNAflow please cite: 
+
+* [RNAflow](https://hoelzer-lab.github.io/publications)
+> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". JOURNAL. 2020. 
 
 <!-- ## Help message
 ```

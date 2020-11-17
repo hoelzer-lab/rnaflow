@@ -5,8 +5,8 @@ process multiqc {
     label 'multiqc'
     label 'smallTask'
 
-    if (params.cloudProcess) { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html' }
-    else { publishDir "${params.output}/${params.multiqc_dir}", pattern: 'multiqc_report.html' }
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.multiqc_dir}", pattern: 'multiqc_report.html' }
+    else { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html' }
 
     input:
     path(config)
@@ -31,7 +31,7 @@ process multiqc {
 }
 
 process multiqc_sample_names {
-    label 'python3'
+    label 'smallTask'
 
     input:
     val(list)
