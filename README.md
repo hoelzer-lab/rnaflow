@@ -21,12 +21,15 @@
 - [Quick start](#quick-start)
   - [Start a test run](#start-a-test-run)
   - [Call help](#call-help)
+  - [Update the pipeline](#update-the-pipeline)
+  - [Use a certain release](#use-a-certain-release)
 - [Usage](#usage)
   - [Input files](#input-files)
     - [Read files (required)](#read-files-required)
     - [Genomes and annotation](#genomes-and-annotation)
     - [Build-in species](#build-in-species)
     - [Comparisons for DEG analysis](#comparisons-for-deg-analysis)
+  - [Resume your run](#resume-your-run)
 - [Workflow control](#workflow-control)
   - [Preprocessing](#preprocessing)
   - [DEG analysis](#deg-analysis)
@@ -34,6 +37,7 @@
 - [Profiles/configuration options](#profilesconfiguration-options)
   - [Executor options...](#executor-options)
   - [Engine options...](#engine-options)
+- [Monitoring](#monitoring)
 - [Output](#output)
   - [DESeq2 results](#deseq2-results)
 - [Working offline](#working-offline)
@@ -461,7 +465,7 @@ Input:
                                     (check terminal output if correctly assigned)
                                     In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
 --species                specifies the species identifier for downstream path analysis.
-                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default hsa]
+                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default ]
                                     Currently supported are:
                                     - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                     - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
@@ -470,7 +474,7 @@ Input:
 --genome                 CSV file with genome reference FASTA files (one path in each line)
                                     If set, --annotation must also be set.
 --annotation             CSV file with genome annotation GTF files (one path in each line)
---include_species        Use genome and annotation of supproted species in addition to --genome and --annotation [default false]
+--include_species        Use genome and annotation of supproted species in addition to --genome and --annotation [default true]
 
 Preprocessing options:
 --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
@@ -493,17 +497,19 @@ Transcriptome assembly options:
 --dammit_uniref90        add UniRef90 to the dammit databases  [default: false]
 
 Computing options:
---cores                  max cores per process for local use [default 10]
---max_cores              max cores used on the machine for local use [default 30]
+--cores                  max cores per process for local use [default 1]
+--max_cores              max cores used on the machine for local use [default Runtime.runtime.availableProcessors()]
 --memory                 max memory in GB for local use [default 8 GB]
 --output                 name of the result folder [default results]
 
 --permanentCacheDir      location for auto-download data like databases [default nextflow-autodownload-databases]
 --condaCacheDir          location for storing the conda environments [default conda]
---workdir                working directory for all intermediate results [default /tmp/nextflow-work-ji57pog]
+--singularityCacheDir    location for storing the singularity images [default singularity]
+--workdir                working directory for all intermediate results [default /tmp/nextflow-work-marie]
 --softlink_results       softlink result files instead of copying
 
 Nextflow options:
+-with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
 -with-report rep.html    cpu / ram usage (may cause errors)
 -with-dag chart.html     generates a flowchart for the process tree
 -with-timeline time.html timeline (may cause errors)
@@ -517,11 +523,13 @@ Execution/Engine profiles:
   lsf
   Engines (choose one):
   conda
-  docker [not supported yet]
-  singularity [not supported yet]
+  docker
+  singularity
 
-For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
-Per default: local,conda is executed.
+For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
+The command will create all conda environments and download and run test data.
+
+Per default: local,conda is executed. 
 
 We also provide some pre-configured profiles for certain HPC environments:    
   ara (slurm, conda and parameter customization)
