@@ -40,7 +40,6 @@ process format_annotation {
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
 process format_annotation_gene_rows {
-    label 'python3'
     label 'smallTask'
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.gene.gtf" }

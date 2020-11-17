@@ -31,7 +31,7 @@ process multiqc {
 }
 
 process multiqc_sample_names {
-    label 'python3'
+    label 'smallTask'
 
     input:
     val(list)
