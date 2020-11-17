@@ -4,12 +4,12 @@ ____
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
 ![](https://github.com/hoelzer-lab/rnaseq/workflows/Syntax_check/badge.svg)
-[![](https://img.shields.io/badge/Publication-MDPI_Genes-violet.svg)](https://hoelzer-lab.github.io/publications)
+[![](https://img.shields.io/badge/Publication-Some_Journal-violet.svg)](https://hoelzer-lab.github.io/publications)
 
-![](https://img.shields.io/badge/nextflow-20.07.1-brightgreen)
-![](https://img.shields.io/badge/uses-conda-yellow.svg)
-![](https://img.shields.io/badge/uses-docker-blue.svg)
-![](https://img.shields.io/badge/uses-singularity-orange.svg)
+![](https://img.shields.io/badge/nextflow-20.10.0-brightgreen)
+![](https://img.shields.io/badge/can_use-conda-yellow.svg)
+![](https://img.shields.io/badge/can_use-docker-blue.svg)
+![](https://img.shields.io/badge/can_use-singularity-orange.svg)
 
 <!--[![Generic badge](https://img.shields.io/badge/Publication-bioRxiv-red.svg)](https://www.)-->
 
