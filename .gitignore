@@ -1,5 +1,6 @@
 .snakemake
 conda/
+singularity/
 .vscode/
 
 # some data aspects
@@ -16,6 +17,7 @@ work/
 results/
 .nextflow/
 nextflow-autodownload-databases/
+nextflow-run-infos/
 
 
 # large file extensions

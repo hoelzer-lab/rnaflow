@@ -24,6 +24,14 @@ println "Launchdir location:"
 println "  $workflow.launchDir"
 println "Permanent cache directory:"
 println "  $params.permanentCacheDir"
+if ( workflow.profile.contains('singularity') ) {
+    println "Singularity cache directory:"
+    println "  $params.singularityCacheDir"
+}
+if ( workflow.profile.contains('conda') ) { 
+    println "Conda cache directory:"
+    println "  $params.condaCacheDir"
+}
 println "Configuration files:"
 println "  $workflow.configFiles"
 println "Cmd line:"
@@ -33,6 +41,23 @@ println " "
 if (workflow.profile.contains('standard') || workflow.profile.contains('local')) {
     println "\033[2mCPUs to use: $params.cores, maximal CPUs to use: $params.max_cores\u001B[0m"
     println " "
+}
+
+if ( !workflow.revision ) { 
+    println ""
+    println "\033[0;33mWARNING: not a stable execution. Please use -r for full reproducibility.\033[0m\n"
+}
+
+def folder = new File(params.output)
+if ( folder.exists() ) { 
+    println ""
+    println "\033[0;33mWARNING: Output folder already exists. Results might be overwritten! You can adjust the output folder via [--output]\033[0m\n"
+}
+
+if ( workflow.profile.contains('singularity') ) {
+    println ""
+    println "\033[0;33mWARNING: Singularity image building sometimes fails!"
+    println "Multiple resumes (-resume) and --max_cores 1 --cores 1 for local execution might help.\033[0m\n"
 }
 
 if (params.assembly) {
@@ -621,6 +646,13 @@ workflow {
 }
 
 
+workflow.onComplete { 
+    if (workflow.success) {
+        // copy execution and timeline HTML reports to output dir
+        println (['bash', "${workflow.projectDir}/bin/reports.sh", "${params.output}", "${workflow.projectDir}/${params.runinfo}"].execute().text)
+    }
+}
+
 def helpMSG() {
     c_green = "\033[0;32m";
     c_reset = "\033[0m";
@@ -682,10 +714,12 @@ def helpMSG() {
 
     --permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
     --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
+    --singularityCacheDir    location for storing the singularity images [default $params.singularityCacheDir]
     --workdir                working directory for all intermediate results [default $params.workdir]
     --softlink_results       softlink result files instead of copying
 
     Nextflow options:
+    -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
     -with-report rep.html    cpu / ram usage (may cause errors)
     -with-dag chart.html     generates a flowchart for the process tree
     -with-timeline time.html timeline (may cause errors)
@@ -699,10 +733,12 @@ def helpMSG() {
       lsf
       ${c_blue}Engines${c_reset} (choose one):
       conda
-      docker [not supported yet]
-      singularity [not supported yet]
+      docker
+      singularity
     
-    For a test run (~ 1 h), add "test" to the profile, e.g. -profile test,local,conda.
+    For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
+    The command will create all conda environments and download and run test data.
+
     Per default: local,conda is executed. 
 
     We also provide some pre-configured profiles for certain HPC environments:    

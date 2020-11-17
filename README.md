@@ -42,9 +42,10 @@
 
 </details>
 
+
 ## Quick installation
 
-The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+The pipeline is written in [`Nextflow`](https://nf-co.re/usage/installation), which can be used on any POSIX compatible system (Linux, OS X, etc). Windows system is supported through [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux). You need `Nextflow` installed and either `conda`, `Docker`, or `Singularity` to run the steps of the pipeline:
 
 1. Install  `Nextflow`
     <details><summary>click here for a bash one-liner </summary>
@@ -87,9 +88,28 @@ OR
 
     </details>
 
-For transcriptome assembly, please install also [`docker`](https://docs.docker.com/engine/installation/).
+For transcriptome assembly you have to install also [`Docker`](https://docs.docker.com/engine/installation/) or [`Singularity`](https://github.com/hpcng/singularity/blob/master/INSTALL.md).
 
-All other dependencies and tools will be installed within the pipeline via `conda` or `docker`.
+1. You can try to simply install `Singularity` via `conda` as well
+    <details><summary>click for an example command</summary>
+
+    ```bash
+    conda create -n singularity -c conda-forge singularity
+    conda active singularity
+    ```
+
+    or if you already have a conda environment for nextflow:
+
+    ```bash
+    conda activate nextflow
+    conda install -c conda-forge singularity
+    ```
+
+    </details>
+
+A system admin-configured `Singularity` installation should be preferred in comparison to an own local conda installation. Please ask your sys admin!
+
+All other dependencies and tools will be installed within the pipeline via `conda`, `Docker` or `Singularity` depending on the profile you run (see [below](#profiles/configuration-options)).
 
 ## Quick start
 
@@ -113,6 +133,21 @@ nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 ```bash
 nextflow run hoelzer-lab/rnaseq --help
 ```
+
+### Update the pipeline
+
+```bash
+nextflow pull hoelzer-lab/rnaseq
+```
+
+### Use a certain release
+
+We recommend to use a [stable release](https://github.com/hoelzer-lab/rnaseq/releases) of the pipeline:
+
+```bash
+nextflow pull hoelzer-lab/rnaseq -r <RELEASE>
+```
+
 
 ## Usage
 
@@ -200,6 +235,16 @@ conditionA,conditionB
 conditionB,conditionA
 ```
 
+### Resume your run
+
+You can easily resume your run in case of changes to the parameters or inputs. Nextflow will try to not recalculate steps that are already done:
+
+```
+nextflow run hoelzer-lab/rnaseq -profile test,conda,local -resume
+```
+
+Nextflow will need access to the working directory where temporary calculations are stored. Per default, this is set to `/tmp/nextflow-work-$USER` but can be adjusted via `--workdir /path/to/any/workdir`. In addition, the `.nextflow.log` file is needed to resume a run, thus, this will only work if you resume the run from the same folder where you started it. 
+
 ## Workflow control
 
 ### Preprocessing
@@ -229,7 +274,7 @@ conditionB,conditionA
 
 ## Profiles/configuration options
 
-Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`.
+Per default, the pipeline is locally executed with `conda` dependency management (corresponds to `-profile local,conda`). Adjust this setting by combining an _executer_ option with an _engine_ option, e.g. `-profile local,conda` or `-profile slurm,conda`. We also provide container support, see [below](#engine-options...).
 
 ### Executor options...
 
@@ -249,9 +294,65 @@ You can customize `local` with this parameters:
 
 *... or in which environment to run the tools.*
 
-Currently implemented is `conda`. For transcriptome assembly some tools need to be run with `docker`.
+Currently implemented are `conda`, `Docker` and `Singularity`. For transcriptome assembly some tools need to be run with `Docker` or `Singularity`.
 
-`docker` support for all steps is coming soon!
+You can switch between different engines via `-profile`, for example:
+
+```
+nextflow run hoelzer-lab/rnaseq -profile test,local,conda
+nextflow run hoelzer-lab/rnaseq -profile test,local,docker
+nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
+```
+
+As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+
+You can customize where `conda` environments are stored using
+
+```bash
+--condaCacheDir /path/to/dir
+```
+
+and where `Singularity` images are stored via
+
+```bash
+--singularityCacheDir /path/to/dir
+```
+
+`Docker` images are stored based on your system configuration.
+
+## Monitoring
+
+<img align="right" width="400px" src="figures/tower.png" alt="Monitoring with Nextflow Tower" /> 
+
+To monitor your computations the pipeline can be connected to [Nextflow Tower](https://tower.nf). You need an user access token to connect your Tower account with the pipeline. Simply [generate a login](https://tower.nf/login) using your email and then click the link send to this address.
+
+> "Nextflow Tower does not require a password or registration procedure. Just provide your email address and we'll send you an authentication link to login. That's all!"
+
+Once logged in, click on your avatar on the top right corner and select "Your tokens". Generate a token or copy the default one and set the environment variable:
+
+```bash
+export TOWER_ACCESS_TOKEN=<YOUR_COPIED_TOKEN>
+export NXF_VER=20.10.0
+```
+
+You can save this command to your `.bashrc` or `.profile` to not need to enter it again.
+
+Now run:
+
+```bash
+nextflow run hoelzer-lab/rnaseq -profile test,local,conda -with-tower
+```
+
+Alternatively, you can also activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:
+
+```java
+tower {
+    accessToken = ''
+    enabled = true
+} 
+```
+
+You can also directly enter your access token here instead of generating the above environment variable.
 
 ## Output
 
