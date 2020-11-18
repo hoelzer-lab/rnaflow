@@ -1,16 +1,19 @@
 ![logo](figures/logo.png)
 
+____
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
 ![](https://github.com/hoelzer-lab/rnaseq/workflows/Syntax_check/badge.svg)
+[![](https://img.shields.io/badge/Publication-Some_Journal-violet.svg)](https://hoelzer-lab.github.io/publications)
 
-![](https://img.shields.io/badge/nextflow-20.07.1-brightgreen)
-![](https://img.shields.io/badge/uses-conda-yellow.svg)
-![](https://img.shields.io/badge/uses-docker-blue.svg)
+![](https://img.shields.io/badge/nextflow-20.10.0-brightgreen)
+![](https://img.shields.io/badge/can_use-conda-yellow.svg)
+![](https://img.shields.io/badge/can_use-docker-blue.svg)
+![](https://img.shields.io/badge/can_use-singularity-orange.svg)
 
 <!--[![Generic badge](https://img.shields.io/badge/Publication-bioRxiv-red.svg)](https://www.)-->
 
-# RN(ext)A-Seq - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow<!-- omit in toc -->
+## RNAflow - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow<!-- omit in toc -->
 
 ![flow-chart](figures/workflow.jpg)
 *Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the used tools and please consider to cite them as well.
