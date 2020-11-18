@@ -28,7 +28,7 @@ if ( workflow.profile.contains('singularity') ) {
     println "Singularity cache directory:"
     println "  $params.singularityCacheDir"
 }
-if ( workflow.profile.contains('conda') || workflow.profile.contains('ara') ) { 
+if ( workflow.profile.contains('conda') ) { 
     println "Conda cache directory:"
     println "  $params.condaCacheDir"
 }
