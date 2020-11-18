@@ -3,6 +3,7 @@
 ************************************************************************/
 process fastqc {
     label 'fastqc'
+    label 'smallTask'
 
     input:
     tuple val(name), path(reads) 
