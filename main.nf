@@ -660,7 +660,7 @@ workflow {
 workflow.onComplete { 
     if (workflow.success) {
         // copy execution and timeline HTML reports to output dir
-        println (['bash', "${workflow.projectDir}/bin/reports.sh", "${params.output}", "${workflow.projectDir}/${params.runinfo}"].execute().text)
+        println (['bash', "${workflow.projectDir}/bin/reports.sh", "${params.output}", "${params.runinfo}"].execute().text)
     }
 }
 
