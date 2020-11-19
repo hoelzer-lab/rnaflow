@@ -137,13 +137,14 @@ nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 
 <details><summary>Resource usage</summary>
 
-For this local test run (with 30 cores in total at maximum):
+For a local test run (with 30 cores in total at maximum):
 
 ```bash
-nextflow run hoelzer-lab/rnaseq -profile test,conda,local -w work --max_cores 30 --cores 10 --softlink_results -r master
+nextflow run hoelzer-lab/rnaseq -profile test,conda,local -w work \
+--max_cores 30 --cores 10 --softlink_results -r master
 ```
 
-we registered, including downloads and `conda` environment creation for each process, the following resource usage:
+we observed the following resource usage including downloads and `conda` environment creation for each process:
 
 <dl>
 <dt>Total runtime</dt>
@@ -154,7 +155,7 @@ we registered, including downloads and `conda` environment creation for each pro
 <dd>10.16 GB at process <code>hisat2</code></dd>
 </dl>
 
-A detailed report can be found [here](test-data/execution_report.html).
+A detailed HTML report automatically produced the pipeline can be found [here](test-data/execution_report.html).
 
 </details>
 
