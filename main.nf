@@ -98,8 +98,8 @@ if ( (params.include_species && params.species) && ! (params.species in species)
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
-    R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
-    = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
+    R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
+    = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
     Output path:          $params.output
     Mode:                 $params.mode
     Strandness:           $params.strand
