@@ -1,6 +1,19 @@
 #!/usr/bin/env nextflow
 
-nextflow.preview.dsl=2
+XX = "20"
+YY = "07"
+ZZ = "1"
+
+if ( nextflow.version.toString().tokenize('.')[0].toInteger() < XX.toInteger() ) {
+println "\033[0;33mRNAflow requires at least Nextflow version " + XX + "." + YY + "." + ZZ + " -- You are using version $nextflow.version\u001B[0m"
+exit 1
+}
+else if ( nextflow.version.toString().tokenize('.')[1].toInteger() < YY.toInteger() ) {
+println "\033[0;33mRNAflow requires at least Nextflow version " + XX + "." + YY + "." + ZZ + " -- You are using version $nextflow.version\u001B[0m"
+exit 1
+}
+
+nextflow.enable.dsl=2
 
 /*
 * RNA-Seq-based detection of differentially expressed genes
@@ -8,6 +21,8 @@ nextflow.preview.dsl=2
 * Author: martin.hoelzer@uni-jena.de
 * Author: marie.lataretu@uni-jena.de
 */
+
+
 
 // terminal prints
 if (params.help) { exit 0, helpMSG() }
@@ -214,10 +229,6 @@ deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bi
 */
 multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
 regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionReport_DESeq2Exploration_custom.Rmd', checkIfExists: true )
-
-//if (params.index) {
-//  index_ch = Channel.fromPath("${params.index}.*", checkIfExists: true)
-//}
 
 /*
 * CHECK INPUT
@@ -649,7 +660,7 @@ workflow {
 workflow.onComplete { 
     if (workflow.success) {
         // copy execution and timeline HTML reports to output dir
-        println (['bash', "${workflow.projectDir}/bin/reports.sh", "${params.output}", "${workflow.projectDir}/${params.runinfo}"].execute().text)
+        println (['bash', "${workflow.projectDir}/bin/reports.sh", "${params.output}", "${params.runinfo}"].execute().text)
     }
 }
 
@@ -662,20 +673,19 @@ def helpMSG() {
     log.info """
     ____________________________________________________________________________________________
 
-    ${c_yellow}Usage example:${c_reset}
-    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
-    or
-    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
-    or
-    nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
-    ${c_dim}Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.${c_reset}
+    ${c_yellow}Usage examples:${c_reset}
+    nextflow run hoelzer-lab/rnaflow -profile test,local,conda
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+    ${c_dim}Genomes and annotations from --species, --genome and --annotation are concatenated if --include_species is set.${c_reset}
 
     ${c_yellow}Input:${c_reset}
-    ${c_green}--reads${c_reset}                  a CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+    ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
-                                        In default all possible comparisons of conditions in one direction are made. Use --deg to change this.${c_reset}
-    ${c_green}--species${c_reset}                specifies the species identifier for downstream path analysis.
-                             If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default $params.species]
+                                        Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.${c_reset}
+    ${c_green}--species${c_reset}                Specifies the species identifier for downstream path analysis.
+                             If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
@@ -684,62 +694,63 @@ def helpMSG() {
     ${c_green}--genome${c_reset}                 CSV file with genome reference FASTA files (one path in each line)
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}             CSV file with genome annotation GTF files (one path in each line)
-    ${c_green}--include_species${c_reset}        Use genome and annotation of supproted species in addition to --genome and --annotation [default $params.include_species]
+    --include_species        Either --species or --genome/--annotation need to be used. Both input seetings can be also combined to use genome and annotation of 
+                             supported species in addition to --genome and --annotation [default: $params.include_species]
 
     ${c_yellow}Preprocessing options:${c_reset}
-    --mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default $params.mode]
-    --skip_sortmerna         skip rRNA removal via SortMeRNA [default $params.skip_sortmerna] 
-    ${c_dim}--index                  the path to the hisat2 index prefix matching the genome provided via --species. 
-                             If provided, no new index will be build. Must be named 'index.*.ht2'.  
-                             Simply provide the path like 'data/db/index'. DEPRECATED${c_reset}
+    --mode                   Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
+    --skip_sortmerna         Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
 
     ${c_yellow}DEG analysis options:${c_reset}
-    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default $params.strand]
-    --tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
-                             if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default $params.tpm]
-    --deg                    a CSV file following the pattern: conditionX,conditionY
-                             Each line stands for one differential gene expression comparison.    
+    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
+    --tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
+                             corresponding samples in this condition is below the threshold. [default: $params.tpm]
+    --deg                    A CSV file following the pattern: conditionX,conditionY
+                             Each line stands for one differential gene expression comparison.  
+                             Must match the 'Condition' labels defined in the CSV file provided via --reads.  
 
     ${c_yellow}Transcriptome assembly options:${c_reset}
-    --assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default $params.assembly]
-    --busco_db               the database used with BUSCO [default: $params.busco_db]
-                             ${c_dim}full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
-    --dammit_uniref90        add UniRef90 to the dammit databases  [default: $params.dammit_uniref90]
+    --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: $params.assembly]
+    --busco_db               The database used with BUSCO [default: $params.busco_db]
+                             ${c_dim}Full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
+    --dammit_uniref90        Add UniRef90 to the dammit databases (time consuming!) [default: $params.dammit_uniref90]
 
-    ${c_dim}Computing options:
-    --cores                  max cores per process for local use [default $params.cores]
-    --max_cores              max cores used on the machine for local use [default $params.max_cores]
-    --memory                 max memory in GB for local use [default $params.memory]
-    --output                 name of the result folder [default $params.output]
+    ${c_yellow}Computing options:${c_reset}
+    --cores                  Max cores per process for local use [default: $params.cores]
+    --max_cores              Max cores used on the machine for local use [default: $params.max_cores]
+    --memory                 Max memory in GB for local use [default: $params.memory]
+    --output                 Name of the result folder [default: $params.output]
 
-    --permanentCacheDir      location for auto-download data like databases [default $params.permanentCacheDir]
-    --condaCacheDir          location for storing the conda environments [default $params.condaCacheDir]
-    --singularityCacheDir    location for storing the singularity images [default $params.singularityCacheDir]
-    --workdir                working directory for all intermediate results [default $params.workdir]
-    --softlink_results       softlink result files instead of copying
+    ${c_yellow}Caching:${c_reset}
+    --permanentCacheDir      Location for auto-download data like databases [default: $params.permanentCacheDir]
+    --condaCacheDir          Location for storing the conda environments [default: $params.condaCacheDir]
+    --singularityCacheDir    Location for storing the singularity images [default: $params.singularityCacheDir]
+    --workdir                Working directory for all intermediate results [default: $params.workdir]
+    --softlink_results       Softlink result files instead of copying.
 
-    Nextflow options:
-    -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
-    -with-report rep.html    cpu / ram usage (may cause errors)
-    -with-dag chart.html     generates a flowchart for the process tree
-    -with-timeline time.html timeline (may cause errors)
+    ${c_dim}Nextflow options:
+    -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).
+    -with-report rep.html    CPU / RAM usage (may cause errors).
+    -with-dag chart.html     Generates a flowchart for the process tree.
+    -with-timeline time.html Timeline (may cause errors).${c_reset}
 
     ${c_yellow}Execution/Engine profiles:${c_reset}
-     The pipeline supports profiles to run via different ${c_green}Executers${c_reset} and ${c_blue}Engines${c_reset} e.g.:
-     -profile ${c_green}local${c_reset},${c_blue}conda${c_reset}
-      ${c_green}Executer${c_reset} (choose one):
+    The pipeline supports profiles to run via different ${c_green}Executers${c_reset} and ${c_blue}Engines${c_reset} e.g.: -profile ${c_green}local${c_reset},${c_blue}conda${c_reset}
+    
+    ${c_green}Executer${c_reset} (choose one):
       local
       slurm
       lsf
-      ${c_blue}Engines${c_reset} (choose one):
+    
+    ${c_blue}Engines${c_reset} (choose one):
       conda
       docker
       singularity
     
-    For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
-    The command will create all conda environments and download and run test data.
+    Per default: -profile local,conda is executed. 
 
-    Per default: local,conda is executed. 
+    ${c_dim}For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
+    The command will create all conda environments and download and run test data.
 
     We also provide some pre-configured profiles for certain HPC environments:    
       ara (slurm, conda and parameter customization)
