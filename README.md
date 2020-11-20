@@ -1,9 +1,9 @@
 ![logo](figures/logo.png)
 
 ____
-![](https://img.shields.io/github/v/release/hoelzer-lab/rnaseq)
+![](https://img.shields.io/github/v/release/hoelzer-lab/rnaflow)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
-![](https://github.com/hoelzer-lab/rnaseq/workflows/Syntax_check/badge.svg)
+![](https://github.com/hoelzer-lab/rnaflow/workflows/Syntax_check/badge.svg)
 [![](https://img.shields.io/badge/Publication-Some_Journal-violet.svg)](https://hoelzer-lab.github.io/publications)
 
 ![](https://img.shields.io/badge/nextflow-20.10.0-brightgreen)
@@ -124,7 +124,7 @@ All other dependencies and tools will be installed within the pipeline via `cond
 
 ```bash
 # conda active nextflow
-nextflow run hoelzer-lab/rnaseq -profile test,conda,local
+nextflow run hoelzer-lab/rnaflow -profile test,conda,local
 ```
 
 ... performs
@@ -140,7 +140,7 @@ nextflow run hoelzer-lab/rnaseq -profile test,conda,local
 For a local test run (with 30 cores in total at maximum):
 
 ```bash
-nextflow run hoelzer-lab/rnaseq -profile test,conda,local -w work \
+nextflow run hoelzer-lab/rnaflow -profile test,conda,local -w work \
 --max_cores 30 --cores 10 --softlink_results -r master
 ```
 
@@ -162,34 +162,34 @@ A detailed HTML report automatically produced the pipeline can be found [here](t
 ### Call help
 
 ```bash
-nextflow run hoelzer-lab/rnaseq --help
+nextflow run hoelzer-lab/rnaflow --help
 ```
 
 ### Update the pipeline
 
 ```bash
-nextflow pull hoelzer-lab/rnaseq
+nextflow pull hoelzer-lab/rnaflow
 ```
 
 ### Use a certain release
 
-We recommend to use a [stable release](https://github.com/hoelzer-lab/rnaseq/releases) of the pipeline:
+We recommend to use a [stable release](https://github.com/hoelzer-lab/rnaflow/releases) of the pipeline:
 
 ```bash
-nextflow pull hoelzer-lab/rnaseq -r <RELEASE>
+nextflow pull hoelzer-lab/rnaflow -r <RELEASE>
 ```
 
 
 ## Usage
 
 ```bash
-nextflow run hoelzer-lab/rnaseq --reads input.csv --species hsa --include_species --max_cores 6 --cores 2
+nextflow run hoelzer-lab/rnaflow --reads input.csv --species hsa --include_species --max_cores 6 --cores 2
 ```
 
 with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
-nextflow run hoelzer-lab/rnaseq --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
+nextflow run hoelzer-lab/rnaflow --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
 ```
 
 Genomes and annotations from `--species`, if `--include_species` is set, `--genome` and `--annotation` are concatenated.
@@ -271,7 +271,7 @@ conditionB,conditionA
 You can easily resume your run in case of changes to the parameters or inputs. Nextflow will try to not recalculate steps that are already done:
 
 ```
-nextflow run hoelzer-lab/rnaseq -profile test,conda,local -resume
+nextflow run hoelzer-lab/rnaflow -profile test,conda,local -resume
 ```
 
 Nextflow will need access to the working directory where temporary calculations are stored. Per default, this is set to `/tmp/nextflow-work-$USER` but can be adjusted via `--workdir /path/to/any/workdir`. In addition, the `.nextflow.log` file is needed to resume a run, thus, this will only work if you resume the run from the same folder where you started it. 
@@ -330,9 +330,9 @@ Currently implemented are `conda`, `Docker` and `Singularity`. For transcriptome
 You can switch between different engines via `-profile`, for example:
 
 ```
-nextflow run hoelzer-lab/rnaseq -profile test,local,conda
-nextflow run hoelzer-lab/rnaseq -profile test,local,docker
-nextflow run hoelzer-lab/rnaseq -profile test,slurm,singularity
+nextflow run hoelzer-lab/rnaflow -profile test,local,conda
+nextflow run hoelzer-lab/rnaflow -profile test,local,docker
+nextflow run hoelzer-lab/rnaflow -profile test,slurm,singularity
 ```
 
 As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
@@ -371,7 +371,7 @@ You can save this command to your `.bashrc` or `.profile` to not need to enter i
 Now run:
 
 ```bash
-nextflow run hoelzer-lab/rnaseq -profile test,local,conda -with-tower
+nextflow run hoelzer-lab/rnaflow -profile test,local,conda -with-tower
 ```
 
 Alternatively, you can also activate the Tower connection within the `nextflow.config` file located in the root GitHub directory:
@@ -449,7 +449,7 @@ Downstream analysis are currently provided for some species: GSEA consensus scor
 
 ## Working offline
 
-In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaseq/issues/102) for manual download and copying of external recourses:
+In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaflow/issues/102) for manual download and copying of external recourses:
 
 - Genomes and annotation can also be specified via `--genome` and `--annotaion`, see [here](#genomes-and-annotation).
 - For `BUSCO` it is a simple download, see [here](modules/buscoGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` as default.
@@ -480,11 +480,11 @@ nextflow-autodownload-databases     # default: `permanentCacheDir = 'nextflow-au
 
 ```
 Usage example:
-nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
 or
-nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --species eco --assembly
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
 or
-nextflow run hoelzer-lab/rnaseq --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
 Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.
 
 Input:
