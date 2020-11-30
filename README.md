@@ -16,7 +16,7 @@ ____
 ## RNAflow - An effective and simple RNA-Seq differential gene expression pipeline using Nextflow<!-- omit in toc -->
 
 ![flow-chart](figures/workflow.jpg)
-*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citation.md) for a list of references for the used tools and please consider to cite them as well.
+*Figure 1.* Workflow. The user can decide after preprocessing to run a differential gene expression (DEG) analysis or a transcriptome assembly. Circles symbolize input data and download icons symbolize automated download of resources. Steps marked by asterisks are currently only available for some species. See [here](citations.md) for a list of references for the used tools and please consider to cite them as well.
 
 <details><summary><b>Table of Contents</b></summary>
 
