@@ -1,8 +1,8 @@
 process dammit {
     label 'dammit'
 
-    if ( params.softlink_results ) { publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.uniref90_dir}", pattern: "${tool}" }
-    else { publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.uniref90_dir}", mode: 'copy', pattern: "${tool}" }
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.uniref90_dir}", pattern: "*" }
+    else { publishDir "${params.output}/${params.rnaseq_annotation_dir}/dammit/${params.uniref90_dir}", mode: 'copy', pattern: "*" }
 
   input:
     path(transcriptome_assembly)
