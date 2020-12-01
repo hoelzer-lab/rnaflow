@@ -563,8 +563,8 @@ workflow assembly_denovo {
         trinity(reads_ch, reads_input_csv)
 
         // qc check
-        //tool_ch = Channel.value('trinity')
-        //busco(trinity.out.assembly, busco_db, tool_ch)    
+        tool_ch = Channel.value('trinity')
+        busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
         //dammit(trinity.out.assembly, dammit_db, tool_ch)
