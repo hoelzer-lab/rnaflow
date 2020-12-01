@@ -275,7 +275,7 @@ include {dammitGetDB} from './modules/dammitGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
-include {sortmerna} from './modules/sortmerna'
+include {sortmerna; sortmerna_extract_db} from './modules/sortmerna'
 include {hisat2; index_bam} from './modules/hisat2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
@@ -442,7 +442,8 @@ workflow preprocess {
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+            sortmerna_extract_db(sortmerna_db)
+            sortmerna(fastp.out.sample_trimmed, sortmerna_extract_db.out)
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
