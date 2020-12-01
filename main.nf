@@ -567,7 +567,7 @@ workflow assembly_denovo {
         busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        //dammit(trinity.out.assembly, dammit_db, tool_ch)
+        dammit(trinity.out.assembly, dammit_db, tool_ch)
 } 
 
 /*****************************************
@@ -586,14 +586,14 @@ workflow assembly_reference {
         stringtie(genome_reference, annotation_reference, bams)
 
         // Merge each single GTF-guided StringTie2 GTF file 
-        //tool_ch = Channel.value('stringtie')
-        //stringtie_merge(genome_reference, stringtie.out.gtf.collect(), tool_ch)
+        tool_ch = Channel.value('stringtie')
+        stringtie_merge(genome_reference, stringtie.out.gtf.collect(), tool_ch)
 
         // qc check
-        //busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
+        busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        //dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
+        dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
 }
 
 
@@ -639,7 +639,7 @@ workflow {
         // de novo
         assembly_denovo(preprocess.out.cleaned_reads_ch, busco_db, dammit_db)
         // reference-based
-        //assembly_reference(reference, annotation, preprocess.out.sample_bam_ch, busco_db, dammit_db)
+        assembly_reference(reference, annotation, preprocess.out.sample_bam_ch, busco_db, dammit_db)
     } else {
     // perform expression analysis
         // start reference-based differential gene expression analysis
