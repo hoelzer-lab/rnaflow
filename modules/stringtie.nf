@@ -34,11 +34,11 @@ process stringtie_merge {
     errorStrategy { task.exitStatus = 1 ? 'ignore' :  'terminate' }
 
     if ( params.softlink_results ) { 
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/", pattern: "*.gtf"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/", pattern: "*.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", pattern: "*.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", pattern: "*.fna"
     } else {
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/", mode: 'copy', pattern: "*.gtf"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/", mode: 'copy', pattern: "*.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "*.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "*.fna"
     }
 
   input:
