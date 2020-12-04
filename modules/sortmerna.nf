@@ -57,16 +57,3 @@ process sortmerna {
     """
     }
 }
-
-process sortmerna_extract_db {
-    input:
-    path(db)
-
-    output:
-    path("rRNA_databases")
-
-    script:
-    """
-    tar zxvf ${db}
-    """
-}

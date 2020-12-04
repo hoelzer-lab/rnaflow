@@ -275,7 +275,7 @@ include {dammitGetDB} from './modules/dammitGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
-include {sortmerna; sortmerna_extract_db} from './modules/sortmerna'
+include {sortmerna} from './modules/sortmerna'
 include {hisat2; index_bam} from './modules/hisat2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
@@ -291,6 +291,7 @@ include {stringtie; stringtie_merge} from './modules/stringtie'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
+include {extract_tar_bz2} from './modules/utils'
 
 /************************** 
 * DATABASES
@@ -442,8 +443,7 @@ workflow preprocess {
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna_extract_db(sortmerna_db)
-            sortmerna(fastp.out.sample_trimmed, sortmerna_extract_db.out)
+            sortmerna(fastp.out.sample_trimmed, extract_tar_bz2(sortmerna_db))
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
@@ -568,7 +568,7 @@ workflow assembly_denovo {
         busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(trinity.out.assembly, dammit_db, tool_ch)
+        dammit(trinity.out.assembly, extract_tar_bz2(dammit_db), tool_ch)
 } 
 
 /*****************************************
@@ -594,7 +594,7 @@ workflow assembly_reference {
         busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
+        dammit(stringtie_merge.out.transcripts, extract_tar_bz2(dammit_db), tool_ch)
 }
 
 
