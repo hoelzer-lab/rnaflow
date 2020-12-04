@@ -15,19 +15,15 @@ process dammit {
   script:
     if (params.dammit_uniref90)
     """
-    tar zxvf ${dbs}
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit annotate ${transcriptome_assembly} --database-dir dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus} --full 
     cp dbs/uniprot_sprot_reduced.dat .
-    rm -rf dbs
     """
     else
     """
-    tar zxvf ${dbs}
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit annotate ${transcriptome_assembly} --database-dir dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus}
     cp dbs/uniprot_sprot_reduced.dat .
-    rm -rf dbs
     """
   }
 
