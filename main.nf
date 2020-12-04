@@ -568,7 +568,7 @@ workflow assembly_denovo {
         busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(trinity.out.assembly, extract_tar_bz2(dammit_db), tool_ch)
+        dammit(trinity.out.assembly, dammit_db, tool_ch)
 } 
 
 /*****************************************
@@ -594,7 +594,7 @@ workflow assembly_reference {
         busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, extract_tar_bz2(dammit_db), tool_ch)
+        dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
 }
 
 
@@ -636,7 +636,7 @@ workflow {
     if (params.assembly) {
         // dbs
         busco_db = download_busco()
-        dammit_db = download_dammit(busco_db)
+        dammit_db = extract_tar_bz2(download_dammit(busco_db))
         // de novo
         assembly_denovo(preprocess.out.cleaned_reads_ch, busco_db, dammit_db)
         // reference-based
