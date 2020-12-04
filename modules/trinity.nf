@@ -1,8 +1,8 @@
 process trinity {
     label 'trinity'
 
-    if ( params.softlink_results ) { publishDir "${params.output}/${params.assembly_dir}/trinity", pattern: "trinity.fasta" }
-    else { publishDir "${params.output}/${params.assembly_dir}/trinity", mode: 'copy', pattern: "trinity.fasta" }
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.assembly_dir}/Trinity", pattern: "trinity.fasta" }
+    else { publishDir "${params.output}/${params.assembly_dir}/Trinity", mode: 'copy', pattern: "trinity.fasta" }
 
   input:
     path reads 
