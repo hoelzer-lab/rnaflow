@@ -2,13 +2,13 @@ process stringtie {
     label 'stringtie'  
 
     if ( params.softlink_results ) {
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", pattern: "*_stringtie.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*_stringtie.gtf"
       //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${sample_name}_stringtie.fna"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", pattern: "*_gene_abundance.txt"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*_gene_abundance.txt"
     } else {
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", mode: 'copy', pattern: "*_stringtie.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*_stringtie.gtf"
       //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", mode: 'copy', pattern: "*_gene_abundance.txt"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*_gene_abundance.txt"
     }
 
   input:
@@ -34,11 +34,11 @@ process stringtie_merge {
     errorStrategy { task.exitStatus = 1 ? 'ignore' :  'terminate' }
 
     if ( params.softlink_results ) { 
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", pattern: "*.gtf"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", pattern: "*.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*.fna"
     } else {
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", mode: 'copy', pattern: "*.gtf"
-      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie", mode: 'copy', pattern: "*.fna"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*.gtf"
+      publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*.fna"
     }
 
   input:
