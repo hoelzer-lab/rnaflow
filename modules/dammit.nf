@@ -16,13 +16,13 @@ process dammit {
     if (params.dammit_uniref90)
     """
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
-    dammit annotate ${transcriptome_assembly} --database-dir dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus} --full 
+    dammit annotate ${transcriptome_assembly} --database-dir \${PWD}/dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus} --full 
     cp dbs/uniprot_sprot_reduced.dat .
     """
     else
     """
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
-    dammit annotate ${transcriptome_assembly} --database-dir dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus}
+    dammit annotate ${transcriptome_assembly} --database-dir \${PWD}/dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus}
     cp dbs/uniprot_sprot_reduced.dat .
     """
   }
