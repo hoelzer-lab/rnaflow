@@ -92,9 +92,9 @@ Set species = ['hsa', 'eco', 'mmu', 'mau']
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
 if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
-if ( params.include_species == '' && params.genome == '' ) { exit 1, "You need to set a genome for mapping and a annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+if ( (! params.include_species) && params.genome == '' && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
 if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
-if ( (params.include_species && params.species) && ! (params.species in species) ) { exit 1, "Unsupported species for automatic download. Suported species as: " + species}
+if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Suported species are: " + species}
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\
@@ -291,6 +291,7 @@ include {stringtie; stringtie_merge} from './modules/stringtie'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
+include {extract_tar_bz2} from './modules/utils'
 
 /************************** 
 * DATABASES
@@ -442,7 +443,7 @@ workflow preprocess {
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(fastp.out.sample_trimmed, sortmerna_db)
+            sortmerna(fastp.out.sample_trimmed, extract_tar_bz2(sortmerna_db))
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
@@ -563,10 +564,11 @@ workflow assembly_denovo {
         trinity(reads_ch, reads_input_csv)
 
         // qc check
-        busco(trinity.out.assembly, busco_db, 'trinity')    
+        tool_ch = Channel.value('trinity')
+        busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(trinity.out.assembly, dammit_db, 'trinity')
+        dammit(trinity.out.assembly, dammit_db, tool_ch)
 } 
 
 /*****************************************
@@ -585,13 +587,14 @@ workflow assembly_reference {
         stringtie(genome_reference, annotation_reference, bams)
 
         // Merge each single GTF-guided StringTie2 GTF file 
-        stringtie_merge(genome_reference, stringtie.out.gtf.collect(), 'stringtie')
+        tool_ch = Channel.value('stringtie')
+        stringtie_merge(genome_reference, stringtie.out.gtf.collect(), tool_ch)
 
         // qc check
-        busco(stringtie_merge.out.transcripts, busco_db, 'stringtie')    
+        busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, dammit_db, 'stringtie')
+        dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
 }
 
 
@@ -633,7 +636,7 @@ workflow {
     if (params.assembly) {
         // dbs
         busco_db = download_busco()
-        dammit_db = download_dammit(busco_db)
+        dammit_db = extract_tar_bz2(download_dammit(busco_db))
         // de novo
         assembly_denovo(preprocess.out.cleaned_reads_ch, busco_db, dammit_db)
         // reference-based
