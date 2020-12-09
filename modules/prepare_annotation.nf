@@ -32,7 +32,7 @@ process format_annotation {
                         gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
                     else:
                         gene_biotype = 'NA'
-                    out.write('\\t'.join([gene_id, gene_name, gene_biotype]) + '\\n')
+                    out.write('\\t'.join([gene_id, gene_name, gene_biotype, desc.rstrip()]) + '\\n')
     '''
 }
 
