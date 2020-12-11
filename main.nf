@@ -88,15 +88,31 @@ if (params.assembly) {
 }
 
 Set species = ['hsa', 'eco', 'mmu', 'mau']
+Set autodownload = ['hsa', 'eco', 'mmu', 'mau']
+Set pathway = ['hsa', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
-if ( params.reads == '' ) { exit 1, "--reads is a required parameter" }
-if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
-if ( (! params.include_species) && params.genome == '' && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
-if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
-if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Suported species are: " + species}
+// required stuff
+if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
+
+// deprecated stuff
+if ( (params.species || params.include_species) && (params.autodownload || params.pathway) ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
+if ( params.species || params.include_species ) { 
+    println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
+    if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
+    if ( (! params.include_species) && params.genome == '' && ! workflow.profile.contains('test') ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
+    if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+    if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Supported species are: " + species}
+} else {
+    if ( ! params.autodownload && ! params.genome && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --autodownload " + autodownload + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+    // logic stuff
+    if ( params.genome && ! params.annotation ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
+    if ( ! params.autodownload in autodownload ) { exit 1, "Unsupported species for automatic download. Supported species are: " + autodownload }
+    if ( ! params.pathway in pathway ) { exit 1, "Unsupported species for downstream pathway analysis. Supported species are: " + pathway }
+}
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
+
 log.info """\
     R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
     = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
@@ -154,9 +170,26 @@ if (params.reads) {
 }
 
 /*
-* read in auto genome(s)
+* read in autodownload genome(s)
 */
-species_auto_ch = Channel.value( params.species )
+if ( params.species ) {
+    species_auto_ch = Channel.value( params.species ) // deprecated reminder
+} else if ( params.autodownload ) { 
+    species_auto_ch = Channel.value( params.autodownload )
+} else {
+    species_auto_ch = Channel.value( '' )
+}
+
+/*
+* read in species for downstream pathway analysis
+*/
+if ( params.species ) {
+    species_pathway_ch = Channel.value( params.species )
+} else if ( params.pathway ) {
+    species_pathway_ch = Channel.value( params.pathway )
+} else {
+    species_pathway_ch = Channel.value( '' )
+}
 
 /*
 * read in genome(s)
@@ -337,7 +370,7 @@ workflow get_test_data {
 
 workflow download_auto_reference {
     main:
-        if (params.include_species){
+        if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
             if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
             // cloud storage file.exists()?
@@ -355,7 +388,7 @@ workflow download_auto_reference {
 
 workflow download_auto_annotation {
     main:
-        if (params.include_species){
+        if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
             if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
             // cloud storage file.exists()?
@@ -528,7 +561,7 @@ workflow expression_reference_based {
         // run DEseq2
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
             annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
-            annotated_sample.source.collect(), species_auto_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
+            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
             deseq2_script_improve_deseq_table)
 
         // run MultiQC
@@ -680,14 +713,20 @@ def helpMSG() {
     nextflow run hoelzer-lab/rnaflow -profile test,local,conda
     nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
     nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
-    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
-    ${c_dim}Genomes and annotations from --species, --genome and --annotation are concatenated if --include_species is set.${c_reset}
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway
+    ${c_dim}Genomes and annotations from --autodownload, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
                                         ${c_dim}(check terminal output if correctly assigned)
                                         Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.${c_reset}
-    ${c_green}--species${c_reset}                Specifies the species identifier for downstream path analysis.
+    ${c_green}--autodownload${c_reset}           Specifies the species identifier for automated download [default: $params.autodownload]
+                                        ${c_dim}Currently supported are:
+                                        - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
+                                        - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                        - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                        - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]${c_reset}
+    ${c_dim}--species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
                              If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: $params.species]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
@@ -697,8 +736,8 @@ def helpMSG() {
     ${c_green}--genome${c_reset}                 CSV file with genome reference FASTA files (one path in each line)
                                         ${c_dim}If set, --annotation must also be set.${c_reset}
     ${c_green}--annotation${c_reset}             CSV file with genome annotation GTF files (one path in each line)
-    --include_species        Either --species or --genome/--annotation need to be used. Both input seetings can be also combined to use genome and annotation of 
-                             supported species in addition to --genome and --annotation [default: $params.include_species]
+    ${c_dim}--include_species        Either --species or --genome/--annotation need to be used. Both input seetings can be also combined to use genome and annotation of 
+                             supported species in addition to --genome and --annotation (DEPRECATED) [default: $params.include_species]${c_reset}
 
     ${c_yellow}Preprocessing options:${c_reset}
     --mode                   Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
@@ -711,6 +750,11 @@ def helpMSG() {
     --deg                    A CSV file following the pattern: conditionX,conditionY
                              Each line stands for one differential gene expression comparison.  
                              Must match the 'Condition' labels defined in the CSV file provided via --reads.  
+    --pathway                Perform different downstream pathway analysis for the species. [default: $params.pathway]
+                             ${c_dim}Currently supported are:
+                                 - hsa | Homo sapiens
+                                 - mmu | Mus musculus
+                                 - mau | Mesocricetus auratus${c_reset}
 
     ${c_yellow}Transcriptome assembly options:${c_reset}
     --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: $params.assembly]
