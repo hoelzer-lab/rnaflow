@@ -4,7 +4,8 @@ ____
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaflow)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
 ![](https://github.com/hoelzer-lab/rnaflow/workflows/Syntax_check/badge.svg)
-[![](https://img.shields.io/badge/Publication-Some_Journal-violet.svg)](https://hoelzer-lab.github.io/publications)
+[![](https://img.shields.io/badge/published_at-Genes-violet.svg)](https://doi.org/10.3390/genes11121487)
+[![](https://img.shields.io/badge/DOI-10.3390/genes11121487-ff69b4.svg)](https://doi.org/10.3390/genes11121487)
 
 ![](https://img.shields.io/badge/nextflow-20.10.0-brightgreen)
 ![](https://img.shields.io/badge/can_use-conda-yellow.svg)
@@ -569,8 +570,7 @@ We also provide some pre-configured profiles for certain HPC environments:
 If you use RNAflow please cite: 
 
 * [RNAflow](https://hoelzer-lab.github.io/publications)
-> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". JOURNAL. 2020. 
-
+> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". Genes 2020, 11(12), 1487; https://doi.org/10.3390/genes11121487
 <!-- ## Help message
 ```
 ``` -->
