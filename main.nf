@@ -95,6 +95,7 @@ if ( params.include_species && ! params.species ) { exit 1, "You need to select 
 if ( (! params.include_species) && params.genome == '' && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --include_species --species " + species + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
 if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
 if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Suported species are: " + species}
+if ( params.max_cores.toInteger() < params.cores.toInteger() ) { exit 1, "--max-cores (now set to " + params.max_cores + ") needs to be greater than --cores (now set to " + params.cores + ")." }
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 log.info """\

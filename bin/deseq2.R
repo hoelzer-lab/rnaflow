@@ -195,25 +195,31 @@ piano <- function(out.dir, resFold, mapGO, cpus) {
   names(myPval) <- rownames(resFold)
   myFC <- resFold$log2FoldChange
   names(myFC) <- rownames(resFold)
+  
+  if (cpus >= 10) {
+    piano_cpus = 10
+  } else {
+    piano_cpus = 1
+  }
 
   gene.set.min <- 20
   gene.set.max <- 'inf' # 9999999999999
   gsaRes1 <- runGSA(myFC, geneSetStat="maxmean", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes2 <- runGSA(myFC, geneSetStat="gsea", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes3 <- runGSA(myFC, geneSetStat="fgsea", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes4 <- runGSA(myFC, geneSetStat="page", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes5 <- runGSA(myPval, myFC, geneSetStat="fisher", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes6 <- runGSA(myPval, myFC, geneSetStat="stouffer", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes7 <- runGSA(myPval, myFC, geneSetStat="reporter", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
   gsaRes8 <- runGSA(myPval, myFC, geneSetStat="tailStrength", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=cpus)
+                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
 
   resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
   names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
@@ -665,6 +671,8 @@ for (comparison in comparisons) {
 
   #####################
   ## Piano
+  print(biomart.ensembl)
+  print(cpus)
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
