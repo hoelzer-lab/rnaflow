@@ -23,6 +23,10 @@ process format_annotation {
                 split_line = line.split('\\t')
                 if split_line[2] == 'gene' or split_line[2] == 'pseudogene':
                     desc = split_line[8]
+                    chr = split_line[0]
+                    start = split_line[3]
+                    stop = split_line[4]
+                    strand = split_line[6]
                     gene_id = line.split('gene_id')[1].split(';')[0].replace('"', '').strip()
                     if 'gene_name' in desc:
                         gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
@@ -32,7 +36,7 @@ process format_annotation {
                         gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
                     else:
                         gene_biotype = 'NA'
-                    out.write('\\t'.join([gene_id, gene_name, gene_biotype, desc.rstrip()]) + '\\n')
+                    out.write('\\t'.join([gene_id, gene_name, gene_biotype, chr, start, stop, strand, desc.rstrip()]) + '\\n')
     '''
 }
 
