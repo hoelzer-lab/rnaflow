@@ -452,7 +452,7 @@ workflow preprocess {
         // HISAT2 index
         hisat2index(reference)
         // map with HISAT2
-        hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.histat2_additional_params)
+        hisat2(sortmerna_no_rna_fastq, hisat2index.out, params.hisat2_additional_params)
         // index BAM files
         index_bam(hisat2.out.sample_bam)
 
@@ -705,7 +705,7 @@ def helpMSG() {
     --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
     --fastp_additional_params          additional parameters for fastp [default: $params.fastp_additional_params]
     --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
-    --histat2_additional_params        additional parameters for HISAT2 [default: $params.histat2_additional_params]
+    --hisat2_additional_params        additional parameters for HISAT2 [default: $params.hisat2_additional_params]
     --featurecounts_additional_params  additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
 
     ${c_yellow}DEG analysis options:${c_reset}
