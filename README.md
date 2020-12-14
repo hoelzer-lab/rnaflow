@@ -285,10 +285,11 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Preprocessing
 
 ```bash
---mode                          # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
---skip_sortmerna                # skip rRNA removal via SortMeRNA [default false]
---fastp_additional_params       # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
---histat2_additional_params     # additional parameters for HISAT2
+--mode                                 # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
+--skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
+--fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
+--hisat2_additional_params             # additional parameters for HISAT2
+--featurecounts_additional_params      # additional parameters for FeatureCounts [default: -t gene -g gene_id]
 ```
 
 ### DEG analysis
@@ -512,11 +513,14 @@ Input:
                                     If set, --annotation must also be set.
 --annotation             CSV file with genome annotation GTF files (one path in each line)
 --include_species        Either --species or --genome/--annotation need to be used. Both input seetings can be also combined to use genome and annotation of 
-                         supported species in addition to --genome and --annotation (DEPRECATED) [default: false]
+                         supported species in addition to --genome and --annotation [default: false]
 
 Preprocessing options:
---mode                   Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: single]
---skip_sortmerna         Skip rRNA removal via SortMeRNA [default: false] 
+--mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: single]
+--fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
+--skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
+--hisat2_additional_params         additional parameters for HISAT2 [default: ]
+--featurecounts_additional_params  additional parameters for FeatureCounts [default: -t gene -g gene_id]
 
 DEG analysis options:
 --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: 0]
