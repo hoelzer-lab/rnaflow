@@ -103,7 +103,7 @@ if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
 
 // deprecated stuff
 if ( ((params.species || params.include_species) && (params.autodownload || params.pathway)) && ! workflow.profile.contains('test') ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
-if ( params.species || params.include_species ) { 
+if ( ( params.species || params.include_species ) && ! workflow.profile.contains('test') ) { 
     println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
     if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
     if ( (! params.include_species) && params.genome == '' && ! workflow.profile.contains('test') ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
