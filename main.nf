@@ -22,7 +22,12 @@ nextflow.enable.dsl=2
 * Author: marie.lataretu@uni-jena.de
 */
 
-
+// Parameters sanity checking
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'histat2_additional_params', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'workdir', 'runinfo', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+def parameter_diff = params.keySet() - valid_params
+if (parameter_diff.size() != 0){
+    exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
+}
 
 // terminal prints
 if (params.help) { exit 0, helpMSG() }
@@ -97,7 +102,7 @@ if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
 
 // deprecated stuff
-if ( (params.species || params.include_species) && (params.autodownload || params.pathway) ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
+if ( ((params.species || params.include_species) && (params.autodownload || params.pathway)) && ! workflow.profile.contains('test') ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
 if ( params.species || params.include_species ) { 
     println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
     if ( params.include_species && ! params.species ) { exit 1, "You need to select a species with --species " + species + " for automatic download." }
@@ -185,7 +190,7 @@ if ( params.species ) {
 * read in species for downstream pathway analysis
 */
 if ( params.species ) {
-    species_pathway_ch = Channel.value( params.species )
+    species_pathway_ch = Channel.value( params.species ) // deprecated reminder
 } else if ( params.pathway ) {
     species_pathway_ch = Channel.value( params.pathway )
 } else {
