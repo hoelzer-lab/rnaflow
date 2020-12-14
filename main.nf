@@ -92,6 +92,7 @@ Set autodownload = ['hsa', 'eco', 'mmu', 'mau']
 Set pathway = ['hsa', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
+
 // required stuff
 if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
 
