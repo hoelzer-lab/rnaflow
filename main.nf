@@ -343,11 +343,11 @@ It is written for local use and cloud use via params.cloudProcess.
 
 workflow get_test_data {
     main:
-        reference_test_preload = file("${params.permanentCacheDir}/genomes/${params.species}_small.fa")
+        reference_test_preload = file("${params.permanentCacheDir}/genomes/${params.species}_small.fa") // deprecated reminder
         if ( reference_test_preload.exists()) { 
             reference_test = Channel.fromPath(reference_test_preload)
         } else {
-            reference_complete_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+            reference_complete_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa") // deprecated reminder
             if (reference_complete_preload.exists()) { 
                 reference_auto_ch = Channel.fromPath( reference_complete_preload )
                 reference_test = reduce_genome_test ( reference_auto_ch )
@@ -356,11 +356,11 @@ workflow get_test_data {
             }
         }
 
-        annotation_test_reload = file("${params.permanentCacheDir}/annotations/${params.species}_small.gtf")
+        annotation_test_reload = file("${params.permanentCacheDir}/annotations/${params.species}_small.gtf") // deprecated reminder
         if ( annotation_test_reload.exists() ) {
             annotation_test = Channel.fromPath(annotation_test_reload)
         } else {
-            annotation_complete_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+            annotation_complete_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf") // deprecated reminder
             if (annotation_complete_preload.exists()) { 
                 annotation_auto_ch = Channel.fromPath( annotation_complete_preload )
                 annotation_test = reduce_annotation_test( annotation_auto_ch )
@@ -381,7 +381,7 @@ workflow download_auto_reference {
             if (!params.cloudProcess) { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out }
             // cloud storage file.exists()?
             if (params.cloudProcess) {
-                reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa")
+                reference_preload = file("${params.permanentCacheDir}/genomes/${params.species}.fa") // deprecated reminder
                 if (reference_preload.exists()) { reference_auto_ch = Channel.fromPath(reference_preload) }
                 else { referenceGet( species_auto_ch ); reference_auto_ch = referenceGet.out } 
             }
@@ -399,7 +399,7 @@ workflow download_auto_annotation {
             if (!params.cloudProcess) { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out }
             // cloud storage file.exists()?
             if (params.cloudProcess) {
-                annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf")
+                annotation_preload = file("${params.permanentCacheDir}/annotations/${params.species}.gtf") // deprecated reminder
                 if (annotation_preload.exists()) { annotation_auto_ch = Channel.fromPath(annotation_preload) }
                 else { annotationGet( species_auto_ch ); annotation_auto_ch = annotationGet.out } 
             }
