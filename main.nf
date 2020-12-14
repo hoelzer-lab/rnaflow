@@ -712,9 +712,9 @@ def helpMSG() {
 
     ${c_yellow}Usage examples:${c_reset}
     nextflow run hoelzer-lab/rnaflow -profile test,local,conda
-    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
-    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
-    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload mmu --pathway mmu
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload eco --assembly
+    nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway hsa
     ${c_dim}Genomes and annotations from --autodownload, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
