@@ -286,7 +286,7 @@ Nextflow will need access to the working directory where temporary calculations 
 --skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
 --fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
 --hisat2_additional_params             # additional parameters for HISAT2
---featurecounts_additional_params      # additional parameters for FeatureCounts
+--featurecounts_additional_params      # additional parameters for FeatureCounts [default: -t gene -g gene_id]
 ```
 
 ### DEG analysis
