@@ -184,17 +184,20 @@ nextflow pull hoelzer-lab/rnaflow -r <RELEASE>
 ## Usage
 
 ```bash
-nextflow run hoelzer-lab/rnaflow --reads input.csv --species hsa --include_species --max_cores 6 --cores 2
+nextflow run hoelzer-lab/rnaflow --reads input.csv --autodownload hsa --pathway hsa --max_cores 6 --cores 2
 ```
 
-with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
+with `--autodownload <hsa|mmu|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run hoelzer-lab/rnaflow --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
 ```
 
-Genomes and annotations from `--species`, if `--include_species` is set, `--genome` and `--annotation` are concatenated.
+Genomes and annotations from `--autodownload`, `--genome` and `--annotation` are concatenated.
+
 By default, all possible comparisons are performed. Use `--deg` to change this.
+
+`--pathway <hsa|mmu|mau>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
 
 ### Input files
 
@@ -242,20 +245,20 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 /path/to/reference_annotation_2.gtf
 ```
 
-You can add a [build-in species](#build-in-species) to your defined genomes and annotation with `--species XXX --include_species`.
-
-`--species` is also an identifier for the downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
+You can add a [build-in species](#build-in-species) to your defined genomes and annotation with `--autodownload xxx`.
 
 #### Build-in species
 
-We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--species XXX --include_species`. Please let us know, we can easily add other species.
+We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--autodownload xxx`. Please let us know, we can easily add other species.
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
-| Homo sapiens | `hsa`                 | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
-| Mus musculus | `mmu`                 | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
-| Mesocricetus auratus | `mau`                 | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
+| Homo sapiens | `hsa` <sup>*</sup>               | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
+| Mus musculus | `mmu` <sup>*</sup>               | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
+| Mesocricetus auratus | `mau` <sup>*</sup>               | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
 | Escherichia coli | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
+
+<sup>*</sup> Downstream pathway analysis availible via `--pathway xxx`.
 
 #### Comparisons for DEG analysis
 
@@ -294,6 +297,7 @@ Nextflow will need access to the working directory where temporary calculations 
 --strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
 --tpm                           # threshold for TPM (transcripts per million) filter [default 1]
 --deg                           # a CSV file following the pattern: conditionX,conditionY
+--pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau
 ```
 
 ### Transcriptome assembly
@@ -446,7 +450,7 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
 
-Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`) and *Mesocricetus auratus* (`mau`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
 
 ## Working offline
 
@@ -480,15 +484,11 @@ nextflow-autodownload-databases     # default: `permanentCacheDir = 'nextflow-au
 <details><summary>click here to see the complete help message</summary>
 
 ```
-N E X T F L O W  ~  version 20.10.0
-Launching `main.nf` [insane_allen] - revision: 9ec3c675be
-____________________________________________________________________________________________
-
 Usage examples:
 nextflow run hoelzer-lab/rnaflow -profile test,local,conda
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload mmu --pathway mmu
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload eco --assembly
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway hsa
 Genomes and annotations from --autodownload, --genome and --annotation are concatenated.
 
 Input:
