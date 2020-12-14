@@ -510,7 +510,7 @@ Preprocessing options:
 --fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
 --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
 --histat2_additional_params        additional parameters for HISAT2 [default: ]
---featurecounts_additional_params  additional parameters for FeatureCounts [default: ]
+--featurecounts_additional_params  additional parameters for FeatureCounts [default: -t gene -g gene_id]
 
 DEG analysis options:
 --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: 0]
