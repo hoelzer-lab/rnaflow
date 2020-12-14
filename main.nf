@@ -487,7 +487,7 @@ workflow expression_reference_based {
 
     main:
         // count with featurecounts
-        featurecounts(sample_bam_ch, annotation)
+        featurecounts(sample_bam_ch, annotation, params.featurecounts_additional_params)
 
         // prepare annotation for R input
         format_annotation_gene_rows(annotation)
@@ -702,8 +702,11 @@ def helpMSG() {
                              supported species in addition to --genome and --annotation [default: $params.include_species]
 
     ${c_yellow}Preprocessing options:${c_reset}
-    --mode                   Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
-    --skip_sortmerna         Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
+    --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
+    --fastp_additional_params          additional parameters for fastp [default: $params.fastp_additional_params]
+    --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
+    --histat2_additional_params        additional parameters for HISAT2 [default: $params.histat2_additional_params]
+    --featurecounts_additional_params  additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
 
     ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
