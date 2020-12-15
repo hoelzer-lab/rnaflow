@@ -174,15 +174,17 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
   if (length(resFold$log2FoldChange) < ntop) {
     ntop = length(resFold$log2FoldChange)
   }
-  selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
+  if (ntop > 1) {
+    selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
   
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
-  pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
+    file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
+    pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
           scale = "row", border_color = NA, 
           labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
           annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
           labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
           height = 12, width = 8, file = file)
+  }
 }
 
 piano <- function(out.dir, resFold, mapGO, cpus) {
