@@ -4,7 +4,7 @@ require 'fileutils'
 
 class RefactorReportingtoolsTable
 
-  def initialize(html_path, anno, add_plot_information)
+  def initialize(html_path, anno, add_plot_information, pvalue)
 
     # does not work anymore because the input is now named 'annotation.gene.gtf'
     #species = anno.sub('.gene.gtf','')
@@ -74,7 +74,7 @@ class RefactorReportingtoolsTable
 
     if $add_plots
       # add plot HTML code and then give this updated file to the refactor function
-      add_plot_html_code(html_path)
+      add_plot_html_code(html_path, pvalue)
       refactor_deseq_html_table(html_path.sub('.html','.html.tmp'))
       `rm #{html_path}.tmp`
     else
@@ -82,7 +82,12 @@ class RefactorReportingtoolsTable
     end
   end
   
-  def add_plot_html_code(html_path)
+  def add_plot_html_code(html_path, pvalue)
+
+    pvalue_label = 'full'
+    if pvalue != '1.1'
+      pvalue_label = "p#{pvalue}"
+    end
 
     html_file = File.open(html_path,'r')    
     html_file_tmp = File.open(html_path.sub('.html','.html.tmp'),'w')
@@ -97,7 +102,7 @@ class RefactorReportingtoolsTable
         tmp_array[2..tmp_array.length-3].each do |row|
           row_splitted = row.split('</td>')
           gene_id = row_splitted[0].split('"">')[1]
-          new_row = [row_splitted[0], "<td class=\"\"><a href=\"figuresRNAseq_analysis_with_DESeq2_full/boxplot.#{gene_id}.pdf\"><img border=\"0\" src=\"figuresRNAseq_analysis_with_DESeq2_full/mini.#{gene_id}.png\" alt=\"figuresRNAseq_analysis_with_DESeq2_full/mini.#{gene_id}.png\" /></a>", row_splitted[1], row_splitted[2], row_splitted[3]].join('</td>') << '</td>'            
+          new_row = [row_splitted[0], "<td class=\"\"><a href=\"figuresRNAseq_analysis_with_DESeq2_#{pvalue_label}/boxplot.#{gene_id}.pdf\"><img border=\"0\" src=\"figuresRNAseq_analysis_with_DESeq2_#{pvalue_label}/mini.#{gene_id}.png\" alt=\"figuresRNAseq_analysis_with_DESeq2_#{pvalue_label}/mini.#{gene_id}.png\" /></a>", row_splitted[1], row_splitted[2], row_splitted[3]].join('</td>') << '</td>'            
           html_file_tmp << new_row << '</tr>'  
         end
         table_footer = tmp_array[tmp_array.length-2]
@@ -126,7 +131,11 @@ class RefactorReportingtoolsTable
         html_file_refac << refac_table_header(tmp_array[1], 2) << '</tr>' # second header
         tmp_array[2..tmp_array.length-3].each do |row|
           row_splitted = row.sub('<a href','<a target="_blank" href').split('</td>')
-          gene_id = row_splitted[0].scan(/#{$scan_gene_id_pattern}/)[0]
+          if $scan_gene_id_pattern
+            gene_id = row_splitted[0].scan(/#{$scan_gene_id_pattern}/)[0]
+          else
+            gene_id = row_splitted[0].split('"">')[1]
+          end
           next unless gene_id
           gene_id = gene_id.gsub('"','')
           gene_name = $id2name[gene_id]
