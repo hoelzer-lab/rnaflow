@@ -32,6 +32,8 @@ process format_annotation {
                         gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
                     else:
                         gene_name = gene_id
+                    if gene_name == 'NA':
+                        gene_name = gene_id
                     if 'gene_biotype' in desc:
                         gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
                     else:
