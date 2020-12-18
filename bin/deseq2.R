@@ -143,7 +143,8 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
 }
 
 plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
-  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
+  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)
+  select <- select[1:min(ntop, length(select))][1:min(ntop, length(select))]
   selected.ensembl.ids <- row.names(trsf_data[select,])
 
   file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
@@ -156,7 +157,8 @@ plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samp
 }
 
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
-  select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
+  select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)
+  select <- select[1:min(ntop, length(select))]
   selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
 
   file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
@@ -169,7 +171,8 @@ plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, sa
 }
 
 plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
-  selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
+  selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])
+  selected.ensembl.ids <- selected.ensembl.ids[1:min(ntop, length(selected.ensembl.ids))]
   
   file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
@@ -305,6 +308,7 @@ species <- eval( parse(text=args[10]) )
 regionReport_config  <- eval( parse(text=args[11]) )[1]
 regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
 cpus <- eval( parse(text=args[12]) )
+id_type <- eval( parse(text=args[13]) )
 #go.terms <- c()
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
@@ -666,12 +670,14 @@ for (comparison in comparisons) {
 
   #####################
   ## Piano
-  print(biomart.ensembl)
-  print(cpus)
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
-    results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
-    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+    if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
+      results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
+      piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+    } else {
+      print('SKIPPING: Piano. Feature ID not supported by biomaRt.')
+    }
   }
 
   #####################
@@ -691,13 +697,17 @@ for (comparison in comparisons) {
     colnames(interestGene) <- NULL
     interestGene <- interestGene[c(2,1)]
     webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    try.webgestalt <- try(
-      for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-        enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+    if (any(grepl(id_type, listIdType(), fixed=TRUE))) {
+      try.webgestalt <- try(
+        for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
+          enrichResult <- WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType=id_type, collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+        }
+      )
+      if (class(try.webgestalt) == "try-error") {
+        print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
       }
-    )
-    if (class(try.webgestalt) == "try-error") {
-      print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
+    } else {
+      print('SKIPPING: WebGestaltR. Feature ID not supported.')
     }
   }
 

@@ -299,6 +299,7 @@ Nextflow will need access to the working directory where temporary calculations 
 --tpm                           # threshold for TPM (transcripts per million) filter [default 1]
 --deg                           # a CSV file following the pattern: conditionX,conditionY
 --pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau
+--feature_id_type               # ID type for downstream analysis [default: ensembl_gene_id]
 ```
 
 ### Transcriptome assembly
@@ -534,6 +535,7 @@ DEG analysis options:
                              - hsa | Homo sapiens
                              - mmu | Mus musculus
                              - mau | Mesocricetus auratus
+--feature_id_type        ID type for downstream analysis [default: ensembl_gene_id]                            
 
 Transcriptome assembly options:
 --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: false]
