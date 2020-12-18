@@ -23,7 +23,7 @@ nextflow.enable.dsl=2
 */
 
 // Parameters sanity checking
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'workdir', 'runinfo', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'workdir', 'runinfo', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -256,12 +256,39 @@ if (params.deg) {
         .map{ it -> it.sort() }
         .unique()
 }
+
 /*
-* DESeq2 scripts
+* FeatureCounts params
+*/
+if ( params.featurecounts_additional_params.contains('-t ') ) {
+    for (param in params.featurecounts_additional_params.split('-')) {
+        if (param.startsWith('t ')) {
+            gtf_feature_type_ch = Channel.value( param.stripIndent().split(' ')[-1] )
+        }
+    }
+} else {
+    gtf_feature_type_ch = Channel.value('exon')
+}
+if ( params.featurecounts_additional_params.contains('-g ') ){
+    for (param in params.featurecounts_additional_params.split('-')) {
+        if (param.startsWith('g ')){
+            foo = param.stripIndent().split(' ')[-1]
+            gtf_attr_type_ch = Channel.value( foo )
+            gtf_feature_type_of_attr_type_ch = Channel.value( foo.split('_')[0] )
+        }
+    }
+} else {
+    gtf_attr_type_ch = Channel.value('gene_id')
+    gtf_feature_type_of_attr_type_ch = Channel.value('gene')
+}
+
+/*
+* DESeq2
 */
 deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIfExists: true )
 deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
+deseq2_id_type_ch = Channel.value(params.feature_id_type)
 
 /*
 * MultiQC config
@@ -528,8 +555,8 @@ workflow expression_reference_based {
         featurecounts(sample_bam_ch, annotation, params.featurecounts_additional_params)
 
         // prepare annotation for R input
-        format_annotation_gene_rows(annotation)
-        format_annotation(annotation)
+        format_annotation_gene_rows(annotation, gtf_feature_type_of_attr_type_ch)
+        format_annotation(annotation, gtf_attr_type_ch, gtf_feature_type_of_attr_type_ch)
 
         // filter by TPM value
         // prepare input channels
@@ -567,7 +594,7 @@ workflow expression_reference_based {
         // run DEseq2
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
             annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
-            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_script_refactor_reportingtools_table, 
+            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
             deseq2_script_improve_deseq_table)
 
         // run MultiQC
@@ -764,6 +791,7 @@ def helpMSG() {
                                  - hsa | Homo sapiens
                                  - mmu | Mus musculus
                                  - mau | Mesocricetus auratus${c_reset}
+    --feature_id_type        ID type for downstream analysis [default: $params.feature_id_type]
 
     ${c_yellow}Transcriptome assembly options:${c_reset}
     --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: $params.assembly]
