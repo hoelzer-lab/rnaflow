@@ -15,7 +15,8 @@ process trinity {
     if (params.mode == 'paired')
     """
       # Update the original CSV file to match quality controlled reads and Trinity input
-      grep -v Condition ${csv} | awk 'BEGIN{FS=","}{print \$4"\\t"\$1"\\t""${reads[0]}\\t""${reads[1]}"}' > \$(basename \$PWD)_input.csv
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.other.fastq.gz\\t"\$SAMPLE".R2.other.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
       mv trinity_out_dir/Trinity.fasta trinity.fasta
@@ -23,7 +24,8 @@ process trinity {
     else if (params.mode == 'single')
     """
       # Update the original CSV file to match quality controlled reads and Trinity input
-      grep -v Condition ${csv} | awk 'BEGIN{FS=","}{print \$3"\\t"\$1"\\t""${reads}"}' > \$(basename \$PWD)_input.csv
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.other.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
       mv trinity_out_dir/Trinity.fasta trinity.fasta
@@ -33,10 +35,6 @@ process trinity {
   }
 
 //In addition, the --bflyHeapSpaceMax is available. If you are confident that no instances of Butterfly will use all 10GB of memory, setting this to a smaller value may allow more Butterfly processes to run.
-
-
-
-
 
 /*
 #      --samples_file <string>         tab-delimited text file indicating biological replicate relationships.
