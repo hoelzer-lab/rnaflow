@@ -21,7 +21,7 @@ process trinity {
       fi
 
       # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk -v var="\$TYPE" 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1."var".fastq.gz\\t"\$SAMPLE".R2."var".fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.\$TYPE.fastq.gz\\t"\$SAMPLE".R2.\$TYPE.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
       
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
@@ -36,7 +36,7 @@ process trinity {
       fi
 
       # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk -v var="\$TYPE" 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1."var".fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.\$TYPE.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
 
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
