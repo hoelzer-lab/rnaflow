@@ -1,8 +1,3 @@
-// due to different file names w/ and w/o SortMeRNA we distinguish here 4 cases:
-// 1) paired-end
-// 2) paired-end + sortmerna
-// 3) single-end
-// 4) single-end + sortmerna
 process trinity {
     label 'trinity'
 
@@ -17,37 +12,31 @@ process trinity {
     path "trinity.fasta", emit: assembly
 
   script:
-    if (params.mode == 'paired') && (params.skip_sortmerna)
+    if (params.mode == 'paired')
     """
-      # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.trimmed.fastq.gz\\t"\$SAMPLE".R2.trimmed.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
-      
-      MEM=\$(echo ${task.memory} | awk '{print \$1}')
-      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
-      mv trinity_out_dir/Trinity.fasta trinity.fasta
-    """
-    else if (params.mode == 'paired')
-    """
-      # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.other.fastq.gz\\t"\$SAMPLE".R2.other.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
-      
-      MEM=\$(echo ${task.memory} | awk '{print \$1}')
-      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
-      mv trinity_out_dir/Trinity.fasta trinity.fasta
-    """
-    else if (params.mode == 'single') && (params.skip_sortmerna)
-    """
-      # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.trimmed.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      # check if sortmerna was used and adjust file names accordingly
+      TYPE='other'
+      if (${params.skip_sortmerna} == 'true'); then
+        TYPE='trimmed'
+      fi
 
+      # Update the original CSV file to match quality controlled reads and Trinity input
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk -v var="\$TYPE" 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1."var".fastq.gz\\t"\$SAMPLE".R2."var".fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
       mv trinity_out_dir/Trinity.fasta trinity.fasta
     """
     else if (params.mode == 'single')
     """
+      # check if sortmerna was used and adjust file names accordingly
+      TYPE='other'
+      if (${params.skip_sortmerna} == 'true'); then
+        TYPE='trimmed'
+      fi
+
       # Update the original CSV file to match quality controlled reads and Trinity input
-      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1.other.fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
+      for SAMPLE in \$(grep -v Sample ${csv} | awk 'BEGIN{FS=","};{print \$1}'); do CONDITION=\$(grep \$SAMPLE ${csv} | awk -v var="\$TYPE" 'BEGIN{FS=","};{print \$4}'); printf \$CONDITION"\\t"\$SAMPLE"\\t"\$SAMPLE".R1."var".fastq.gz\\n"; done > \$(basename \$PWD)_input.csv
 
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
       Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
