@@ -1,3 +1,8 @@
+// due to different file names w/ and w/o SortMeRNA we distinguish here 4 cases:
+// 1) paired-end
+// 2) paired-end + sortmerna
+// 3) single-end
+// 4) single-end + sortmerna
 process trinity {
     label 'trinity'
 
@@ -12,11 +17,6 @@ process trinity {
     path "trinity.fasta", emit: assembly
 
   script:
-    // due to different file names w/ and w/o SortMeRNA we distinguish here 4 cases:
-    // 1) paired-end
-    // 2) paired-end + sortmerna
-    // 3) single-end
-    // 4) single-end + sortmerna
     if (params.mode == 'paired') && (params.skip_sortmerna)
     """
       # Update the original CSV file to match quality controlled reads and Trinity input
