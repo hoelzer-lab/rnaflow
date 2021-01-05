@@ -272,9 +272,9 @@ if ( params.featurecounts_additional_params.contains('-t ') ) {
 if ( params.featurecounts_additional_params.contains('-g ') ){
     for (param in params.featurecounts_additional_params.split('-')) {
         if (param.startsWith('g ')){
-            values_of_g = param.stripIndent().split(' ')[-1]
-            gtf_attr_type_ch = Channel.value( values_of_g )
-            gtf_feature_type_of_attr_type_ch = Channel.value( values_of_g.split('_')[0] )
+            value_of_g = param.stripIndent().split(' ')[-1]
+            gtf_attr_type_ch = Channel.value( value_of_g )
+            gtf_feature_type_of_attr_type_ch = Channel.value( value_of_g.split('_')[0] )
         }
     }
 } else {
