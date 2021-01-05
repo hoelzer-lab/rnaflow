@@ -23,7 +23,7 @@ nextflow.enable.dsl=2
 */
 
 // Parameters sanity checking
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'workdir', 'runinfo', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'runinfo', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -781,7 +781,7 @@ def helpMSG() {
     --permanentCacheDir      Location for auto-download data like databases [default: $params.permanentCacheDir]
     --condaCacheDir          Location for storing the conda environments [default: $params.condaCacheDir]
     --singularityCacheDir    Location for storing the singularity images [default: $params.singularityCacheDir]
-    --workdir                Working directory for all intermediate results [default: $params.workdir]
+    ${c_dim}--workdir                Working directory for all intermediate results [default: $params.workdir] (DEPRECATED: use `-w your/workdir` instead)${c_reset}
     --softlink_results       Softlink result files instead of copying.
 
     ${c_dim}Nextflow options:
