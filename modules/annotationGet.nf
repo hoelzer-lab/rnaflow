@@ -47,13 +47,13 @@ process concat_annotation {
   label 'smallTask'
 
   input:
-  path '*'
+  path annotation
 
   output:
   path 'annotation.gtf'
   
   script:
   """
-  cat * > annotation.gtf
+  cat ${annotation} > annotation.gtf
   """
 }

@@ -47,13 +47,13 @@ process concat_genome {
   label 'smallTask'
   
   input:
-  path '*'
+  path fasta
 
   output:
   path 'reference.fa'
   
   script:
   """
-  cat * > reference.fa
+  cat ${fasta} > reference.fa
   """
 }
