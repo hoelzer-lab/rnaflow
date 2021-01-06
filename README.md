@@ -278,7 +278,7 @@ You can easily resume your run in case of changes to the parameters or inputs. N
 nextflow run hoelzer-lab/rnaflow -profile test,conda,local -resume
 ```
 
-Nextflow will need access to the working directory where temporary calculations are stored. Per default, this is set to `/tmp/nextflow-work-$USER` but can be adjusted via `--workdir /path/to/any/workdir`. In addition, the `.nextflow.log` file is needed to resume a run, thus, this will only work if you resume the run from the same folder where you started it. 
+Nextflow will need access to the working directory where temporary calculations are stored. Per default, this is set to `work` but can be adjusted via `-w /path/to/any/workdir`. In addition, the `.nextflow.log` file is needed to resume a run, thus, this will only work if you resume the run from the same folder where you started it. 
 
 ## Workflow control
 
@@ -551,7 +551,7 @@ Caching:
 --permanentCacheDir      Location for auto-download data like databases [default: nextflow-autodownload-databases]
 --condaCacheDir          Location for storing the conda environments [default: conda]
 --singularityCacheDir    Location for storing the singularity images [default: singularity]
---workdir                Working directory for all intermediate results [default: /tmp/nextflow-work-marie]
+--workdir                Working directory for all intermediate results [default: null] (DEPRECATED: use `-w your/workdir` instead)
 --softlink_results       Softlink result files instead of copying.
 
 Nextflow options:
