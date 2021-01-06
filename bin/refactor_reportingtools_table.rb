@@ -119,7 +119,7 @@ class RefactorReportingtoolsTable
   def refactor_deseq_html_table(html_path)
     
     html_file = File.open(html_path,'r')    
-    html_file_refac = File.open(html_path.sub('.tmp','').sub('.html','_table.html'),'w')
+    html_file_refac = File.open(html_path.sub('.tmp','').sub('.html','_extended.html'),'w')
 
     #pvalue = File.basename(html_path, '.html').split('_').reverse[0]
 
@@ -186,4 +186,4 @@ class RefactorReportingtoolsTable
 
 end
 
-RefactorReportingtoolsTable.new(ARGV[0], ARGV[1], ARGV[2])
+RefactorReportingtoolsTable.new(ARGV[0], ARGV[1], ARGV[2], ARGV[3])

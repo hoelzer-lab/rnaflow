@@ -673,8 +673,6 @@ for (comparison in comparisons) {
 
   #####################
   ## Piano
-  print(biomart.ensembl)
-  print(cpus)
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
