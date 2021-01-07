@@ -181,7 +181,6 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
           annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
           labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
           height = 12, width = 8, file = file)
-  }
 }
 
 piano <- function(out.dir, resFold, mapGO, cpus) {
