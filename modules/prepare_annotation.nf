@@ -25,16 +25,22 @@ process format_annotation {
                 split_line = line.split('\\t')
                 if split_line[2] == '!{gtf_feature_type_of_attr_type}' or split_line[2] == 'pseudogene':
                     desc = split_line[8]
+                    chr = split_line[0]
+                    start = split_line[3]
+                    stop = split_line[4]
+                    strand = split_line[6]
                     target_id = line.split('!{gtf_attr_type}')[1].split(';')[0].replace('"', '').strip()
                     if 'gene_name' in desc:
                         gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
                     else:
                         gene_name = target_id
+                    if gene_name == 'NA':
+                        gene_name = target_id
                     if 'gene_biotype' in desc:
                         gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
                     else:
                         gene_biotype = 'NA'
-                    out.write('\\t'.join([target_id, gene_name, gene_biotype]) + '\\n')
+                    out.write('\\t'.join([target_id, gene_name, gene_biotype, chr, start, stop, strand, desc.rstrip()]) + '\\n')
     '''
 }
 

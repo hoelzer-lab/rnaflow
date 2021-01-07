@@ -96,7 +96,7 @@ reportingTools.html <- function(out.dir, dds, deseq2.result, pvalueCutoff, condi
   des2Report <- HTMLReport(shortName=shortName, title=title, basePath=out.dir, reportDirectory="reports/")
   publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor=colData(dds)$condition, reportDir=out.dir, n=length(row.names(deseq2.result)), contrast=c("condition",condition1,condition2), make.plots=make.plots)
   finish(des2Report)
-  system(paste('./refactor_reportingtools_table.rb', paste0(out.dir, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', sep=" "))
+  system(paste('./refactor_reportingtools_table.rb', paste0(out.dir, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', pvalueCutoff, sep=" "))
 }
 
 plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
@@ -182,6 +182,7 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
           labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
           height = 12, width = 8, file = file)
   }
+}
 
 piano <- function(out.dir, resFold, mapGO, cpus) {
   mapGO <- mapGO[mapGO[,2]!="",]
