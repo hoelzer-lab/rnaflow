@@ -39,6 +39,9 @@ class RefactorReportingtoolsTable
       when 'mmu'
         $scan_gene_id_pattern = 'ENSMUSG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?g='
+      when 'mau'
+        $scan_gene_id_pattern = 'ENSMAUG[0-9]+'
+        $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?g='
       else
         $scan_gene_id_pattern = false
         $ensembl_url = false
