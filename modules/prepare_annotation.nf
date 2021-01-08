@@ -19,28 +19,37 @@ process format_annotation {
     shell:
     '''
     #!/usr/bin/env python3
+    target_id_set = set()
     with open("!{annotation}", 'r') as gtf, open("!{annotation.baseName}.id2details", 'a') as out:
         for line in gtf:
             if not line.startswith('#'):
                 split_line = line.split('\\t')
                 if split_line[2] == '!{gtf_feature_type_of_attr_type}' or split_line[2] == 'pseudogene':
-                    desc = split_line[8]
-                    chr = split_line[0]
-                    start = split_line[3]
-                    stop = split_line[4]
-                    strand = split_line[6]
                     target_id = line.split('!{gtf_attr_type}')[1].split(';')[0].replace('"', '').strip()
-                    if 'gene_name' in desc:
-                        gene_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
-                    else:
-                        gene_name = target_id
-                    if gene_name == 'NA':
-                        gene_name = target_id
-                    if 'gene_biotype' in desc:
-                        gene_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
-                    else:
-                        gene_biotype = 'NA'
-                    out.write('\\t'.join([target_id, gene_name, gene_biotype, chr, start, stop, strand, desc.rstrip()]) + '\\n')
+                    if target_id not in target_id_set:
+                        desc = split_line[8]
+                        chr = split_line[0]
+                        start = split_line[3]
+                        stop = split_line[4]
+                        strand = split_line[6]
+                        if '!{gtf_attr_type}' == 'transcript_id' and 'transcript_name' in desc:
+                            target_name = desc.split('transcript_name')[1].split(';')[0].replace('"','').strip()
+                        else:
+                            if 'gene_name' in desc:
+                                target_name = desc.split('gene_name')[1].split(';')[0].replace('"','').strip()
+                            else:
+                                target_name = target_id
+                        if target_name == 'NA':
+                            target_name = target_id
+                        if '!{gtf_attr_type}' == 'transcript_id' and 'transcript_biotype' in desc:
+                            target_biotype = desc.split('transcript_biotype')[1].split(';')[0].replace('"','').strip()
+                        else:
+                            if 'gene_biotype' in desc:
+                                target_biotype = desc.split('gene_biotype')[1].split(';')[0].replace('"','').strip()
+                            else:
+                                target_biotype = 'NA'
+                        target_id_set.add(target_id)
+                        out.write('\\t'.join([target_id, target_name, target_biotype, chr, start, stop, strand, desc.rstrip()]) + '\\n')
     '''
 }
 
