@@ -19,12 +19,15 @@ process format_annotation {
     shell:
     '''
     #!/usr/bin/env python3
+    import sys
     target_id_set = set()
     with open("!{annotation}", 'r') as gtf, open("!{annotation.baseName}.id2details", 'a') as out:
         for line in gtf:
             if not line.startswith('#'):
                 split_line = line.split('\\t')
                 if split_line[2] == '!{gtf_feature_type_of_attr_type}' or split_line[2] == 'pseudogene':
+                    if '!{gtf_attr_type}' not in line:
+                        sys.exit(f"ERROR: No '!{gtf_attr_type}' found in a '!{gtf_feature_type_of_attr_type}'-type line:\\n{line}\\nCheck your annotation file or adapt the parameter `--featurecounts_additional_params`")
                     target_id = line.split('!{gtf_attr_type}')[1].split(';')[0].replace('"', '').strip()
                     if target_id not in target_id_set:
                         desc = split_line[8]
