@@ -9,6 +9,12 @@ class RefactorReportingtoolsTable
     # does not work anymore because the input is now named 'annotation.gene.gtf'
     #species = anno.sub('.gene.gtf','')
 
+    # check if analysis runs on transcripts instead of genes
+    feature_type = 'gene'
+    if anno.include?('.transcript.gtf')
+      feature_type = 'transcript'
+    end
+
     $add_plots = false
     $add_plots = true if add_plot_information && add_plot_information == 'add_plots'
 
@@ -23,6 +29,7 @@ class RefactorReportingtoolsTable
           species = 'eco' if gene_id.start_with?('ER')
           species = 'hsa' if gene_id.start_with?('ENSG')
           species = 'mmu' if gene_id.start_with?('ENSMUSG')
+          species = 'mau' if gene_id.start_with?('ENSMAUG')
           break if species != 'na'
         end
       end
@@ -31,19 +38,31 @@ class RefactorReportingtoolsTable
 
     case species
       when 'eco' 
-        $scan_gene_id_pattern = 'ER[0-9]+_[0-9]+'
+        $scan_feature_id_pattern = 'ER[0-9]+_[0-9]+'
         $ensembl_url = 'https://bacteria.ensembl.org/Escherichia_coli_k_12/Gene/Summary?g='
       when 'hsa'
-        $scan_gene_id_pattern = 'ENSG[0-9]+'
+        $scan_feature_id_pattern = 'ENSG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?g='
+        if feature_type == 'transcript'
+          $scan_feature_id_pattern = 'ENST[0-9]+'
+          $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?t='  
+        end
       when 'mmu'
-        $scan_gene_id_pattern = 'ENSMUSG[0-9]+'
+        $scan_feature_id_pattern = 'ENSMUSG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?g='
+        if feature_type == 'transcript'
+          $scan_feature_id_pattern = 'ENSMUST[0-9]+'
+          $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?t='
+        end
       when 'mau'
-        $scan_gene_id_pattern = 'ENSMAUG[0-9]+'
+        $scan_feature_id_pattern = 'ENSMAUG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?g='
+        if feature_type == 'transcript'
+          $scan_feature_id_pattern = 'ENSMAUT[0-9]+'
+          $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?t='
+        end
       else
-        $scan_gene_id_pattern = false
+        $scan_feature_id_pattern = false
         $ensembl_url = false
     end
 
@@ -52,25 +71,40 @@ class RefactorReportingtoolsTable
     $id2pos = {}
     gtf = File.open(anno,'r')
     gtf.each do |line|
+      
       s = line.split("\t")
+      
+      feature_name = 'NA'
       if line.include?('gene_name')
-        gene_name = s[8].split('gene_name')[1].split(';')[0].gsub('"','').strip
-      else
-        gene_name = 'NA'
+        feature_name = s[8].split('gene_name')[1].split(';')[0].gsub('"','').strip
+      end 
+      if feature_type == 'transcript' && line.include?('transcript_name')
+        # update feature name to transcript_name
+        feature_name = s[8].split('transcript_name')[1].split(';')[0].gsub('"','').strip
       end
-      gene_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+
+      feature_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+      if feature_type == 'transcript' && line.include?('transcript_id')
+        # update feature id to transcript_name
+        feature_id = s[8].split('transcript_id')[1].split(';')[0].gsub('"','').strip
+      end
+      
+      feature_biotype = 'NA'
       if line.include?('gene_biotype')
-        gene_biotype = s[8].split('gene_biotype')[1].split(';')[0].gsub('"','').strip
-      else
-        gene_biotype = 'NA'
+        feature_biotype = s[8].split('gene_biotype')[1].split(';')[0].gsub('"','').strip
       end
+      if feature_type == 'transcript' && line.include?('transcript_biotype')
+        # update feature biotype to transcript_name
+        feature_biotype = s[8].split('transcript_biotype')[1].split(';')[0].gsub('"','').strip
+      end
+      
       chr = s[0]
       start = s[3]
       stop = s[4]
       strand = s[6]
-      $id2name[gene_id] = gene_name
-      $id2biotype[gene_id] = gene_biotype
-      $id2pos[gene_id] = [chr, start, stop, strand]
+      $id2name[feature_id] = feature_name
+      $id2biotype[feature_id] = feature_biotype
+      $id2pos[feature_id] = [chr, start, stop, strand]
     end
     gtf.close
     puts "read in #{$id2name.keys.size} genes."
@@ -134,21 +168,21 @@ class RefactorReportingtoolsTable
         html_file_refac << refac_table_header(tmp_array[1], 2) << '</tr>' # second header
         tmp_array[2..tmp_array.length-3].each do |row|
           row_splitted = row.sub('<a href','<a target="_blank" href').split('</td>')
-          if $scan_gene_id_pattern
-            gene_id = row_splitted[0].scan(/#{$scan_gene_id_pattern}/)[0]
+          if $scan_feature_id_pattern
+            feature_id = row_splitted[0].scan(/#{$scan_feature_id_pattern}/)[0]
           else
-            gene_id = row_splitted[0].split('"">')[1]
+            feature_id = row_splitted[0].split('"">')[1]
           end
-          next unless gene_id
-          gene_id = gene_id.gsub('"','')
-          gene_name = $id2name[gene_id]
-          gene_biotype = $id2biotype[gene_id]
-          #puts gene_id          
-          pos_part = "<td class=\"\">#{$id2pos[gene_id][0]}:#{$id2pos[gene_id][1]}-#{$id2pos[gene_id][2]} (#{$id2pos[gene_id][3]})"
+          next unless feature_id
+          feature_id = feature_id.gsub('"','')
+          feature_name = $id2name[feature_id]
+          gene_biotype = $id2biotype[feature_id]
+          #puts feature_id          
+          pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
-	          new_row = [row_splitted[0].sub('<td class="">',"<td class=\"\"><a target=\"_blank\" href=\"#{$ensembl_url}#{gene_id};\">") + '</a>', "<td class=\"\">#{gene_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'
+	          new_row = [row_splitted[0].sub('<td class="">',"<td class=\"\"><a target=\"_blank\" href=\"#{$ensembl_url}#{feature_id};\">") + '</a>', "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'
 	        else
-            new_row = [row_splitted[0], "<td class=\"\">#{gene_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'            
+            new_row = [row_splitted[0], "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'            
           end          
           html_file_refac << new_row << '</tr>'  
         end
