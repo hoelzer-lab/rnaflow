@@ -10,9 +10,13 @@ class RefactorReportingtoolsTable
     #species = anno.sub('.gene.gtf','')
 
     # check if analysis runs on transcripts instead of genes
+    $exon_id_2_gene_id = {}
     feature_type = 'gene'
     if anno.include?('.transcript.gtf')
       feature_type = 'transcript'
+    end
+    if anno.include?('.exon.gtf')
+      feature_type = 'exon'
     end
 
     $add_plots = false
@@ -47,6 +51,9 @@ class RefactorReportingtoolsTable
           $scan_feature_id_pattern = 'ENST[0-9]+'
           $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?t='  
         end
+        if feature_type == 'exon'
+          $scan_feature_id_pattern = 'ENSE[0-9]+'
+        end
       when 'mmu'
         $scan_feature_id_pattern = 'ENSMUSG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?g='
@@ -54,12 +61,18 @@ class RefactorReportingtoolsTable
           $scan_feature_id_pattern = 'ENSMUST[0-9]+'
           $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?t='
         end
+        if feature_type == 'exon'
+          $scan_feature_id_pattern = 'ENSMUSE[0-9]+'
+        end
       when 'mau'
         $scan_feature_id_pattern = 'ENSMAUG[0-9]+'
         $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?g='
         if feature_type == 'transcript'
           $scan_feature_id_pattern = 'ENSMAUT[0-9]+'
           $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?t='
+        end
+        if feature_type == 'exon'
+          $scan_feature_id_pattern = 'ENSMAUE[0-9]+'
         end
       else
         $scan_feature_id_pattern = false
@@ -85,8 +98,13 @@ class RefactorReportingtoolsTable
 
       feature_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
       if feature_type == 'transcript' && line.include?('transcript_id')
-        # update feature id to transcript_name
+        # update feature id to transcript_id
         feature_id = s[8].split('transcript_id')[1].split(';')[0].gsub('"','').strip
+      end
+      if feature_type == 'exon' && line.include?('exon_id')
+        # update feature id to exon_id
+        feature_id = s[8].split('exon_id')[1].split(';')[0].gsub('"','').strip
+        $exon_id_2_gene_id[feature_id] = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
       end
       
       feature_biotype = 'NA'
@@ -94,7 +112,7 @@ class RefactorReportingtoolsTable
         feature_biotype = s[8].split('gene_biotype')[1].split(';')[0].gsub('"','').strip
       end
       if feature_type == 'transcript' && line.include?('transcript_biotype')
-        # update feature biotype to transcript_name
+        # update feature biotype to transcript_biotype
         feature_biotype = s[8].split('transcript_biotype')[1].split(';')[0].gsub('"','').strip
       end
       
@@ -180,7 +198,12 @@ class RefactorReportingtoolsTable
           #puts feature_id          
           pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
-	          new_row = [row_splitted[0].sub('<td class="">',"<td class=\"\"><a target=\"_blank\" href=\"#{$ensembl_url}#{feature_id};\">") + '</a>', "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'
+            if $exon_id_2_gene_id[feature_id]
+              # in this case we write the exon gene ID but want to point to the ENSEMBL gene URL
+              new_row = [row_splitted[0].sub('<td class="">',"<td class=\"\"><a target=\"_blank\" href=\"#{$ensembl_url}#{$exon_id_2_gene_id[feature_id]};\">") + '</a>', "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'
+            else
+              new_row = [row_splitted[0].sub('<td class="">',"<td class=\"\"><a target=\"_blank\" href=\"#{$ensembl_url}#{feature_id};\">") + '</a>', "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'
+            end
 	        else
             new_row = [row_splitted[0], "<td class=\"\">#{feature_name}", "<td class=\"\">#{gene_biotype}", pos_part, row_splitted[1].sub('href=','target="_blank" href=').sub('<td class="">','<td class=""><div style="width: 200px">') + '</div>', row_splitted[2], row_splitted[3], row_splitted[4]].join('</td>') << '</td>'            
           end          
