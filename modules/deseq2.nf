@@ -21,6 +21,7 @@ process deseq2 {
     val(sources)
     val(species)
     path(script)
+    val(id_type)
     path(script_refactor_reportingtools_table)
     path(script_improve_deseq_table)
 
@@ -40,7 +41,7 @@ process deseq2 {
         sources_in = sources.collect { "\"${it}\"" }.join(",")
     }
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${sources_in}) c("${species}") c("${regionReport_config}") c(${task.cpus})' ${script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${sample_files}) c(${conditions}) c(${col_labels_in}) c(${levels}) c(${comparisons}) c("${ensembl2id}") c("${annotation_genes}") c(${sources_in}) c("${species}") c("${regionReport_config}") c(${task.cpus}) c("${id_type}")' ${script}
     """
 }
 /*
