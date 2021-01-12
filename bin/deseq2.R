@@ -30,7 +30,7 @@ build.project.structure <- function(out.dir) {
   }
 }
 
-write.table.to.file <- function(as.data.frame.object, output.path, output.name, ensembl2genes, row.names=TRUE, col.names=TRUE) {
+write.table.to.file <- function(as.data.frame.object, output.path, output.name, id2name, row.names=TRUE, col.names=TRUE) {
   output.file.basename <- paste0(output.path, "/", output.name)
   write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row.names, col.names=col.names)
   if( is.na(col.names) ){
@@ -39,10 +39,10 @@ write.table.to.file <- function(as.data.frame.object, output.path, output.name, 
     write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names, asTable=TRUE)
   }
 
-  if ( !missing(ensembl2genes)) {
+  if ( !missing(id2name)) {
     output.file.basename.extended <- paste0(output.path, "/", output.name, "_extended")
     ## add real gene names and biotypes to the csv files
-    system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), ensembl2genes, sep=" "), wait=TRUE)
+    system(paste("./improve_deseq_table.rb", paste0(output.file.basename.extended, ".csv" ), paste0(output.file.basename, ".csv"), id2name, sep=" "), wait=TRUE)
     write.xlsx(read.csv(paste0(output.file.basename.extended, ".csv" )), paste0(output.file.basename.extended, ".xlsx" ), asTable=TRUE)
   }
 }
@@ -143,48 +143,44 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
 }
 
 plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
-  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
-  selected.ensembl.ids <- row.names(trsf_data[select,])
+  select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)
+  select <- select[1:min(ntop, length(select))][1:min(ntop, length(select))]
+  selected.ids <- row.names(trsf_data[select,])
 
   file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
         scale = "row", border_color = NA,
-        labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
+        labels_row = as.character(genes.info[selected.ids,]$gene_type),
         annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
         labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
         height = 12, width = 8, file = file)
 }
 
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
-  select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:ntop]
-  selected.ensembl.ids <- row.names(counts(dds,normalized=TRUE)[select,])
+  select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)
+  select <- select[1:min(ntop, length(select))]
+  selected.ids <- row.names(counts(dds,normalized=TRUE)[select,])
 
   file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
   pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
           scale = "row", border_color = NA,
-          labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
+          labels_row = as.character(genes.info[selected.ids,]$gene_type),
           annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
           labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
           height = 12, width = 8, file = file)
 }
 
 plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
-  # check how many elements are in the dataframe
-  # if less elements are in the dataframe than selected by ntop, reduce ntop
-  if (length(resFold$log2FoldChange) < ntop) {
-    ntop = length(resFold$log2FoldChange)
-  }
-  if (ntop > 1) {
-    selected.ensembl.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])[1:ntop]
+  selected.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])
+  selected.ids <- selected.ids[1:min(ntop, length(selected.ids))]
   
-    file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
-    pheatmap(assay(trsf_data)[selected.ensembl.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
+  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
+  pheatmap(assay(trsf_data)[selected.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
           scale = "row", border_color = NA, 
-          labels_row = as.character(genes.info[selected.ensembl.ids,]$gene_type),
+          labels_row = as.character(genes.info[selected.ids,]$gene_type),
           annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
           labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
           height = 12, width = 8, file = file)
-  }
 }
 
 piano <- function(out.dir, resFold, mapGO, cpus) {
@@ -305,19 +301,20 @@ conditions <- eval( parse(text=args[3]) )
 col.labels <- eval( parse(text=args[4]) )
 levels <- eval( parse(text=args[5]) )
 comparisons <- eval( parse(text=args[6]) )
-ensembl2genes <- eval( parse(text=args[7]) )[1]
+id2name <- eval( parse(text=args[7]) )[1]
 annotation_genes <- eval( parse(text=args[8]) )[1]
 sources <- eval( parse(text=args[9]) )
 species <- eval( parse(text=args[10]) )
 regionReport_config  <- eval( parse(text=args[11]) )[1]
 regionReport_config <- normalizePath(regionReport_config) # regionReport needs the absolute path
 cpus <- eval( parse(text=args[12]) )
+id_type <- eval( parse(text=args[13]) )
 #go.terms <- c()
 #go.terms <- eval( parse(text=args[12]) ) # c("GO:004563","GO:0011231",...)
 
 #####################
 ## Read in ensembl ids, gene names and biotypes from a tab seperated table
-df.gene.anno <- as.data.frame( read.table(ensembl2genes, header=FALSE, sep="\t") )
+df.gene.anno <- as.data.frame( read.table(id2name, header=FALSE, sep="\t") )
 rownames(df.gene.anno) <- df.gene.anno$V1
 df.gene.anno$V1 <- NULL
 colnames(df.gene.anno) <- c('gene_symbol', 'biotype')
@@ -578,10 +575,10 @@ for (comparison in comparisons) {
   ## DESeq2 results
   out.sub.output.dir <- paste0(out.sub, "/results/")
 
-  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), ensembl2genes, col.names=NA)
-  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), ensembl2genes, col.names=NA)
-  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), ensembl2genes, col.names=NA)
-  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), ensembl2genes, col.names=NA)
+  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), id2name, col.names=NA)
+  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), id2name, col.names=NA)
+  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), id2name, col.names=NA)
+  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), id2name, col.names=NA)
 
   #####################
   ## DESeq2 results summary
@@ -675,8 +672,12 @@ for (comparison in comparisons) {
   ## Piano
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
-    results.gene <- getBM(attributes =  c("ensembl_gene_id", "name_1006"), filters = "ensembl_gene_id", values = rownames(resFold05), mart=biomart.ensembl)
-    piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+    if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
+      results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
+      piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+    } else {
+      print('SKIPPING: Piano. Feature ID not supported by biomaRt.')
+    }
   }
 
   #####################
@@ -696,13 +697,17 @@ for (comparison in comparisons) {
     colnames(interestGene) <- NULL
     interestGene <- interestGene[c(2,1)]
     webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    try.webgestalt <- try(
-      for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-        enrichResult <-WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType="ensembl_gene_id", collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+    if (any(grepl(id_type, listIdType(), fixed=TRUE))) {
+      try.webgestalt <- try(
+        for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
+          enrichResult <- WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType=id_type, collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
+        }
+      )
+      if (class(try.webgestalt) == "try-error") {
+        print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
       }
-    )
-    if (class(try.webgestalt) == "try-error") {
-      print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
+    } else {
+      print('SKIPPING: WebGestaltR. Feature ID not supported.')
     }
   }
 

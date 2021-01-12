@@ -11,6 +11,7 @@ process featurecounts {
     input:
     tuple val(name), path(bam)
     path(annotation)
+    val(additionalParams)
 
     output:
     tuple val(name), path("${name}.counts.tsv"), emit: counts // [mock_rep1, /home/hoelzer/git/nanozoo/wf_gene_expression/work/9e/7fb58903c9e4163d526ef749c0d088/mock_rep1.tsv]
@@ -19,12 +20,12 @@ process featurecounts {
     script:
     if (params.mode == 'single') {
     """
-    featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv ${bam}
+    featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv  ${additionalParams} ${bam}
     """
     }
     else {
     """
-    featureCounts -pBP -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv ${bam}
+    featureCounts -pBP -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv ${additionalParams} ${bam}
     """
     }
 }

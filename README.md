@@ -4,7 +4,8 @@ ____
 ![](https://img.shields.io/github/v/release/hoelzer-lab/rnaflow)
 ![](https://img.shields.io/badge/licence-GPL--3.0-lightgrey.svg)
 ![](https://github.com/hoelzer-lab/rnaflow/workflows/Syntax_check/badge.svg)
-[![](https://img.shields.io/badge/Publication-Some_Journal-violet.svg)](https://hoelzer-lab.github.io/publications)
+[![](https://img.shields.io/badge/published_at-Genes-violet.svg)](https://doi.org/10.3390/genes11121487)
+[![](https://img.shields.io/badge/DOI-10.3390/genes11121487-ff69b4.svg)](https://doi.org/10.3390/genes11121487)
 
 ![](https://img.shields.io/badge/nextflow-20.10.0-brightgreen)
 ![](https://img.shields.io/badge/can_use-conda-yellow.svg)
@@ -183,17 +184,20 @@ nextflow pull hoelzer-lab/rnaflow -r <RELEASE>
 ## Usage
 
 ```bash
-nextflow run hoelzer-lab/rnaflow --reads input.csv --species hsa --include_species --max_cores 6 --cores 2
+nextflow run hoelzer-lab/rnaflow --reads input.csv --autodownload hsa --pathway hsa --max_cores 6 --cores 2
 ```
 
-with `hsa`, `mmu`, `mau` or `eco` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
+with `--autodownload <hsa|mmu|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run hoelzer-lab/rnaflow --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
 ```
 
-Genomes and annotations from `--species`, if `--include_species` is set, `--genome` and `--annotation` are concatenated.
+Genomes and annotations from `--autodownload`, `--genome` and `--annotation` are concatenated.
+
 By default, all possible comparisons are performed. Use `--deg` to change this.
+
+`--pathway <hsa|mmu|mau>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
 
 ### Input files
 
@@ -241,20 +245,20 @@ and `--annotation gtfs.csv` with `gtfs.csv` looking like this:
 /path/to/reference_annotation_2.gtf
 ```
 
-You can add a [build-in species](#build-in-species) to your defined genomes and annotation with `--species XXX --include_species`.
-
-`--species` is also an identifier for the downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
+You can add a [build-in species](#build-in-species) to your defined genomes and annotation with `--autodownload xxx`.
 
 #### Build-in species
 
-We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--species XXX --include_species`. Please let us know, we can easily add other species.
+We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--autodownload xxx`. Please let us know, we can easily add other species.
 
 | Species      | three-letter shortcut | Genome                              | Annotation                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
-| Homo sapiens | `hsa`                 | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
-| Mus musculus | `mmu`                 | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
-| Mesocricetus auratus | `mau`                 | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
+| Homo sapiens | `hsa` <sup>*</sup>               | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
+| Mus musculus | `mmu` <sup>*</sup>               | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
+| Mesocricetus auratus | `mau` <sup>*</sup>               | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
 | Escherichia coli | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
+
+<sup>*</sup> Downstream pathway analysis availible via `--pathway xxx`.
 
 #### Comparisons for DEG analysis
 
@@ -281,10 +285,11 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Preprocessing
 
 ```bash
---mode                          # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
---skip_sortmerna                # skip rRNA removal via SortMeRNA [default false]
---fastp_additional_params       # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
---histat2_additional_params     # additional parameters for HISAT2
+--mode                                 # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
+--skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
+--fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
+--hisat2_additional_params             # additional parameters for HISAT2
+--featurecounts_additional_params      # additional parameters for FeatureCounts [default: -t gene -g gene_id]
 ```
 
 ### DEG analysis
@@ -293,6 +298,8 @@ Nextflow will need access to the working directory where temporary calculations 
 --strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
 --tpm                           # threshold for TPM (transcripts per million) filter [default 1]
 --deg                           # a CSV file following the pattern: conditionX,conditionY
+--pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau
+--feature_id_type               # ID type for downstream analysis [default: ensembl_gene_id]
 ```
 
 ### Transcriptome assembly
@@ -445,7 +452,7 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g. the log2FoldChange describes the change of a gene under condition B with respect to the gene under condition A.
 
-Downstream analysis are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens*, *Mus musculus* and *Mesocricetus auratus*; and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`) and *Mesocricetus auratus* (`mau`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
 
 ## Working offline
 
@@ -479,20 +486,25 @@ nextflow-autodownload-databases     # default: `permanentCacheDir = 'nextflow-au
 <details><summary>click here to see the complete help message</summary>
 
 ```
-Usage example:
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco
-or
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --species eco --assembly
-or
-nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --species hsa --include_species
-Genomes and annotations from --species, if --include_species is set, --genome and --annotation are concatenated.
+Usage examples:
+nextflow run hoelzer-lab/rnaflow -profile test,local,conda
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload mmu --pathway mmu
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --autodownload eco --assembly
+nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_virus.csv --annotation gtf_virus.csv --autodownload hsa --pathway hsa
+Genomes and annotations from --autodownload, --genome and --annotation are concatenated.
 
 Input:
---reads                  a CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+--reads                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
                                     (check terminal output if correctly assigned)
-                                    In default all possible comparisons of conditions in one direction are made. Use --deg to change this.
---species                specifies the species identifier for downstream path analysis.
-                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default ]
+                                    Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.
+--autodownload           Specifies the species identifier for automated download [default: ]
+                                    Currently supported are:
+                                    - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
+                                    - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
+                                    - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                    - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
+--species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
+                         If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: ]
                                     Currently supported are:
                                     - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                     - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
@@ -501,62 +513,72 @@ Input:
 --genome                 CSV file with genome reference FASTA files (one path in each line)
                                     If set, --annotation must also be set.
 --annotation             CSV file with genome annotation GTF files (one path in each line)
---include_species        Use genome and annotation of supproted species in addition to --genome and --annotation [default true]
+--include_species        Either --species or --genome/--annotation need to be used. Both input seetings can be also combined to use genome and annotation of 
+                         supported species in addition to --genome and --annotation [default: false]
 
 Preprocessing options:
---mode                   either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
---skip_sortmerna         skip rRNA removal via SortMeRNA [default false] 
---index                  the path to the hisat2 index prefix matching the genome provided via --species. 
-                         If provided, no new index will be build. Must be named 'index.*.ht2'.  
-                         Simply provide the path like 'data/db/index'. DEPRECATED
+--mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: single]
+--fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
+--skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
+--hisat2_additional_params         additional parameters for HISAT2 [default: ]
+--featurecounts_additional_params  additional parameters for FeatureCounts [default: -t gene -g gene_id]
 
 DEG analysis options:
---strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
---tpm                    threshold for TPM (transcripts per million) filter. A feature is discared, 
-                         if in all conditions the mean TPM value of all libraries in this condition are below the threshold. [default 1]
---deg                    a CSV file following the pattern: conditionX,conditionY
-                         Each line stands for one differential gene expression comparison.    
+--strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: 0]
+--tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
+                         corresponding samples in this condition is below the threshold. [default: 1]
+--deg                    A CSV file following the pattern: conditionX,conditionY
+                         Each line stands for one differential gene expression comparison.  
+                         Must match the 'Condition' labels defined in the CSV file provided via --reads.  
+--pathway                Perform different downstream pathway analysis for the species. [default: ]
+                         Currently supported are:
+                             - hsa | Homo sapiens
+                             - mmu | Mus musculus
+                             - mau | Mesocricetus auratus
+--feature_id_type        ID type for downstream analysis [default: ensembl_gene_id]                            
 
 Transcriptome assembly options:
---assembly               perform de novo and reference-based transcriptome assembly instead of DEG analysis [default false]
---busco_db               the database used with BUSCO [default: euarchontoglires_odb9]
-                         full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
---dammit_uniref90        add UniRef90 to the dammit databases  [default: false]
+--assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: false]
+--busco_db               The database used with BUSCO [default: euarchontoglires_odb9]
+                         Full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
+--dammit_uniref90        Add UniRef90 to the dammit databases (time consuming!) [default: false]
 
 Computing options:
---cores                  max cores per process for local use [default 1]
---max_cores              max cores used on the machine for local use [default Runtime.runtime.availableProcessors()]
---memory                 max memory in GB for local use [default 8 GB]
---output                 name of the result folder [default results]
+--cores                  Max cores per process for local use [default: 1]
+--max_cores              Max cores used on the machine for local use [default: 4]
+--memory                 Max memory in GB for local use [default: 8 GB]
+--output                 Name of the result folder [default: results]
 
---permanentCacheDir      location for auto-download data like databases [default nextflow-autodownload-databases]
---condaCacheDir          location for storing the conda environments [default conda]
---singularityCacheDir    location for storing the singularity images [default singularity]
---workdir                working directory for all intermediate results [default /tmp/nextflow-work-marie]
---softlink_results       softlink result files instead of copying
+Caching:
+--permanentCacheDir      Location for auto-download data like databases [default: nextflow-autodownload-databases]
+--condaCacheDir          Location for storing the conda environments [default: conda]
+--singularityCacheDir    Location for storing the singularity images [default: singularity]
+--workdir                Working directory for all intermediate results [default: /tmp/nextflow-work-marie]
+--softlink_results       Softlink result files instead of copying.
 
 Nextflow options:
--with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set)
--with-report rep.html    cpu / ram usage (may cause errors)
--with-dag chart.html     generates a flowchart for the process tree
--with-timeline time.html timeline (may cause errors)
+-with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).
+-with-report rep.html    CPU / RAM usage (may cause errors).
+-with-dag chart.html     Generates a flowchart for the process tree.
+-with-timeline time.html Timeline (may cause errors).
 
 Execution/Engine profiles:
- The pipeline supports profiles to run via different Executers and Engines e.g.:
- -profile local,conda
-  Executer (choose one):
+The pipeline supports profiles to run via different Executers and Engines e.g.: -profile local,conda
+
+Executer (choose one):
   local
   slurm
   lsf
-  Engines (choose one):
+
+Engines (choose one):
   conda
   docker
   singularity
 
+Per default: -profile local,conda is executed. 
+
 For a test run (~ 15 min), add "test" to the profile, e.g. -profile test,local,conda.
 The command will create all conda environments and download and run test data.
-
-Per default: local,conda is executed. 
 
 We also provide some pre-configured profiles for certain HPC environments:    
   ara (slurm, conda and parameter customization)
@@ -569,8 +591,7 @@ We also provide some pre-configured profiles for certain HPC environments:
 If you use RNAflow please cite: 
 
 * [RNAflow](https://hoelzer-lab.github.io/publications)
-> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". JOURNAL. 2020. 
-
+> Marie Lataretu and Martin Hölzer. "RNAflow: An effective and simple RNA-Seq differential gene expression pipeline using Nextflow". Genes 2020, 11(12), 1487; https://doi.org/10.3390/genes11121487
 <!-- ## Help message
 ```
 ``` -->
