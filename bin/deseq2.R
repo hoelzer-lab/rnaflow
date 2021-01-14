@@ -146,41 +146,50 @@ plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samp
   select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)
   select <- select[1:min(ntop, length(select))][1:min(ntop, length(select))]
   selected.ids <- row.names(trsf_data[select,])
-
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
-  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
-        scale = "row", border_color = NA,
-        labels_row = as.character(genes.info[selected.ids,]$gene_type),
-        annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
-        labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
-        height = 12, width = 8, file = file)
+  if ( length(selected.ids) > 1 ) {
+    file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
+    pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+          scale = "row", border_color = NA,
+          labels_row = as.character(genes.info[selected.ids,]$gene_type),
+          annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
+          labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
+          height = 12, width = 8, file = file)
+  } else {
+    print('SKIPPING: plot.heatmap.most_var. Only one feature to plot.')
+  }
 }
 
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)
   select <- select[1:min(ntop, length(select))]
   selected.ids <- row.names(counts(dds,normalized=TRUE)[select,])
-
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
-  pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
-          scale = "row", border_color = NA,
-          labels_row = as.character(genes.info[selected.ids,]$gene_type),
-          annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
-          labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
-          height = 12, width = 8, file = file)
+  if ( length(selected.ids) > 1 ) {
+    file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
+    pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
+            scale = "row", border_color = NA,
+            labels_row = as.character(genes.info[selected.ids,]$gene_type),
+            annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
+            labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
+            height = 12, width = 8, file = file)
+  } else {
+    print('SKIPPING: plot.heatmap.top_counts. Only one feature to plot.')
+  }
 }
 
 plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
   selected.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])
   selected.ids <- selected.ids[1:min(ntop, length(selected.ids))]
-  
-  file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
-  pheatmap(assay(trsf_data)[selected.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
-          scale = "row", border_color = NA, 
-          labels_row = as.character(genes.info[selected.ids,]$gene_type),
-          annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
-          labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
-          height = 12, width = 8, file = file)
+  if ( length(selected.ids) > 1 ) {
+    file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
+    pheatmap(assay(trsf_data)[selected.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
+            scale = "row", border_color = NA, 
+            labels_row = as.character(genes.info[selected.ids,]$gene_type),
+            annotation_col=samples.info[ , !(colnames(samples.info) == 'columns'), drop=FALSE],
+            labels_col = as.character(samples.info[colnames(trsf_data),]$columns),
+            height = 12, width = 8, file = file)
+  } else {
+    print('SKIPPING: plot.heatmap.top_fc. Only one feature to plot.')
+  }
 }
 
 piano <- function(out.dir, resFold, mapGO, cpus) {
@@ -674,7 +683,11 @@ for (comparison in comparisons) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
     if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
       results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
-      piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+      if ( length(row.names(results.gene)) > 0 ) {
+        piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+      } else {
+        print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported.'))
+      }
     } else {
       print('SKIPPING: Piano. Feature ID not supported by biomaRt.')
     }
