@@ -684,12 +684,17 @@ for (comparison in comparisons) {
     if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
       results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
       if ( length(row.names(results.gene)) > 0 ) {
-        piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+        try.piano <- try( 
+          piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+        )
+        if (class(try.piano) == "try-error") {
+          print ('SKIPPING: Piano. Some error occurred.')
+        }
       } else {
-        print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported.'))
+        print(paste('SKIPPING: Piano. No matching feature IDs with type', id_type, 'found.'))
       }
     } else {
-      print('SKIPPING: Piano. Feature ID not supported by biomaRt.')
+      print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported by biomaRt.'))
     }
   }
 
@@ -720,7 +725,7 @@ for (comparison in comparisons) {
         print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
       }
     } else {
-      print('SKIPPING: WebGestaltR. Feature ID not supported.')
+      print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
     }
   }
 
