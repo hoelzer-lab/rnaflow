@@ -693,8 +693,12 @@ workflow {
     }
 
     // get sortmerna databases
-    download_sortmerna()
-    sortmerna_db = download_sortmerna.out
+    if ( ! params.skip_sortmerna ) { 
+        download_sortmerna()
+        sortmerna_db = download_sortmerna.out
+    } else {
+        sortmerna_db = Channel.empty()
+    }
 
     // preprocess RNA-Seq reads
     preprocess(illumina_input_ch, reference, sortmerna_db)
