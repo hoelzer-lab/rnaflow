@@ -24,7 +24,7 @@ nextflow.enable.dsl=2
 
 // Parameters sanity checking
 
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -93,6 +93,11 @@ if (params.assembly) {
     }
 }
 
+if (params.nanopore) {
+    println "\u001B[32mPerform processing of reads in Nanopore mode instead default short-read mode. After mapping, the same steps are used as for Illumina."
+}
+
+
 Set species = ['hsa', 'eco', 'mmu', 'mau']
 Set autodownload = ['hsa', 'eco', 'mmu', 'mau']
 Set pathway = ['hsa', 'mmu', 'mau']
@@ -128,6 +133,7 @@ log.info """\
     Strandness:           $params.strand
     TPM threshold:        $params.tpm
     Comparisons:          $comparison 
+    Nanopore mode:        $params.nanopore
     """
     .stripIndent()
 
@@ -151,10 +157,10 @@ if (params.reads) {
             return [ sample, read, condition, source ]
         }
         .tap { annotated_reads }
-        .tap { illumina_input_ch }
+        .tap { read_input_ch }
         .map { sample, read, condition, source ->
             return [ sample, [ read ] ] }
-        .set { illumina_input_ch }
+        .set { read_input_ch }
 
     } else {
     Channel
@@ -169,10 +175,10 @@ if (params.reads) {
             return [ sample, read1, read2, condition, source ]
         }
         .tap { annotated_reads }
-        .tap { illumina_input_ch }
+        .tap { read_input_ch }
         .map { sample, read1, read2, condition, source ->
             return [ sample, [ read1, read2 ] ] }
-        .set { illumina_input_ch }
+        .set { read_input_ch }
     }
 }
 
@@ -337,6 +343,7 @@ include {referenceGet; concat_genome} from './modules/referenceGet'
 include {annotationGet; concat_annotation} from './modules/annotationGet'
 include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
+include {minimap2index} from './modules/minimap2'
 include {buscoGetDB} from './modules/buscoGetDB'
 include {dammitGetDB} from './modules/dammitGetDB'
 
@@ -344,10 +351,12 @@ include {dammitGetDB} from './modules/dammitGetDB'
 include {fastp} from './modules/fastp'
 include {sortmerna} from './modules/sortmerna'
 include {hisat2; index_bam} from './modules/hisat2'
+include {minimap2; index_bam_minimap2} from './modules/minimap2'
 include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
 include {deseq2} from './modules/deseq2'
 include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
+include {nanoplot as nanoplotPre} from './modules/nanoplot'
 include {multiqc; multiqc_sample_names} from './modules/multiqc'
 
 // assembly & annotation
@@ -487,20 +496,20 @@ workflow download_dammit {
 **************************/
 
 /***************************************
-Preprocess RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
+Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
 */
-workflow preprocess {
+workflow preprocess_illumina {
     take:
-        illumina_input_ch
+        read_input_ch
         reference
         sortmerna_db
 
     main:
         // initial QC of raw reads
-        fastqcPre(illumina_input_ch)
+        fastqcPre(read_input_ch)
 
         // trim with fastp
-        fastp(illumina_input_ch)
+        fastp(read_input_ch)
 
         // QC after fastp
         fastqcPost(fastp.out.sample_trimmed)
@@ -526,11 +535,52 @@ workflow preprocess {
         sample_bam_ch = hisat2.out.sample_bam
         fastp_json_report = fastp.out.json_report
         sortmerna_log
-        hisat2_log = hisat2.out.log  
-        fastqcPre = fastqcPre.out.zip  
-        fastqcPost = fastqcPost.out.zip
+        mapping_log = hisat2.out.log  
+        readqcPre = fastqcPre.out.zip  
+        readqcPost = fastqcPost.out.zip
         cleaned_reads_ch = sortmerna_no_rna_fastq
 } 
+
+/***************************************
+Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
+*/
+workflow preprocess_nanopore {
+    take:
+        read_input_ch
+        reference
+        sortmerna_db
+
+    main:
+        // initial QC of raw reads
+        nanoplotPre(read_input_ch)
+
+        if ( params.skip_sortmerna ) {
+            sortmerna_no_rna_fastq = read_input_ch
+            sortmerna_log = Channel.empty()
+        } else {
+            // remove rRNA with SortmeRNA
+            sortmerna(read_input_ch, extract_tar_bz2(sortmerna_db))
+            sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
+            sortmerna_log = sortmerna.out.log
+        }
+
+        // Minimap2 index
+        minimap2index(reference)
+        // map with Minimap2
+        minimap2(sortmerna_no_rna_fastq, minimap2index.out, params.minimap2_additional_params)
+        // index BAM files
+        index_bam_minimap2(minimap2.out.sample_bam)
+
+    emit:
+        sample_bam_ch = minimap2.out.sample_bam
+        fastp_json_report = Channel.empty()
+        sortmerna_log
+        mapping_log = minimap2.out.log  
+        readqcPre = nanoplotPre.out.zip  
+        readqcPost = Channel.empty()
+        cleaned_reads_ch = sortmerna_no_rna_fastq
+} 
+
 
 
 /******************************************
@@ -541,9 +591,9 @@ workflow expression_reference_based {
         sample_bam_ch
         fastp_json_report
         sortmerna_log
-        hisat2_log
-        fastqcPre
-        fastqcPost
+        mapping_log
+        readqcPre
+        readqcPost
         annotation
         deg_comparisons_input_ch
         deseq2_script
@@ -604,10 +654,10 @@ workflow expression_reference_based {
                 multiqc_sample_names.out,
                 fastp_json_report.collect(), 
                 sortmerna_log.collect().ifEmpty([]), 
-                hisat2_log.collect(), 
+                mapping_log = mapping_log.collect(), 
                 featurecounts.out.log.collect(), 
-                fastqcPre.collect(),
-                fastqcPost.collect(),
+                readqcPre = readqcPre.collect(),
+                readqcPost = readqcPost.collect(),
                 tpm_filter.out.stats,
                 params.tpm
         )
@@ -700,8 +750,12 @@ workflow {
         sortmerna_db = Channel.empty()
     }
 
-    // preprocess RNA-Seq reads
-    preprocess(illumina_input_ch, reference, sortmerna_db)
+    // preprocess RNA-Seq reads (Illumina or Nanopore)
+    if (!params.nanopore) {
+        preprocess_illumina(read_input_ch, reference, sortmerna_db)
+    } else {
+        preprocess_nanopore(read_input_ch, reference, sortmerna_db)
+    }
 
     // perform assembly & annotation
     if (params.assembly) {
@@ -715,18 +769,33 @@ workflow {
     } else {
     // perform expression analysis
         // start reference-based differential gene expression analysis
-        expression_reference_based(preprocess.out.sample_bam_ch,
-                                preprocess.out.fastp_json_report,
-                                preprocess.out.sortmerna_log,
-                                preprocess.out.hisat2_log,
-                                preprocess.out.fastqcPre,
-                                preprocess.out.fastqcPost,
+        if (!params.nanopore) { 
+        expression_reference_based(preprocess_illumina.out.sample_bam_ch,
+                                preprocess_illumina.out.fastp_json_report,
+                                preprocess_illumina.out.sortmerna_log,
+                                preprocess_illumina.out.mapping_log,
+                                preprocess_illumina.out.readqcPre,
+                                preprocess_illumina.out.readqcPost,
                                 annotation,
                                 deg_comparisons_input_ch, 
                                 deseq2_script, 
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
                                 multiqc_config)
+        } else {
+        expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
+                                preprocess_nanopore.out.fastp_json_report,
+                                preprocess_nanopore.out.sortmerna_log,
+                                preprocess_nanopore.out.mapping_log,
+                                preprocess_nanopore.out.readqcPre,
+                                preprocess_nanopore.out.readqcPost,
+                                annotation,
+                                deg_comparisons_input_ch, 
+                                deseq2_script, 
+                                deseq2_script_refactor_reportingtools_table, 
+                                deseq2_script_improve_deseq_table, 
+                                multiqc_config)
+        }
     }
 }
 
@@ -771,10 +840,12 @@ def helpMSG() {
 
     ${c_yellow}Preprocessing options:${c_reset}
     --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
-    --fastp_additional_params          additional parameters for fastp [default: $params.fastp_additional_params]
+    --fastp_additional_params          Additional parameters for fastp [default: $params.fastp_additional_params]
     --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
-    --hisat2_additional_params        additional parameters for HISAT2 [default: $params.hisat2_additional_params]
-    --featurecounts_additional_params  additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
+    --hisat2_additional_params         Additional parameters for HISAT2 [default: $params.hisat2_additional_params]
+    --minimap2_additional_params       Additional parameters for minimap2 (Nanopore input) [default: $params.minimap2_additional_params]
+    --featurecounts_additional_params  Additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
+    --nanopore                         Activate Nanopore long-read mode (default is Illumina data) [default: $params.nanopore]  
 
     ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
