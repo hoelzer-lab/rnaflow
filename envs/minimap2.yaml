@@ -1,4 +1,4 @@
-name: miniamp2
+name: minimap2
 channels:
   - bioconda
 dependencies:
