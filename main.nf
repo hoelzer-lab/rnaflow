@@ -356,7 +356,7 @@ include {featurecounts} from './modules/featurecounts'
 include {tpm_filter} from './modules/tpm_filter'
 include {deseq2} from './modules/deseq2'
 include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
-include {nanoplot as nanoplotPre} from './modules/nanoplot'
+include {nanoplot as nanoplot} from './modules/nanoplot'
 include {multiqc; multiqc_sample_names} from './modules/multiqc'
 
 // assembly & annotation
@@ -552,7 +552,7 @@ workflow preprocess_nanopore {
 
     main:
         // initial QC of raw reads
-        nanoplotPre(read_input_ch)
+        nanoplot(read_input_ch)
 
         if ( params.skip_sortmerna ) {
             sortmerna_no_rna_fastq = read_input_ch
@@ -576,7 +576,7 @@ workflow preprocess_nanopore {
         fastp_json_report = Channel.empty()
         sortmerna_log
         mapping_log = minimap2.out.log  
-        readqcPre = nanoplotPre.out.zip  
+        readqcPre = nanoplot.out.zip  
         readqcPost = Channel.empty()
         cleaned_reads_ch = sortmerna_no_rna_fastq
 } 
