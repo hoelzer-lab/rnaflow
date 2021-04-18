@@ -36,7 +36,7 @@ process minimap2 {
 
     script:
     """
-    minimap2 -a -t ${task.cpus} ${index} ${reads[0]} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}    
+    minimap2 -a -t ${task.cpus} ${index} ${reads[0]} 2> ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}    
     """
 }
     

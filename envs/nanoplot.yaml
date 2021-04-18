@@ -1,0 +1,6 @@
+name: nanoplot
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - nanoplot=1.32.0
