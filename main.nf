@@ -1,18 +1,5 @@
 #!/usr/bin/env nextflow
 
-XX = "20"
-YY = "07"
-ZZ = "1"
-
-if ( nextflow.version.toString().tokenize('.')[0].toInteger() < XX.toInteger() ) {
-println "\033[0;33mRNAflow requires at least Nextflow version " + XX + "." + YY + "." + ZZ + " -- You are using version $nextflow.version\u001B[0m"
-exit 1
-}
-else if ( nextflow.version.toString().tokenize('.')[1].toInteger() < YY.toInteger() ) {
-println "\033[0;33mRNAflow requires at least Nextflow version " + XX + "." + YY + "." + ZZ + " -- You are using version $nextflow.version\u001B[0m"
-exit 1
-}
-
 nextflow.enable.dsl=2
 
 /*
