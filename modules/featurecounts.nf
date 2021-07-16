@@ -19,9 +19,15 @@ process featurecounts {
 
     script:
     if (params.mode == 'single') {
-    """
-    featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv  ${additionalParams} ${bam}
-    """
+        if (params.nanopore == true) {
+        """
+        featureCounts -L -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv ${additionalParams} ${bam}
+        """
+        } else {
+            """
+            featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${name}.counts.tsv  ${additionalParams} ${bam}
+            """
+        }
     }
     else {
     """
