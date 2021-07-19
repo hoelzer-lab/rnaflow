@@ -34,6 +34,7 @@ class RefactorReportingtoolsTable
           species = 'hsa' if gene_id.start_with?('ENSG')
           species = 'mmu' if gene_id.start_with?('ENSMUSG')
           species = 'mau' if gene_id.start_with?('ENSMAUG')
+          species = 'rno' if gene_id.start_with?('ENSRNOG')
           break if species != 'na'
         end
       end
@@ -73,6 +74,16 @@ class RefactorReportingtoolsTable
         end
         if feature_type == 'exon'
           $scan_feature_id_pattern = 'ENSMAUE[0-9]+'
+        end
+      when 'rno'
+        $scan_feature_id_pattern = 'ENSRNOG[0-9]+'
+        $ensembl_url = 'https://ensembl.org/Rattus_norvegicus/Gene/Summary?g='
+        if feature_type == 'transcript'
+          $scan_feature_id_pattern = 'ENSRNOT[0-9]+'
+          $ensembl_url = 'https://ensembl.org/Rattus_norvegicus/Gene/Summary?t='
+        end
+        if feature_type == 'exon'
+          $scan_feature_id_pattern = 'ENSRNOE[0-9]+'
         end
       else
         $scan_feature_id_pattern = false
