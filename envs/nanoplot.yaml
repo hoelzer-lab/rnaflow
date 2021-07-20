@@ -3,5 +3,5 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - nanoplot=1.32.0
+  - nanoplot=1.38.0
   - seaborn==0.10.1
