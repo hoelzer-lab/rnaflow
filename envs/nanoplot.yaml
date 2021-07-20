@@ -4,3 +4,4 @@ channels:
   - conda-forge
 dependencies:
   - nanoplot=1.32.0
+  - seaborn==0.10.1
