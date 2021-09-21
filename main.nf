@@ -630,10 +630,10 @@ workflow expression_reference_based {
             .map { it.join(",") }
 
         // run DEseq2
-        // deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
-        //    annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
-        //    annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
-        //    deseq2_script_improve_deseq_table)
+        deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
+           annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
+           annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
+           deseq2_script_improve_deseq_table)
 
         // run MultiQC
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
