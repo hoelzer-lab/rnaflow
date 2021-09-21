@@ -46,6 +46,10 @@ ____
   - [DESeq2 results](#deseq2-results)
 - [Working offline](#working-offline)
 - [Help message](#help-message)
+- [Known bugs and issues](#known-bugs-and-issues)
+  - [Problems with `SortMeRNA`/ `HISAT2` error (#141, [#116](https://github.com/hoelzer-lab/rnaflow/issues/116))](#problems-with-sortmerna-hisat2-error-141-116)
+    - [Description](#description)
+    - [Workaround](#workaround)
 - [Citation](#citation)
 
 </details>
@@ -227,7 +231,7 @@ treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated
 treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
 ```
 
-Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation.
+The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation.
 
 #### Genomes and annotation
 
@@ -264,11 +268,14 @@ We provide a small set of build-in species for which the genome and annotation f
 
 Per default, all possible pairwise comparisons _in one direction_ are performed. Thus, when _A_ is compared against _B_ the pipeline will not automatically compare _B_ vs. _A_ which will anyway only change the direction of the finally resulting fold changes. To change this, please define the needed comparison with `--deg comparisons.csv`, where each line contains a pairwise comparison:
 
-```
+```csv
+Condition1,Condition2
 conditionX,conditionY
 conditionA,conditionB
 conditionB,conditionA
 ```
+
+The first line is a required header. 
 
 ### Resume your run
 
@@ -585,6 +592,56 @@ We also provide some pre-configured profiles for certain HPC environments:
 ```
 
 </details>
+
+## Known bugs and issues
+
+### Problems with `SortMeRNA`/ `HISAT2` error ([#141](https://github.com/hoelzer-lab/rnaflow/issues/141), [#116](https://github.com/hoelzer-lab/rnaflow/issues/116))
+
+#### Description
+
+The pipeline fails with something like 
+ 
+<details><summary>this</summary>
+
+```
+Error executing process > 'preprocess:hisat2 (2)'
+
+Caused by:
+  Missing output file(s) `22_rep4_summary.log` expected by process `preprocess:hisat2 (2)`
+
+Command executed:
+
+  hisat2 -x reference -1 22_rep4.R1.other.fastq.gz -2 22_rep4.R2.other.fastq.gz -p 60 --new-summary --summary-file 22_rep4_summary.log  | samtools view -bS | samtools sort -o 22_rep4.sorted.bam -T tmp --threads 60
+
+Command exit status:
+  0
+
+Command output:
+  (empty)
+
+Command error:
+  Error: Read AFFFJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ has more quality values than read characters.
+  terminate called after throwing an instance of 'int'
+  Aborted (core dumped)
+  (ERR): hisat2-align exited with value 134
+  [bam_sort_core] merging from 0 files and 60 in-memory blocks...
+  grep: warning: GREP_OPTIONS is deprecated; please use an alias or script
+  
+Work dir:
+  /tmp/nextflow-work-as11798/2f/4a5b7060530705c2697bdf3eec73a4
+
+Tip: when you have fixed the problem you can continue the execution adding the option `-resume` to the run command line
+```
+
+</details>
+
+- Often encountered when running in `screen` or `tmux`
+- Nextflow's `-bg` option does not help
+
+#### Workaround
+
+- Skip `SortMeRNA` with `--skip_sortmerna`
+- Reads can be cleand beforhand e.g. with [CLEAN](https://github.com/hoelzer/clean)
 
 ## Citation 
 
