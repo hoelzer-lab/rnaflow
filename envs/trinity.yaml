@@ -2,4 +2,4 @@ name: trinity
 channels:
   - bioconda
 dependencies:
-  - trinity=2.11.0
+  - trinity=2.12.0
