@@ -1,6 +1,7 @@
 name: multiqc
 channels:
-  - bioconda
+channels:
   - conda-forge
+  - bioconda
 dependencies:
   - multiqc=1.11
