@@ -750,17 +750,9 @@ workflow {
         busco_db = download_busco()
         dammit_db = extract_tar_bz2(download_dammit(busco_db))
         // de novo
-        if (!params.nanopore) {
-            // de novo
-            assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, busco_db, dammit_db)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, busco_db, dammit_db)
-        } else {
-            // de novo
-            assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, busco_db, dammit_db)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, busco_db, dammit_db)
-        }
+        assembly_denovo(preprocess.out.cleaned_reads_ch, busco_db, dammit_db)
+        // reference-based
+        assembly_reference(reference, annotation, preprocess.out.sample_bam_ch, busco_db, dammit_db)
     } else {
     // perform expression analysis
         // start reference-based differential gene expression analysis
