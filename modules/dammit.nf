@@ -6,21 +6,15 @@ process dammit {
 
   input:
     path(transcriptome_assembly)
-    path(dbs)
+    path(busco_db)
     val(tool)
 
   output:
     tuple path("${tool}", type: 'dir'), path('uniprot_sprot_reduced.dat')
 
   script:
-    if (params.dammit_uniref90)
     """
-    BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
-    dammit annotate ${transcriptome_assembly} --database-dir \${PWD}/dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus} --full 
-    cp dbs/uniprot_sprot_reduced.dat .
-    """
-    else
-    """
+    tar zxvf ${dbs}
     BUSCO=\$(echo ${params.busco_db} | awk 'BEGIN{FS="_"};{print \$1}')
     dammit annotate ${transcriptome_assembly} --database-dir \${PWD}/dbs --busco-group \${BUSCO} -n dammit -o ${tool} --n_threads ${task.cpus}
     cp dbs/uniprot_sprot_reduced.dat .
