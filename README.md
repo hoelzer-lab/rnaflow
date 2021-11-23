@@ -313,7 +313,7 @@ Nextflow will need access to the working directory where temporary calculations 
 
 ```bash
 --assemly                       # switch to transcriptome assemly
---busco_db                      # BUSCO database ['euarchontoglires_odb9']
+--busco_db                      # BUSCO database ['euarchontoglires' or path to existing DB]
 --dammit_uniref90               # add UniRef90 to dammit databases, takes long [false]
 ```
 
