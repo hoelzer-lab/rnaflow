@@ -8,54 +8,53 @@ process busco {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/BUSCO", mode: 'copy', pattern: "busco_*_summary.txt"
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/BUSCO", mode: 'copy', pattern: "busco_*_figure.pdf"
     }
-
-    busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}/${params.busco_db}*")
-
-    if ( busco_db_preload.exists() ) { storeDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}" }
+    
+    { publishDir "${params.permanentCacheDir}/databases/busco", mode: 'copy', pattern: "${params.busco_db}_odb10.tar.gz" }
 
 
     input:
       path fasta
-      //path database
+      val preload
       val tool
       
+
     output:
       tuple path("busco_${tool}_summary.txt"), path("busco_${tool}_figure.pdf")
       path "full_table_${tool}_results.tsv"
+      path "${params.busco_db}_odb10.tar.gz", emit: odb10
     
     script:
-
-      if ( busco_db_preload.exists() ) {
+      if ( preload )
         """
-        tar -zxf ${database}
-
         # run busco
-        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${busco_db_preload} 
-        cp run_results/short_summary_results.txt busco_${tool}_summary.txt
+        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${params.permanentCacheDir}/databases/busco/${params.busco_db}_odb10.tar.gz 
+        cp results/run_${params.busco_db}_odb10/short_summary.txt busco_${tool}_summary.txt
 
         # generate Plot and rehack Rscript
-        generate_plot.py -wd run_results/
-        sed -i 's/busco_figure.png/busco_figure.pdf/g' run_results/busco_figure.R
-        Rscript run_results/busco_figure.R
-        cp run_results/busco_figure.pdf busco_${tool}_figure.pdf
-        cp run_results/full_table_results.tsv full_table_${tool}_results.tsv
-        """ 
-      } else  {
-        """
-        tar -zxf ${database}
+        generate_plot.py -wd results/
+        sed -i 's/busco_figure.png/busco_figure.pdf/g' results/busco_figure.R
+        Rscript results/busco_figure.R
+        cp results/busco_figure.pdf busco_${tool}_figure.pdf
+        cp results/run_${params.busco_db}_odb10/full_table.tsv full_table_${tool}_results.tsv
 
+        """
+      else
+        """
         # run busco
-        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${params.busco_db} #--download-path
-        cp run_results/short_summary_results.txt busco_${tool}_summary.txt
+        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${params.busco_db} #--download_path ${params.busco_db}.tar.gz busco_downloads/lineages/..
+        cp results/run_${params.busco_db}_odb10/short_summary.txt busco_${tool}_summary.txt
 
         # generate Plot and rehack Rscript
-        generate_plot.py -wd run_results/
-        sed -i 's/busco_figure.png/busco_figure.pdf/g' run_results/busco_figure.R
-        Rscript run_results/busco_figure.R
-        cp run_results/busco_figure.pdf busco_${tool}_figure.pdf
-        cp run_results/full_table_results.tsv full_table_${tool}_results.tsv
+        generate_plot.py -wd results/
+        sed -i 's/busco_figure.png/busco_figure.pdf/g' results/busco_figure.R
+        Rscript results/busco_figure.R
+        cp results/busco_figure.pdf busco_${tool}_figure.pdf
+        cp results/run_${params.busco_db}_odb10/full_table.tsv full_table_${tool}_results.tsv
+
+        # tar creates busco_downloads/lineages/euarchontoglires_odb10/ in archive smth is wrong..
+        mv busco_downloads/lineages/${params.busco_db}_odb10 .
+        tar -czf ${params.busco_db}_odb10.tar.gz ${params.busco_db}_odb10 
         """
-      }
 }
 
 /* Comments:

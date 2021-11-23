@@ -7,11 +7,11 @@ process dammitGetDB {
 
       //if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
       //else { 
-      storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz" 
+      storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}" 
       //}  
 
   input:
-    path(busco_db)
+    //path(busco_db)
 
   output:
     path("dbs.tar.gz")
