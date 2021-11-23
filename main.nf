@@ -450,7 +450,7 @@ workflow download_sortmerna {
 
 workflow download_busco {
     main:
-        if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out }
+        if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out; preload = false }
         else if (params.cloudProcess) { 
             busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}.tar.gz")
             if (busco_db_preload.exists()) { preload = true}
