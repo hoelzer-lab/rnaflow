@@ -51,7 +51,6 @@ process busco {
         cp results/busco_figure.pdf busco_${tool}_figure.pdf
         cp results/run_${params.busco_db}_odb10/full_table.tsv full_table_${tool}_results.tsv
 
-        # tar creates busco_downloads/lineages/euarchontoglires_odb10/ in archive smth is wrong..
         mv busco_downloads/lineages/${params.busco_db}_odb10 .
         tar -czf ${params.busco_db}_odb10.tar.gz ${params.busco_db}_odb10 
         """
