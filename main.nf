@@ -331,7 +331,6 @@ include {annotationGet; concat_annotation} from './modules/annotationGet'
 include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
 include {minimap2index} from './modules/minimap2'
-include {buscoGetDB} from './modules/buscoGetDB'
 include {dammitGetDB} from './modules/dammitGetDB'
 
 // analysis
@@ -450,20 +449,17 @@ workflow download_sortmerna {
 
 workflow download_busco {
     main:
-        if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out; preload = false }
+        if (!params.cloudProcess) { preload = false }
         else if (params.cloudProcess) { 
             busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}.tar.gz")
             if (busco_db_preload.exists()) { preload = true}
             else  { preload = false }
         }
     emit: 
-        //database_busco
         preload
 }
 
 workflow download_dammit {
-    take: 
-    //busco_db_ch
     
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
@@ -750,8 +746,6 @@ workflow {
     // perform assembly & annotation
     if (params.assembly) {
         // dbs
-        //busco_check = download_busco()
-        //busco_db = busco_check.database_busco
         busco_preload = download_busco()
         dammit_db = download_dammit()
         // de novo
