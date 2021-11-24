@@ -5,7 +5,8 @@ process dammitGetDB {
     errorStrategy 'retry'
     maxRetries 2
 
-    storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}" 
+    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
+    else { storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/" }
 
   output:
     path("dbs.tar.gz")
