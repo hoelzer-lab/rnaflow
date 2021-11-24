@@ -5,4 +5,3 @@ dependencies:
   - python=3.9.7
   - pandas=1.3.4
   - numpy=1.21.2
-  #care this could break something!! check later
