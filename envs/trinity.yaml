@@ -1,5 +1,8 @@
 name: trinity
 channels:
+  - conda-forge
   - bioconda
+  - anaconda
+  - r
 dependencies:
-  - trinity=2.12.0
+  - trinity=2.12
