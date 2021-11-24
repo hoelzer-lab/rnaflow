@@ -3,6 +3,5 @@ channels:
   - conda-forge
   - bioconda
   - anaconda
-  - r
 dependencies:
   - trinity=2.12
