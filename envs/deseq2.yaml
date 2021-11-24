@@ -1,4 +1,4 @@
-#env export from docker container
+# conda env currently only runs with this configuration !!
 name: deseq2
 channels:
   - anaconda
