@@ -22,10 +22,9 @@ process stringtie {
     //tuple val(name), file("${sample_name}_stringtie.fna"), emit: transcripts
 
   script:
-    """
-      stringtie -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam} 
-      #gffread -w ${sample_name}_stringtie.fna -g ${genome} ${sample_name}_stringtie.gtf
-    """
+      """
+        stringtie -L ${params.nanopore} -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam}
+      """
   }
 
 process stringtie_merge {
