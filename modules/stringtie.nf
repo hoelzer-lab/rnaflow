@@ -22,8 +22,13 @@ process stringtie {
     //tuple val(name), file("${sample_name}_stringtie.fna"), emit: transcripts
 
   script:
+    if ( params.nanopore )
       """
-        stringtie -L ${params.nanopore} -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam}
+        stringtie -L -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam}
+      """
+    else
+      """
+        stringtie -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam}
       """
   }
 
