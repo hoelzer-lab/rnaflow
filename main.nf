@@ -350,6 +350,7 @@ include {trinity} from './modules/trinity'
 include {busco} from './modules/busco'
 include {dammit} from './modules/dammit'
 include {stringtie; stringtie_merge} from './modules/stringtie' 
+include {rattle} from './modules/rattle'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
@@ -663,15 +664,27 @@ workflow assembly_denovo {
         reads_ch = cleaned_reads_ch.map {sample, reads -> tuple reads}.collect()
         reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
  
-        // co-assembly
-        trinity(reads_ch, reads_input_csv)
+        // co-assembly LR
+        if ( params.nanopore ){
+            rattle(reads_ch)
 
-        // qc check
-        tool_ch = Channel.value('trinity')
-        busco(trinity.out.assembly, preload, tool_ch)    
+            // qc check
+            tool_ch = Channel.value('rattle')
+            busco(rattle.out.assembly, preload, tool_ch)    
 
-        // transcript annotation 
-        dammit(trinity.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+            // transcript annotation 
+            dammit(rattle.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+        }else{
+            // co-assembly SR
+            trinity(reads_ch, reads_input_csv)
+
+            // qc check
+            tool_ch = Channel.value('trinity')
+            busco(trinity.out.assembly, preload, tool_ch)    
+
+            // transcript annotation 
+            dammit(trinity.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+        }
 } 
 
 /*****************************************
