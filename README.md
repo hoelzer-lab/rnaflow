@@ -642,7 +642,7 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 - Skip `SortMeRNA` with `--skip_sortmerna`
 - Reads can be cleand beforhand e.g. with [CLEAN](https://github.com/hoelzer/clean)
 
-### Latency problems on HPCs, error ([#79](https://github.com/hoelzer-lab/rnaflow/issues/79))
+### Latency problems on HPCs, issue ([#79](https://github.com/hoelzer-lab/rnaflow/issues/79))
 
 #### Description
 
