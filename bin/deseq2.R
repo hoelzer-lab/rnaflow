@@ -534,8 +534,8 @@ for (comparison in comparisons) {
   ##########################################
 
   factor <- "condition"
-  numerator <- l2
-  denominator <- l1
+  numerator <- l1
+  denominator <- l2
   group <- colData(dds)[[factor]]
   group <- relevel(x = group, ref = denominator)
   colData(dds)[[factor]] <- group
