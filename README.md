@@ -648,7 +648,6 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 
 Latency related problems with `Nextflow` might occur when running on HPC systems, where `Nextflow` expects files to be available before they are fully written to the file system. In these cases `Nextflow` might get stuck or report missing output or input files to some processes:
  
-<details>
 
 ```
 ERROR ~ Error executing process > 'some_process'
@@ -658,7 +657,6 @@ Caused by:
 
 ```
 
-</details>
 
 - Often encountered when running on HPC systems
 
