@@ -2,14 +2,14 @@ process rattle {
     label 'rattle'
     time '48h'
 
-    if ( params.softlink_results ) { publishDir "${params.output}/${params.assembly_dir}/rattle", pattern: "transcriptome.fq" }
-    else { publishDir "${params.output}/${params.assembly_dir}/rattle", mode: 'copy', pattern: "transcriptome.fq" }
+    if ( params.softlink_results ) { publishDir "${params.output}/${params.assembly_dir}/rattle", pattern: "transcriptome.fa" }
+    else { publishDir "${params.output}/${params.assembly_dir}/rattle", mode: 'copy', pattern: "transcriptome.fa" }
 
   input:
     path (reads) 
 
   output:
-    path "transcriptome.fq", emit: assembly
+    path "transcriptome.fa", emit: assembly
 
   script:
     """
@@ -30,6 +30,9 @@ process rattle {
     rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus} --rna
 
     mv output/transcriptome.fq transcriptome.fq
+
+    # convert to fasta for busco etc.
+    cat transcriptome.fq | awk '{if(NR%4==1) {printf(">%s\\n",substr(\$0,2));} else if(NR%4==2) print;}' > transcriptome.fa
     rm *fastq
     """
   }
