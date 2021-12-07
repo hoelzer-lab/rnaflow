@@ -1,6 +1,5 @@
 process rattle {
     label 'rattle'
-    time '48h'
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.assembly_dir}/rattle", pattern: "transcriptome.fa" }
     else { publishDir "${params.output}/${params.assembly_dir}/rattle", mode: 'copy', pattern: "transcriptome.fa" }
