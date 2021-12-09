@@ -34,14 +34,16 @@ process multiqc_sample_names {
     label 'smallTask'
 
     input:
+    val(meta)
     val(list)
+    
 
     output:
     path('multiqc_sample_names.tsv')
 
     script:
     def tbl = ''
-    if (params.mode == 'single') {
+    if ( !meta.paired_end ) {
         for( int i=0; i<list.size()-1; i=i+2 ){
             tbl += "${list[i+1].baseName.tokenize('.')[0]}\t${list[i]}\n"
         }

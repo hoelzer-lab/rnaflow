@@ -21,28 +21,29 @@ process hisat2index {
 ************************************************************************/
 process hisat2 {
     label 'hisat2'
+    tag "$meta.sample"
     
     if ( params.softlink_results ) { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
     else { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
 
     input:
-    tuple val(sample_name), path(reads)
+    tuple val(meta), path(reads)
     tuple path(reference), path(index)
     val(additionalParams)
 
     output:
-    tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: sample_bam 
-    path "${sample_name}_summary.log", emit: log
+    tuple val(meta), path("${meta.sample}.sorted.bam"), emit: sample_bam 
+    path "${meta.sample}_summary.log", emit: log
 
     script:
-    if (params.mode == 'single') {
+    if ( !meta.paired_end ) {
     """
-    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
     """
     }
     else {
     """
-    hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${sample_name}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
     """
     } 
 }
