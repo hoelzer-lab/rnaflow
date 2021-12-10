@@ -888,6 +888,8 @@ def helpMSG() {
       local
       slurm
       lsf
+      latency
+
     
     ${c_blue}Engines${c_reset} (choose one):
       conda

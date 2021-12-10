@@ -576,6 +576,7 @@ Executer (choose one):
   local
   slurm
   lsf
+  latency
 
 Engines (choose one):
   conda
@@ -642,6 +643,32 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 
 - Skip `SortMeRNA` with `--skip_sortmerna`
 - Reads can be cleand beforhand e.g. with [CLEAN](https://github.com/hoelzer/clean)
+
+### Latency problems on HPCs, issue ([#79](https://github.com/hoelzer-lab/rnaflow/issues/79))
+
+#### Description
+
+Latency related problems with `Nextflow` might occur when running on HPC systems, where `Nextflow` expects files to be available before they are fully written to the file system. In these cases `Nextflow` might get stuck or report missing output or input files to some processes:
+ 
+
+```
+ERROR ~ Error executing process > 'some_process'
+
+Caused by:
+ Missing output file(s) `some_process.out` expected by process `some_process`
+
+```
+
+
+- Often encountered when running on HPC systems
+
+
+#### Workaround
+Please try running the pipeline with the `latency` profile activated, just add it to the profiles you already defined:
+
+```
+-profile slurm,conda,latency
+```
 
 ## Citation 
 
