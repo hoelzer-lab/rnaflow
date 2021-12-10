@@ -117,8 +117,6 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 * INPUT CHANNELS 
 **************************/
 
-//MODE = ""
-
 if (params.reads) { 
     Channel
         .fromPath( params.reads, checkIfExists: true)
@@ -143,21 +141,15 @@ if (params.reads) {
     exit 1, "Parameter 'reads' undefined."
 }
 
-// set global vars
-MODE = ( read_input_ch.map{ meta, reads -> meta.paired_end }.unique().first() ) ? "paired" : "single"
-if ( read_input_ch.map{ meta, reads -> meta.strandedness }.unique() == 1 ) { STRAND = "stranded" } else if ( read_input_ch.map{ meta, reads -> meta.strandedness }.unique() == 2 ) { STRAND = "reversely strandend" } else { STRAND = "unstranded" }
-
 log.info """\
-    R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
-    = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
-    Output path:                    $params.output
-    Mode:                           $MODE
-    Strandness:                     $STRAND
-    TPM threshold:                  $params.tpm
-    Comparisons:                    $comparison 
-    Nanopore mode:                  $params.nanopore
-    """
-    .stripIndent()
+                R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
+                = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
+                Output path:                    $params.output
+                TPM threshold:                  $params.tpm
+                Comparisons:                    $comparison 
+                Nanopore mode:                  $params.nanopore
+                """
+                .stripIndent() 
 /*
 * read in autodownload genome(s)
 */
@@ -651,11 +643,11 @@ workflow assembly_denovo {
         preload
 
     main:
-        reads_ch = cleaned_reads_ch.map {sample, reads -> tuple reads}.collect()
+        reads_ch = cleaned_reads_ch.map {meta, reads -> tuple reads}.collect()
         reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
  
         // co-assembly
-        trinity(reads_ch, reads_input_csv)
+        trinity(cleaned_reads_ch.map{ meta, reads -> meta }.unique{ it.paired_end }, reads_ch, reads_input_csv)
 
         // qc check
         tool_ch = Channel.value('trinity')
