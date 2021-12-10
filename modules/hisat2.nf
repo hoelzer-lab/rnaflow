@@ -52,12 +52,13 @@ process hisat2 {
 process index_bam {
     label 'hisat2'
     label 'smallTask'    
+    tag "$meta.sample"
     
     if ( params.softlink_results ) { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.bai" }
     else { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.bai" }
 
     input:
-    tuple val(sample_name), path(bam_file)
+    tuple val(meta), path(bam_file)
 
     output:
     path("${bam_file}.bai")

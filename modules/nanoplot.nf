@@ -11,11 +11,11 @@ process nanoplot {
     // addet ignore here - to avoid pipeline breaking
     errorStrategy 'ignore'
     input:
-      tuple val(name), path(reads)
+      tuple val(meta), path(reads)
     output:
       path("${meta.sample}_nanoplot.zip", emit: zip) optional true
-      tuple val(name), path("*.html"), path("*.pdf") optional true
-      tuple val(name), path("${meta.sample}_read_quality.txt"), path("*.png") optional true
+      tuple val(meta.sample), path("*.html"), path("*.pdf") optional true
+      tuple val(meta.sample), path("${meta.sample}_read_quality.txt"), path("*.png") optional true
     script:
       """
       NanoPlot -t ${task.cpus} --fastq ${reads} --title '${meta.sample}' --color darkslategrey --N50 --plots hex --loglength -f png --store
