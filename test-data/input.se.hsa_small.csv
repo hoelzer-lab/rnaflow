@@ -1,4 +1,4 @@
-Sample,R1,R2,Condition,Source,Strandedness,Single_end
+Sample,R1,R2,Condition,Source,Strandedness
 MAQCA_rep1,test-data/hsa/SRR3670977_sub.fastq.gz,,MAQCA,
 MAQCA_rep2,test-data/hsa/SRR3670978_sub.fastq.gz,,MAQCA,
 MAQCB_rep1,test-data/hsa/SRR3670985_sub.fastq.gz,,MAQCB,
