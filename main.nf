@@ -117,6 +117,11 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 * INPUT CHANNELS 
 **************************/
 
+<<<<<<< HEAD
+=======
+//MODE = ""
+
+>>>>>>> 42b977ef5c2d22874448dbfe624a1737f8d81d86
 if (params.reads) { 
     Channel
         .fromPath( params.reads, checkIfExists: true)
