@@ -1,6 +1,5 @@
 process busco {
     label 'busco'
-    time '4h'
 
     if ( params.softlink_results ) {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/BUSCO", pattern: "busco_*_summary.txt"
