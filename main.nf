@@ -123,8 +123,7 @@ if (params.reads) {
         .splitCsv(header: true, sep: ',')
         .map{row ->
             def paired_end = row['R2'] ? true : false
-            def MODE = paired_end ? "paired" : "single"
-            def read1 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
+            def read1 = row['R'] ? (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true) : (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
             def read2 = paired_end ? (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2']) : "" 
             def meta = [:]
                 meta.sample = row['Sample']
