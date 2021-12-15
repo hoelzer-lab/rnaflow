@@ -617,7 +617,7 @@ workflow expression_reference_based {
            deseq2_script_improve_deseq_table)
 
         // run MultiQC
-        multiqc_sample_names( annotated_reads.unique{ it.paired.end }.map{ meta, reads -> meta}, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
+        multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
         multiqc(multiqc_config, 
                 multiqc_sample_names.out,
                 fastp_json_report.collect().ifEmpty([]), 
