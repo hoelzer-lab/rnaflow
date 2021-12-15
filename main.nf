@@ -617,7 +617,7 @@ workflow expression_reference_based {
            deseq2_script_improve_deseq_table)
 
         // run MultiQC
-        multiqc_sample_names( annotated_reads.unique{ it.paired.end }.map{ meta, reads -> meta}, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
+        multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
         multiqc(multiqc_config, 
                 multiqc_sample_names.out,
                 fastp_json_report.collect().ifEmpty([]), 
@@ -627,7 +627,9 @@ workflow expression_reference_based {
                 readqcPre.collect().ifEmpty([]),
                 readqcPost.collect().ifEmpty([]),
                 tpm_filter.out.stats,
-                params.tpm
+                params.tpm,
+                [],
+                []
         )
 } 
 
@@ -654,6 +656,9 @@ workflow assembly_denovo {
 
         // transcript annotation 
         dammit(trinity.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+    
+    emit:
+        busco_summary = busco.out.summary
 } 
 
 /*****************************************
@@ -680,6 +685,9 @@ workflow assembly_reference {
 
         // transcript annotation 
         dammit(stringtie_merge.out.transcripts, busco.out.odb10, dammit_db, tool_ch)
+
+    emit:
+        busco_summary = busco.out.summary
 }
 
 
@@ -742,6 +750,21 @@ workflow {
             // reference-based
             assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_preload)
         }
+        multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
+        multiqc(multiqc_config, 
+                multiqc_sample_names.out,
+                preprocess_illumina.out.fastp_json_report.collect().ifEmpty([]), 
+                preprocess_illumina.out.sortmerna_log.collect().ifEmpty([]), 
+                preprocess_illumina.out.mapping_log.collect(), 
+                [], 
+                preprocess_illumina.out.readqcPre.collect().ifEmpty([]),
+                preprocess_illumina.out.readqcPost.collect().ifEmpty([]),
+                [],
+                params.tpm,
+                assembly_denovo.out.busco_summary,
+                assembly_reference.out.busco_summary
+        )
+    
     } else {
     // perform expression analysis
         // start reference-based differential gene expression analysis
