@@ -17,6 +17,9 @@ module_order:
         anchor: 'hisat2'
     - featureCounts:
         anchor: 'featureCounts'
+    - busco:
+        anchor: 'busco'
+        fn: 'busco_*_summary*'
     - custom_data
     
 report_section_order:
