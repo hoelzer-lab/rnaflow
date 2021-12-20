@@ -475,18 +475,32 @@ workflow preprocess_illumina {
         // initial QC of raw reads
         fastqcPre(read_input_ch)
 
-        // trim with fastp
-        fastp(read_input_ch)
+        if ( params.skip_read_preprocessing ) {
+            // skip fastp, set dependent ch to empty
+            smr_in = read_input_ch
+            fastp_json_report = Channel.empty()
+            readqcPost = Channel.empty()
+        } else {
+            // trim with fastp
+            fastp(read_input_ch)
+            smr_in = fastp.out.sample_trimmed
+            fastp_json_report = fastp.out.json_report
+            // QC after fastp
+            fastqcPost(fastp.out.sample_trimmed)
+            fastqcPost = fastqcPost.out.zip
+        }
 
-        // QC after fastp
-        fastqcPost(fastp.out.sample_trimmed)
-
-        if ( params.skip_sortmerna ) {
+        if ( params.skip_sortmerna && !params.skip_read_preprocessing ) {
+            // skip SMR but not fastp
             sortmerna_no_rna_fastq = fastp.out.sample_trimmed
+            sortmerna_log = Channel.empty()
+        } else if ( params.skip_sortmerna && params.skip_read_preprocessing ) {
+            // skip SMR and fastp
+            sortmerna_no_rna_fastq = read_input_ch
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(fastp.out.sample_trimmed, extract_tar_bz2(sortmerna_db))
+            sortmerna(smr_in, extract_tar_bz2(sortmerna_db))
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
@@ -500,11 +514,11 @@ workflow preprocess_illumina {
 
     emit:
         sample_bam_ch = hisat2.out.sample_bam
-        fastp_json_report = fastp.out.json_report
+        fastp_json_report 
         sortmerna_log
         mapping_log = hisat2.out.log  
         readqcPre = fastqcPre.out.zip  
-        readqcPost = fastqcPost.out.zip
+        readqcPost 
         cleaned_reads_ch = sortmerna_no_rna_fastq
 } 
 
@@ -718,10 +732,11 @@ workflow {
         sortmerna_db = Channel.empty()
     }
 
-    if ( ! params.skip_read_preprocessing ) {
-        // preprocess RNA-Seq reads (Illumina or Nanopore)
-        if (!params.nanopore)   { preprocess_illumina(read_input_ch, reference, sortmerna_db) } 
-        else                    { preprocess_nanopore(read_input_ch, reference, sortmerna_db) }
+    // preprocess RNA-Seq reads (Illumina or Nanopore)
+    if (!params.nanopore) { 
+        preprocess_illumina(read_input_ch, reference, sortmerna_db) 
+    } else { 
+        preprocess_nanopore(read_input_ch, reference, sortmerna_db) 
     }
 
     // perform assembly & annotation
