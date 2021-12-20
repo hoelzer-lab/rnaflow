@@ -11,7 +11,7 @@ nextflow.enable.dsl=2
 
 // Parameters sanity checking
 
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'skip_read_preprocessing', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -718,11 +718,10 @@ workflow {
         sortmerna_db = Channel.empty()
     }
 
-    // preprocess RNA-Seq reads (Illumina or Nanopore)
-    if (!params.nanopore) {
-        preprocess_illumina(read_input_ch, reference, sortmerna_db)
-    } else {
-        preprocess_nanopore(read_input_ch, reference, sortmerna_db)
+    if ( ! params.skip_read_preprocessing ) {
+        // preprocess RNA-Seq reads (Illumina or Nanopore)
+        if (!params.nanopore)   { preprocess_illumina(read_input_ch, reference, sortmerna_db) } 
+        else                    { preprocess_nanopore(read_input_ch, reference, sortmerna_db) }
     }
 
     // perform assembly & annotation
@@ -818,6 +817,7 @@ def helpMSG() {
     --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
     --fastp_additional_params          Additional parameters for fastp [default: $params.fastp_additional_params]
     --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
+    --skip_read_preprocessing          Skip preprocessing sub-workflow [default: $params.skip_read_preprocessing]
     --hisat2_additional_params         Additional parameters for HISAT2 [default: $params.hisat2_additional_params]
     --minimap2_additional_params       Additional parameters for minimap2 (Nanopore input) [default: $params.minimap2_additional_params]
     --featurecounts_additional_params  Additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
