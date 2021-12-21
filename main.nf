@@ -833,7 +833,7 @@ def helpMSG() {
     --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
     --fastp_additional_params          Additional parameters for fastp [default: $params.fastp_additional_params]
     --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
-    --skip_read_preprocessing          Skip preprocessing sub-workflow [default: $params.skip_read_preprocessing]
+    --skip_read_preprocessing          Skip preprocessing with fastp [default: $params.skip_read_preprocessing]
     --hisat2_additional_params         Additional parameters for HISAT2 [default: $params.hisat2_additional_params]
     --minimap2_additional_params       Additional parameters for minimap2 (Nanopore input) [default: $params.minimap2_additional_params]
     --featurecounts_additional_params  Additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]
