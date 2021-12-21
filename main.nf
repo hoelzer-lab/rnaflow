@@ -335,6 +335,7 @@ include {stringtie; stringtie_merge} from './modules/stringtie'
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 include {extract_tar_bz2} from './modules/utils'
+include {format_read_name} from './modules/format_read_name'
 
 /************************** 
 * DATABASES
@@ -496,7 +497,7 @@ workflow preprocess_illumina {
             sortmerna_log = Channel.empty()
         } else if ( params.skip_sortmerna && params.skip_read_preprocessing ) {
             // skip SMR and fastp
-            sortmerna_no_rna_fastq = read_input_ch
+            sortmerna_no_rna_fastq = format_read_name(read_input_ch)
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
