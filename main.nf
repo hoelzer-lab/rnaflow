@@ -672,7 +672,7 @@ workflow assembly_denovo {
         busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(trinity.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+        dammit(trinity.out.assembly, busco_db, dammit_db, tool_ch)
 } 
 
 /*****************************************
@@ -698,7 +698,7 @@ workflow assembly_reference {
         busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, busco.out.odb10, dammit_db, tool_ch)
+        dammit(stringtie_merge.out.transcripts, busco_db, dammit_db, tool_ch)
 }
 
 
