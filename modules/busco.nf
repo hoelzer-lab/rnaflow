@@ -22,7 +22,6 @@ process busco {
     output:
       tuple path("busco_${tool}_summary.txt"), path("busco_${tool}_figure.pdf")
       path "full_table_${tool}_results.tsv"
-      path "${params.busco_db}_odb10.tar.gz", emit: odb10
     
     script:
         """
