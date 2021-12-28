@@ -11,7 +11,7 @@ nextflow.enable.dsl=2
 
 // Parameters sanity checking
 
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process', 'setup'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -92,7 +92,7 @@ Set pathway = ['hsa', 'mmu', 'mau']
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 
 // required stuff
-if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
+if ( ! params.reads && ! params.setup ) { exit 1, "--reads is a required parameter" }
 
 // deprecated stuff
 if ( params.mode ) { println "\033[0;33mWARNING: Parameter --mode is deprecated, read mode will automatically be detected from the sample file.\033[0m\n" }
@@ -136,6 +136,10 @@ if (params.reads) {
         .tap { annotated_reads }
         .tap { read_input_ch }
         .set { read_input_ch }
+}else if (!params.reads && params.setup) {
+    println "\u001B[32mRunning in setup mode. Only necessary database and reference files will be downloaded."
+    annotated_reads = Channel.empty()
+    read_input_ch = Channel.empty()
 }else{
     exit 1, "Parameter 'reads' undefined."
 }
@@ -313,6 +317,7 @@ include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
 include {minimap2index} from './modules/minimap2'
 include {dammitGetDB} from './modules/dammitGetDB'
+include {buscoGetDB} from './modules/buscoGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
@@ -430,14 +435,14 @@ workflow download_sortmerna {
 
 workflow download_busco {
     main:
-        if (!params.cloudProcess) { preload = false }
-        else if (params.cloudProcess) { 
+        if (!params.cloudProcess) { buscoGetDB(); database_busco = buscoGetDB.out }
+        if (params.cloudProcess) { 
             busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}.tar.gz")
-            if (busco_db_preload.exists()) { preload = true}
-            else  { preload = false }
+            if (busco_db_preload.exists()) { database_busco = busco_db_preload }
+            else  { buscoGetDB(); database_busco = buscoGetDB.out }
         }
     emit: 
-        preload
+        database_busco
 }
 
 workflow download_dammit {
@@ -461,7 +466,20 @@ workflow download_dammit {
 /************************** 
 * SUB WORKFLOWS
 **************************/
+/***************************************
+Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
+*/
+workflow setup {
+    //take:
 
+    main:
+        download_auto_annotation()
+        download_auto_reference()
+        download_busco()
+        download_dammit()
+        download_sortmerna()
+    //emit:
+} 
 /***************************************
 Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
 */
@@ -690,87 +708,91 @@ workflow assembly_reference {
 /* Comment section: */
 
 workflow {
-    if ( workflow.profile.contains('test') ){
-        get_test_data()
-        reference = get_test_data.out.reference_test.collect()
-        annotation = get_test_data.out.annotation_test.collect()
+    if (params.setup) {
+        setup()
     } else {
-        // get the reference genome
-        download_auto_reference()
-        reference_auto = download_auto_reference.out
-
-        // get the annotation
-        download_auto_annotation()
-        annotation_auto = download_auto_annotation.out
-
-        // concatenate genomes and annotations
-        concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
-        reference = concat_genome.out
-        concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
-        annotation = concat_annotation.out
-    }
-
-    // get sortmerna databases
-    if ( ! params.skip_sortmerna ) { 
-        download_sortmerna()
-        sortmerna_db = download_sortmerna.out
-    } else {
-        sortmerna_db = Channel.empty()
-    }
-
-    // preprocess RNA-Seq reads (Illumina or Nanopore)
-    if (!params.nanopore) {
-        preprocess_illumina(read_input_ch, reference, sortmerna_db)
-    } else {
-        preprocess_nanopore(read_input_ch, reference, sortmerna_db)
-    }
-
-    // perform assembly & annotation
-    if (params.assembly) {
-        // dbs
-        busco_preload = download_busco()
-        dammit_db = download_dammit()
-        // de novo
-        if (!params.nanopore) {
-            // de novo
-            assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, dammit_db, busco_preload)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, dammit_db, busco_preload)
+        if ( workflow.profile.contains('test') ){
+            get_test_data()
+            reference = get_test_data.out.reference_test.collect()
+            annotation = get_test_data.out.annotation_test.collect()
         } else {
-            // de novo
-            assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, dammit_db, busco_preload)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_preload)
+            // get the reference genome
+            download_auto_reference()
+            reference_auto = download_auto_reference.out
+
+            // get the annotation
+            download_auto_annotation()
+            annotation_auto = download_auto_annotation.out
+
+            // concatenate genomes and annotations
+            concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+            reference = concat_genome.out
+            concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+            annotation = concat_annotation.out
         }
-    } else {
-    // perform expression analysis
-        // start reference-based differential gene expression analysis
-        if (!params.nanopore) { 
-        expression_reference_based(preprocess_illumina.out.sample_bam_ch,
-                                preprocess_illumina.out.fastp_json_report,
-                                preprocess_illumina.out.sortmerna_log,
-                                preprocess_illumina.out.mapping_log,
-                                preprocess_illumina.out.readqcPre,
-                                preprocess_illumina.out.readqcPost,
-                                annotation,
-                                deg_comparisons_input_ch, 
-                                deseq2_script, 
-                                deseq2_script_refactor_reportingtools_table, 
-                                deseq2_script_improve_deseq_table, 
-                                multiqc_config)
+
+        // get sortmerna databases
+        if ( ! params.skip_sortmerna ) { 
+            download_sortmerna()
+            sortmerna_db = download_sortmerna.out
         } else {
-        expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
-                                preprocess_nanopore.out.fastp_json_report,
-                                preprocess_nanopore.out.sortmerna_log,
-                                preprocess_nanopore.out.mapping_log,
-                                preprocess_nanopore.out.readqcPre,
-                                preprocess_nanopore.out.readqcPost,
-                                annotation,
-                                deg_comparisons_input_ch, 
-                                deseq2_script, 
-                                deseq2_script_refactor_reportingtools_table, 
-                                deseq2_script_improve_deseq_table, 
-                                multiqc_config)
+            sortmerna_db = Channel.empty()
+        }
+
+        // preprocess RNA-Seq reads (Illumina or Nanopore)
+        if (!params.nanopore) {
+            preprocess_illumina(read_input_ch, reference, sortmerna_db)
+        } else {
+            preprocess_nanopore(read_input_ch, reference, sortmerna_db)
+        }
+
+        // perform assembly & annotation
+        if (params.assembly) {
+            // dbs
+            busco_preload = download_busco()
+            dammit_db = download_dammit()
+            // de novo
+            if (!params.nanopore) {
+                // de novo
+                assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, dammit_db, busco_preload)
+                // reference-based
+                assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, dammit_db, busco_preload)
+            } else {
+                // de novo
+                assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, dammit_db, busco_preload)
+                // reference-based
+                assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_preload)
+            }
+        } else {
+        // perform expression analysis
+            // start reference-based differential gene expression analysis
+            if (!params.nanopore) { 
+            expression_reference_based(preprocess_illumina.out.sample_bam_ch,
+                                    preprocess_illumina.out.fastp_json_report,
+                                    preprocess_illumina.out.sortmerna_log,
+                                    preprocess_illumina.out.mapping_log,
+                                    preprocess_illumina.out.readqcPre,
+                                    preprocess_illumina.out.readqcPost,
+                                    annotation,
+                                    deg_comparisons_input_ch, 
+                                    deseq2_script, 
+                                    deseq2_script_refactor_reportingtools_table, 
+                                    deseq2_script_improve_deseq_table, 
+                                    multiqc_config)
+            } else {
+            expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
+                                    preprocess_nanopore.out.fastp_json_report,
+                                    preprocess_nanopore.out.sortmerna_log,
+                                    preprocess_nanopore.out.mapping_log,
+                                    preprocess_nanopore.out.readqcPre,
+                                    preprocess_nanopore.out.readqcPost,
+                                    annotation,
+                                    deg_comparisons_input_ch, 
+                                    deseq2_script, 
+                                    deseq2_script_refactor_reportingtools_table, 
+                                    deseq2_script_improve_deseq_table, 
+                                    multiqc_config)
+            }
         }
     }
 }
