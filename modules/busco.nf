@@ -1,6 +1,5 @@
 process busco {
     label 'busco'
-    time '2h'
 
     if ( params.softlink_results ) {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/BUSCO", pattern: "busco_*_summary.txt"
@@ -25,8 +24,12 @@ process busco {
     
     script:
         """
+        # unpack DB
+        mkdir -p lineages
+        tar -zxvf ${busco_db} -C lineages/
+
         # run busco
-        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${busco_db}
+        busco -i ${fasta} -o results  -m tran -c ${task.cpus} -l ${params.busco_db} --offline --download_path .
         cp results/run_${params.busco_db}_odb10/short_summary.txt busco_${tool}_summary.txt
 
         # generate Plot and rehack Rscript
@@ -36,6 +39,8 @@ process busco {
         cp results/busco_figure.pdf busco_${tool}_figure.pdf
         cp results/run_${params.busco_db}_odb10/full_table.tsv full_table_${tool}_results.tsv
 
+        # cleanup the DB files
+        rm -rf lineages
         """
 }
 
