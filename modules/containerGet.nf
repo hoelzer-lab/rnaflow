@@ -13,7 +13,7 @@ process containerGet {
     tuple val(tool), val(path)
 
   output:
-    file("*/*${tool}*")
+    //file("*/*${tool}*")
 
   script:
   
