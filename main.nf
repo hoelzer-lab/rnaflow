@@ -741,11 +741,11 @@ workflow {
             annotation = get_test_data.out.annotation_test.collect()
         } else {
             // get the reference genome
-            download_auto_reference([])
+            download_auto_reference()
             reference_auto = download_auto_reference.out
 
             // get the annotation
-            download_auto_annotation([])
+            download_auto_annotation()
             annotation_auto = download_auto_annotation.out
 
             // concatenate genomes and annotations
@@ -757,7 +757,7 @@ workflow {
 
         // get sortmerna databases
         if ( ! params.skip_sortmerna ) { 
-            download_sortmerna([])
+            download_sortmerna()
             sortmerna_db = download_sortmerna.out
         } else {
             sortmerna_db = Channel.empty()
@@ -773,8 +773,8 @@ workflow {
         // perform assembly & annotation
         if (params.assembly) {
             // dbs
-            busco_db = download_busco([])
-            dammit_db = download_dammit([])
+            busco_db = download_busco()
+            dammit_db = download_dammit()
             // de novo
             if (!params.nanopore) {
                 // de novo
