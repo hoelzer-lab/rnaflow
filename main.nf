@@ -731,7 +731,6 @@ workflow assembly_reference {
 
 workflow {
     if (params.setup) {
-        containerGet(container_ch)
         setup()
     } else {
         if ( workflow.profile.contains('test') ){
