@@ -1,12 +1,12 @@
 process buscoGetDB {
-    label 'basic_tools'
+    if (!params.setup) { label 'basic_tools' }
     label 'smallTask'
 
     errorStrategy 'retry'
     maxRetries 2
 
-    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}", mode: 'copy', pattern: "dbs.tar.gz" }
-    else { storeDir "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/" }
+    if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}", mode: 'copy', pattern: "${params.busco_db}_odb10.tar.gz" }
+    else { storeDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}/" }
 
   output:
     path("${params.busco_db}_odb10.tar.gz")

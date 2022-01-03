@@ -1,5 +1,5 @@
 process get_reduced_genome_test {
-    label 'basic_tools'
+    if (!params.setup) { label 'basic_tools' }
     label 'smallTask'
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
