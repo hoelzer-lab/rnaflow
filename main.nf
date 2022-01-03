@@ -116,6 +116,19 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 /************************** 
 * INPUT CHANNELS 
 **************************/
+if (params.setup) {
+    Channel.fromPath( workflow.profile.contains('conda') ? './configs/conda.config' : './configs/container.config' )
+            .splitCsv(skip: 1, sep: '\t')
+            .map{ row ->
+                    if ( row[1] != null && row[2] != null) {
+                        def tool = row[1]
+                        def path = row[2].split('"')[1]
+                        return [tool, path] 
+                    }
+            }
+            .tap{ container_ch }
+}
+
 
 if (params.reads) { 
     Channel
@@ -136,7 +149,7 @@ if (params.reads) {
         .tap { annotated_reads }
         .tap { read_input_ch }
         .set { read_input_ch }
-}else if (!params.reads && params.setup) {
+}else if ((!params.reads && params.setup) || params.setup) {
     println "\u001B[32mRunning in setup mode. Only necessary database and reference files will be downloaded."
     annotated_reads = Channel.empty()
     read_input_ch = Channel.empty()
@@ -339,6 +352,7 @@ include {stringtie; stringtie_merge} from './modules/stringtie'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
+include {containerGet} from './modules/containerGet'
 include {extract_tar_bz2} from './modules/utils'
 
 /************************** 
@@ -384,6 +398,8 @@ workflow get_test_data {
 }
 
 workflow download_auto_reference {
+    take:
+        // setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -402,6 +418,8 @@ workflow download_auto_reference {
 }
 
 workflow download_auto_annotation {
+    take:
+        // setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -420,6 +438,8 @@ workflow download_auto_annotation {
 }
 
 workflow download_sortmerna {
+    take:
+        // setup_ch
     main:
         // local storage via storeDir
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
@@ -434,6 +454,8 @@ workflow download_sortmerna {
 }
 
 workflow download_busco {
+    take:
+        // setup_ch
     main:
         if (!params.cloudProcess) { buscoGetDB(); database_busco = buscoGetDB.out }
         if (params.cloudProcess) { 
@@ -446,7 +468,8 @@ workflow download_busco {
 }
 
 workflow download_dammit {
-    
+    take:
+        // setup_ch
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
     if (params.dammit_uniref90) {
@@ -478,7 +501,6 @@ workflow setup {
         download_busco()
         download_dammit()
         download_sortmerna()
-    //emit:
 } 
 /***************************************
 Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
@@ -709,6 +731,7 @@ workflow assembly_reference {
 
 workflow {
     if (params.setup) {
+        containerGet(container_ch)
         setup()
     } else {
         if ( workflow.profile.contains('test') ){
@@ -717,11 +740,11 @@ workflow {
             annotation = get_test_data.out.annotation_test.collect()
         } else {
             // get the reference genome
-            download_auto_reference()
+            download_auto_reference([])
             reference_auto = download_auto_reference.out
 
             // get the annotation
-            download_auto_annotation()
+            download_auto_annotation([])
             annotation_auto = download_auto_annotation.out
 
             // concatenate genomes and annotations
@@ -733,7 +756,7 @@ workflow {
 
         // get sortmerna databases
         if ( ! params.skip_sortmerna ) { 
-            download_sortmerna()
+            download_sortmerna([])
             sortmerna_db = download_sortmerna.out
         } else {
             sortmerna_db = Channel.empty()
@@ -749,8 +772,8 @@ workflow {
         // perform assembly & annotation
         if (params.assembly) {
             // dbs
-            busco_db = download_busco()
-            dammit_db = download_dammit()
+            busco_db = download_busco([])
+            dammit_db = download_dammit([])
             // de novo
             if (!params.nanopore) {
                 // de novo
