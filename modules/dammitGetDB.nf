@@ -1,5 +1,5 @@
 process dammitGetDB {
-    if (!params.setup) { label 'basic_tools' }
+    label 'basic_tools'
     label 'smallTask'
 
     errorStrategy 'retry'

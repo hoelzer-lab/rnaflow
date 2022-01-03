@@ -2,7 +2,7 @@
 * DOWNLOAD A REFERENCE GENOME
 ********************************************/
 process referenceGet {
-    if (!params.setup) { label 'basic_tools' }
+    label 'basic_tools'
     label 'smallTask'
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }

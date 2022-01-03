@@ -490,7 +490,8 @@ workflow download_dammit {
 * SUB WORKFLOWS
 **************************/
 /***************************************
-Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
+Set up all databse and reference files for pipeline run without network connection:
+annotation, genome reference, buscoDB, dammitDB, sortmernaDB
 */
 workflow setup {
     //take:
@@ -502,6 +503,7 @@ workflow setup {
         download_dammit()
         download_sortmerna()
 } 
+
 /***************************************
 Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
 */

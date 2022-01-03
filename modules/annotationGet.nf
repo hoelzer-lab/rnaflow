@@ -2,7 +2,7 @@
 * DOWNLOAD ANNOTATION
 ********************************************/
 process annotationGet {
-    if (!params.setup) { label 'basic_tools' }
+    label 'basic_tools'
     label 'smallTask'
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
