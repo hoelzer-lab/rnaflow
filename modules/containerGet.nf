@@ -1,5 +1,4 @@
 process containerGet {
-    //label 'basic_tools'
     label 'smallTask'
     tag "$tool"
 
@@ -28,11 +27,13 @@ process containerGet {
     """
   else if ( workflow.profile.contains('docker') )
     """
-    if [[ "\$(docker images -q ${path}* 2> /dev/null)" == "" ]]; 
+    if [[ "\$(docker images -q ${path} 2> /dev/null)" == "" ]]; 
     then
-	    echo "${tool} docker image file already exists, skipping."
-	else
       docker pull ${path}
+      touch ${img_file_name}.img
+	  else
+	    echo "${tool} docker image file already exists, skipping."
+      touch ${img_file_name}.img
     fi
     """
   else if ( workflow.profile.contains('conda') )
