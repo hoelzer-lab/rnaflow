@@ -117,7 +117,7 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 * INPUT CHANNELS 
 **************************/
 if (params.setup) {
-    Channel.fromPath( workflow.profile.contains('conda') ? './configs/conda.config' : './configs/container.config' )
+    Channel.fromPath( './configs/container.config' )
             .splitCsv(skip: 1, sep: '\t')
             .map{ row ->
                     if ( row[1] != null && row[2] != null) {

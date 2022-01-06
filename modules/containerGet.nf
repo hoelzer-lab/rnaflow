@@ -38,12 +38,8 @@ process containerGet {
     """
   else if ( workflow.profile.contains('conda') )
     """
-    if [ -e ${params.condaCacheDir}/${tool}* ] 
-      then
-        echo "${tool} conda environment already exists, skipping."
-    else
-      yes | conda env create -f ${path}
-    fi
+    echo "The setup mode currently doesn't support conda environments, skipping."
+    touch ${img_file_name}.img
     """
   else 
     """
