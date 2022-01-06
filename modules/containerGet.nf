@@ -13,17 +13,17 @@ process containerGet {
     tuple val(tool), val(path)
 
   output:
-    //file("*/*${tool}*")
+    path("${img_file_name}.img")
 
   script:
-  
+  img_file_name = path.replace("/", "-")
   if ( workflow.profile.contains('singularity') )
     """
-    if [ -e ${params.singularityCacheDir}/${path}*.img ] 
+    if [ -e ${params.singularityCacheDir}/${img_file_name}.img ] 
         then
             echo "${tool} singularity image file already exists, skipping."
     else
-        singularity pull --name ${path}.img --dir "${params.singularityCacheDir}" "docker://${path}"
+        singularity pull --name ${img_file_name}.img --dir "${params.singularityCacheDir}" "docker://${path}"
     fi
     """
   else if ( workflow.profile.contains('docker') )

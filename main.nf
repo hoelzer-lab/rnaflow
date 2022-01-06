@@ -399,7 +399,7 @@ workflow get_test_data {
 
 workflow download_auto_reference {
     take:
-        // setup_ch
+        setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -419,7 +419,7 @@ workflow download_auto_reference {
 
 workflow download_auto_annotation {
     take:
-        // setup_ch
+        setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -439,7 +439,7 @@ workflow download_auto_annotation {
 
 workflow download_sortmerna {
     take:
-        // setup_ch
+        setup_ch
     main:
         // local storage via storeDir
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
@@ -455,7 +455,7 @@ workflow download_sortmerna {
 
 workflow download_busco {
     take:
-        // setup_ch
+        setup_ch
     main:
         if (!params.cloudProcess) { buscoGetDB(); database_busco = buscoGetDB.out }
         if (params.cloudProcess) { 
@@ -469,7 +469,7 @@ workflow download_busco {
 
 workflow download_dammit {
     take:
-        // setup_ch
+        setup_ch
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
     if (params.dammit_uniref90) {
@@ -497,11 +497,12 @@ workflow setup {
     //take:
 
     main:
-        download_auto_annotation()
-        download_auto_reference()
-        download_busco()
-        download_dammit()
-        download_sortmerna()
+        containerGet(container_ch)
+        download_auto_annotation(container_ch)
+        download_auto_reference(container_ch)
+        download_busco(container_ch)
+        download_dammit(container_ch)
+        download_sortmerna(container_ch)
 } 
 
 /***************************************
@@ -741,11 +742,11 @@ workflow {
             annotation = get_test_data.out.annotation_test.collect()
         } else {
             // get the reference genome
-            download_auto_reference()
+            download_auto_reference([])
             reference_auto = download_auto_reference.out
 
             // get the annotation
-            download_auto_annotation()
+            download_auto_annotation([])
             annotation_auto = download_auto_annotation.out
 
             // concatenate genomes and annotations
@@ -757,7 +758,7 @@ workflow {
 
         // get sortmerna databases
         if ( ! params.skip_sortmerna ) { 
-            download_sortmerna()
+            download_sortmerna([])
             sortmerna_db = download_sortmerna.out
         } else {
             sortmerna_db = Channel.empty()
@@ -773,8 +774,8 @@ workflow {
         // perform assembly & annotation
         if (params.assembly) {
             // dbs
-            busco_db = download_busco()
-            dammit_db = download_dammit()
+            busco_db = download_busco([])
+            dammit_db = download_dammit([])
             // de novo
             if (!params.nanopore) {
                 // de novo
