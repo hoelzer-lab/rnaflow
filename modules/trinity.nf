@@ -27,8 +27,8 @@ process trinity {
         done > \$(basename \$PWD)_input.csv
       
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
-      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
-      mv trinity_out_dir.Trinity.fasta trinity.fasta
+      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus} --output trinity_out_dir
+      mv trinity_out_dir/Trinity.fasta trinity.fasta
     """
     else if (params.mode == 'single')
     """
@@ -45,8 +45,8 @@ process trinity {
         done > \$(basename \$PWD)_input.csv
 
       MEM=\$(echo ${task.memory} | awk '{print \$1}')
-      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}
-      mv trinity_out_dir.Trinity.fasta trinity.fasta
+      Trinity --seqType fq --samples_file \$(basename \$PWD)_input.csv --max_memory \${MEM}G --bflyCalculateCPU --CPU ${task.cpus}  --output trinity_out_dir
+      mv trinity_out_dir/Trinity.fasta trinity.fasta
     """
     else 
       error "Invalid read mode: ${params.mode}"
