@@ -5,8 +5,7 @@ nextflow.enable.dsl=2
 /*
 * RNA-Seq-based detection of differentially expressed genes
 *
-* Author: martin.hoelzer@uni-jena.de
-* Author: marie.lataretu@uni-jena.de
+* Authors: marie.lataretu@uni-jena.de, fischerd@rki.de, hoelzer.martin@gmail.com
 */
 
 // Parameters sanity checking
@@ -81,7 +80,7 @@ if (params.assembly) {
 }
 
 if (params.nanopore) {
-    println "\u001B[32mPerform processing of reads in Nanopore mode instead default short-read mode. After mapping, the same steps are used as for Illumina."
+    println "\u001B[32mPerform processing of reads in Nanopore mode instead default short-read mode. After mapping, the same steps are used as for Illumina.\033[0m"
 }
 
 
