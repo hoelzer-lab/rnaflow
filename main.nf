@@ -331,8 +331,8 @@ include {annotationGet; concat_annotation} from './modules/annotationGet'
 include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
 include {minimap2index} from './modules/minimap2'
-include {buscoGetDB} from './modules/buscoGetDB'
 include {dammitGetDB} from './modules/dammitGetDB'
+include {buscoGetDB} from './modules/buscoGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
@@ -450,31 +450,31 @@ workflow download_sortmerna {
 
 workflow download_busco {
     main:
-        if (!params.cloudProcess) { buscoGetDB() ; database_busco = buscoGetDB.out }
-        else if (params.cloudProcess) { 
-            busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}/${params.busco_db}.tar.gz")
+        if (!params.cloudProcess) { buscoGetDB(); database_busco = buscoGetDB.out }
+        if (params.cloudProcess) { 
+            busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}.tar.gz")
             if (busco_db_preload.exists()) { database_busco = busco_db_preload }
             else  { buscoGetDB(); database_busco = buscoGetDB.out }
         }
-    emit: database_busco
+    emit: 
+        database_busco
 }
 
 workflow download_dammit {
-    take: 
-    busco_db_ch
     
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
     if (params.dammit_uniref90) {
         dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/uniref90/${params.busco_db}/dbs.tar.gz"
     }
-    if (!params.cloudProcess) { dammitGetDB(busco_db_ch) ; database_dammit = dammitGetDB.out }
+    if (!params.cloudProcess) { dammitGetDB() ; database_dammit = dammitGetDB.out }
     if (params.cloudProcess) { 
         dammit_db_preload = file(dammit_db_preload_path)
         if (dammit_db_preload.exists()) { database_dammit = dammit_db_preload }
-        else  { dammitGetDB(busco_db_ch); database_dammit = dammitGetDB.out }
+        else  { dammitGetDB(); database_dammit = dammitGetDB.out }
     }
     emit: database_dammit
+        
 }
 
 
@@ -657,8 +657,8 @@ ToDo: also do co-assembly of samples belonging to the same condition.
 workflow assembly_denovo {
     take:
         cleaned_reads_ch
-        busco_db
         dammit_db
+        busco_db
 
     main:
         reads_ch = cleaned_reads_ch.map {sample, reads -> tuple reads}.collect()
@@ -672,7 +672,7 @@ workflow assembly_denovo {
         busco(trinity.out.assembly, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(trinity.out.assembly, dammit_db, tool_ch)
+        dammit(trinity.out.assembly, busco_db, dammit_db, tool_ch)
 } 
 
 /*****************************************
@@ -683,8 +683,8 @@ workflow assembly_reference {
         genome_reference
         annotation_reference
         bams
-        busco_db
         dammit_db
+        busco_db
 
     main:
         // StringTie2 GTF-guided transcript prediction
@@ -698,7 +698,7 @@ workflow assembly_reference {
         busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, dammit_db, tool_ch)
+        dammit(stringtie_merge.out.transcripts, busco_db, dammit_db, tool_ch)
 }
 
 
@@ -748,18 +748,18 @@ workflow {
     if (params.assembly) {
         // dbs
         busco_db = download_busco()
-        dammit_db = extract_tar_bz2(download_dammit(busco_db))
+        dammit_db = download_dammit()
         // de novo
         if (!params.nanopore) {
             // de novo
-            assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, busco_db, dammit_db)
+            assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, dammit_db, busco_db)
             // reference-based
-            assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, busco_db, dammit_db)
+            assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, dammit_db, busco_db)
         } else {
             // de novo
-            assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, busco_db, dammit_db)
+            assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, dammit_db, busco_db)
             // reference-based
-            assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, busco_db, dammit_db)
+            assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_db)
         }
     } else {
     // perform expression analysis
