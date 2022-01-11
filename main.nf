@@ -139,15 +139,29 @@ if (params.reads) {
     exit 1, "Parameter 'reads' undefined."
 }
 
+param_strand = ""
+param_read_mode = ""
+
+File csvFile = new File(params.reads)
+csvFile.eachLine { line ->
+    def row = line.split(",")
+    param_strand = row[5] ? row[5] : params.strand
+    param_read_mode = row[2] ? "paired-end" : "single-end"
+}
+
+if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
+
 log.info """\
                 R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
                 = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
                 Output path:                    $params.output
+                Strandedness                    $param_strand
+                Read mode:                      $param_read_mode
                 TPM threshold:                  $params.tpm
                 Comparisons:                    $comparison 
                 Nanopore mode:                  $params.nanopore
                 """
-                .stripIndent() 
+                .stripIndent()  
 /*
 * read in autodownload genome(s)
 */
