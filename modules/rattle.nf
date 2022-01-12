@@ -18,7 +18,7 @@ process rattle {
     # clustering step
     mkdir -p output/clusters/
 
-    if [ ${params.rna} ]; then
+    if ( ${params.rna} == 'true' ); then
       rattle cluster -i filtered.fastq -t ${task.cpus} -o ./output/ --fastq --rna 
     else
       rattle cluster -i filtered.fastq -t ${task.cpus} -o ./output/ --fastq 
@@ -31,7 +31,7 @@ process rattle {
     rattle correct -i filtered.fastq -c ./output/clusters.out -o ./output/ -t ${task.cpus} --fastq
 
     # polish
-    if [ ${params.rna} ]; then
+    if ( ${params.rna} == 'true' ); then
       rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus} --rna
     else
       rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus}
