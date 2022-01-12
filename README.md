@@ -312,9 +312,10 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Transcriptome assembly
 
 ```bash
---assemly                       # switch to transcriptome assemly
+--assembly                      # switch to transcriptome assemlby
 --busco_db                      # BUSCO database ['euarchontoglires' or path to existing DB]
 --dammit_uniref90               # add UniRef90 to dammit databases, takes long [false]
+--rna                           # activate directRNA mode for ONT transcriptome assembly [default: false (cDNA)]
 ```
 
 ## Profiles/configuration options
@@ -547,8 +548,9 @@ DEG analysis options:
 Transcriptome assembly options:
 --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: false]
 --busco_db               The database used with BUSCO [default: euarchontoglires_odb9]
-                         Full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
+                         Full list of available data sets at https://busco-data.ezlab.org/v5/data/lineages/ 
 --dammit_uniref90        Add UniRef90 to the dammit databases (time consuming!) [default: false]
+--rna                    Activate directRNA mode for ONT transcriptome assembly [default: false (cDNA)]
 
 Computing options:
 --cores                  Max cores per process for local use [default: 1]
