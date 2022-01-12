@@ -17,7 +17,12 @@ process rattle {
 
     # clustering step
     mkdir -p output/clusters/
-    rattle cluster -i filtered.fastq -t ${task.cpus} -o ./output/ --fastq --rna #(direct rna seq, disables checking both strands)
+
+    if [ ${params.rna} ]; then
+      rattle cluster -i filtered.fastq -t ${task.cpus} -o ./output/ --fastq --rna 
+    else
+      rattle cluster -i filtered.fastq -t ${task.cpus} -o ./output/ --fastq 
+    fi
 
     # extract clusters
     rattle extract_clusters -i filtered.fastq -c ./output/clusters.out -o ./output/clusters --fastq 
@@ -26,7 +31,11 @@ process rattle {
     rattle correct -i filtered.fastq -c ./output/clusters.out -o ./output/ -t ${task.cpus} --fastq
 
     # polish
-    rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus} --rna
+    if [ ${params.rna} ]; then
+      rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus} --rna
+    else
+      rattle polish -i ./output/consensi.fq -o ./output/  -t ${task.cpus}
+    fi
 
     mv output/transcriptome.fq transcriptome.fq
 
