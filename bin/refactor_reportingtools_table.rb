@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'net/http'
+require 'json'
 
 class RefactorReportingtoolsTable
 
@@ -23,71 +25,21 @@ class RefactorReportingtoolsTable
     $add_plots = true if add_plot_information && add_plot_information == 'add_plots'
 
     # fix for now, we need at some point a more general mechanic to detect the (main) species (host) used. Likely as a parameter
-    species = 'na'
-    f = File.open(anno, 'r')
-    f.each do |line|
-      unless line.start_with?('#')
-        s = line.split("\t")
-        if s[8] && s[8].include?('gene_id')
-          gene_id = s[8].split(';')[0].split('gene_id')[1].gsub('"','').chomp.strip
-          species = 'eco' if gene_id.start_with?('ER')
-          species = 'hsa' if gene_id.start_with?('ENSG')
-          species = 'mmu' if gene_id.start_with?('ENSMUSG')
-          species = 'mau' if gene_id.start_with?('ENSMAUG')
-          species = 'rno' if gene_id.start_with?('ENSRNOG')
-          break if species != 'na'
-        end
-      end
-    end
-    f.close
 
-    case species
-      when 'eco' 
-        $scan_feature_id_pattern = 'ER[0-9]+_[0-9]+'
-        $ensembl_url = 'https://bacteria.ensembl.org/Escherichia_coli_k_12/Gene/Summary?g='
-      when 'hsa'
-        $scan_feature_id_pattern = 'ENSG[0-9]+'
-        $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?g='
-        if feature_type == 'transcript'
-          $scan_feature_id_pattern = 'ENST[0-9]+'
-          $ensembl_url = 'https://ensembl.org/Homo_sapiens/Gene/Summary?t='  
-        end
-        if feature_type == 'exon'
-          $scan_feature_id_pattern = 'ENSE[0-9]+'
-        end
-      when 'mmu'
-        $scan_feature_id_pattern = 'ENSMUSG[0-9]+'
-        $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?g='
-        if feature_type == 'transcript'
-          $scan_feature_id_pattern = 'ENSMUST[0-9]+'
-          $ensembl_url = 'https://ensembl.org/Mus_musculus/Gene/Summary?t='
-        end
-        if feature_type == 'exon'
-          $scan_feature_id_pattern = 'ENSMUSE[0-9]+'
-        end
-      when 'mau'
-        $scan_feature_id_pattern = 'ENSMAUG[0-9]+'
-        $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?g='
-        if feature_type == 'transcript'
-          $scan_feature_id_pattern = 'ENSMAUT[0-9]+'
-          $ensembl_url = 'https://ensembl.org/Mesocricetus_auratus/Gene/Summary?t='
-        end
-        if feature_type == 'exon'
-          $scan_feature_id_pattern = 'ENSMAUE[0-9]+'
-        end
-      when 'rno'
-        $scan_feature_id_pattern = 'ENSRNOG[0-9]+'
-        $ensembl_url = 'https://ensembl.org/Rattus_norvegicus/Gene/Summary?g='
-        if feature_type == 'transcript'
-          $scan_feature_id_pattern = 'ENSRNOT[0-9]+'
-          $ensembl_url = 'https://ensembl.org/Rattus_norvegicus/Gene/Summary?t='
-        end
-        if feature_type == 'exon'
-          $scan_feature_id_pattern = 'ENSRNOE[0-9]+'
-        end
-      else
-        $scan_feature_id_pattern = false
-        $ensembl_url = false
+    base_url = get_ens_base_url(anno)
+    if species != ""
+      $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'G[0-9]+'
+      $ensembl_url = base_url.rpartition("=")[0] + "="
+      if feature_type == 'transcript'
+        $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'T[0-9]+'
+        $ensembl_url = base_url.rpartition("?")[0] + "?t="  
+      end
+      if feature_type == 'exon'
+        $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'E[0-9]+'
+      end
+    else
+      $scan_feature_id_pattern = false
+      $ensembl_url = false
     end
 
 		$id2name = {}
@@ -254,6 +206,60 @@ class RefactorReportingtoolsTable
         [split[0], "<th class=\"sort-string-robust bottom-header-row\">Name", "<th class=\"sort-string-robust bottom-header-row\">Type", "<th class=\"sort-string-robust bottom-header-row\">Position", split[1], split[2], split[3], split[4]].join('</th>') << '</th>'
     end
   end
+
+
+  def get_ens_base_url(annotation_file)
+    
+    # get ENS stable ID from annotation file
+    ens_id = "na"
+    f = File.open(annotation_file, 'r')
+      f.each do |line|
+        unless line.start_with?('#')
+          s = line.split("\t")
+          if s[8] && s[8].include?('gene_id')
+            ens_id = s[8].split(';')[0].split('gene_id')[1].gsub('"','').chomp.strip
+            break
+          end
+      end
+    end
+    f.close
+
+    # identify species from ENS stable ID
+    server='https://rest.ensembl.org'
+    path = "/lookup/id/#{ens_id}"
+    
+    url = URI.parse(server)
+    http = Net::HTTP.new(url.host, url.port)
+    
+    request = Net::HTTP::Get.new(path, {'Content-Type' => 'application/json'})
+    http.use_ssl = true
+    
+    response = http.request(request)
+    
+    if response.code != "200"
+      puts "Invalid response: #{response.code}"
+      puts response.body
+      exit
+    end
+    
+    result = JSON.parse(response.body)
+    species_name = result["species"]
+
+    # get ensembl prefix for link creation
+    species2prefix = Hash.new   #{species_name: link_prefix}
+    f = File.open("ens_species_mapping.tsv", 'r')
+      f.each do |line|
+        s = line.split("\t")
+        species2prefix[s[1].strip] = s[0]
+      end
+    f.close
+    if species2prefix[species_name] == "none"
+      prefix = ""
+    else
+      prefix = species2prefix[species_name] + '.'
+    end
+    return "https://#{prefix}ensembl.org/#{species_name.capitalize}/Gene/Summary?g=#{ens_id}"
+  end 
 
 end
 
