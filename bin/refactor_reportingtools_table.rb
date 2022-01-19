@@ -28,14 +28,14 @@ class RefactorReportingtoolsTable
 
     base_url = get_ens_base_url(anno)
     if base_url != ""
-      $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'G[0-9]+'
+      $scan_feature_id_pattern = base_url.split("=")[1][0..5] + 'G[0-9]+'
       $ensembl_url = base_url.rpartition("=")[0] + "="
       if feature_type == 'transcript'
-        $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'T[0-9]+'
+        $scan_feature_id_pattern = base_url.split("=")[1][0..5] + 'T[0-9]+'
         $ensembl_url = base_url.rpartition("?")[0] + "?t="  
       end
       if feature_type == 'exon'
-        $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'E[0-9]+'
+        $scan_feature_id_pattern = base_url.split("=")[1][0..5] + 'E[0-9]+'
       end
     else
       $scan_feature_id_pattern = false
