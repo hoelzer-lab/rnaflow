@@ -27,7 +27,7 @@ class RefactorReportingtoolsTable
     # fix for now, we need at some point a more general mechanic to detect the (main) species (host) used. Likely as a parameter
 
     base_url = get_ens_base_url(anno)
-    if species != ""
+    if base_url != ""
       $scan_feature_id_pattern = base_url.split("=")[1][0..2] + 'G[0-9]+'
       $ensembl_url = base_url.rpartition("=")[0] + "="
       if feature_type == 'transcript'
@@ -224,6 +224,10 @@ class RefactorReportingtoolsTable
     end
     f.close
 
+    if ens_id == "na"
+      return ""
+    end
+
     # identify species from ENS stable ID
     server='https://rest.ensembl.org'
     path = "/lookup/id/#{ens_id}"
@@ -239,7 +243,7 @@ class RefactorReportingtoolsTable
     if response.code != "200"
       puts "Invalid response: #{response.code}"
       puts response.body
-      exit
+      return ""
     end
     
     result = JSON.parse(response.body)
