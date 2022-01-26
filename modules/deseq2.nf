@@ -3,6 +3,7 @@
 ***************************************************/
 process deseq2 {
     label 'deseq2'
+    time '3h'
 
     errorStrategy 'retry'
     maxRetries 1
@@ -26,7 +27,8 @@ process deseq2 {
     path(script_improve_deseq_table)
 
     output:
-    path("*")
+    path("*"),
+    path("*_vs_*/results/deseq2_*_filtered_padj_0.05.csv", glob: True), emit: resFold05
     
     script:
 
