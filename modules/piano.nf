@@ -17,6 +17,6 @@ process piano {
     script:
     
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${resFold05}) c(${species}) c(${id_type}) c(${task.cpus}) ${piano_script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${resFold05}) c(${species}) c(${id_type}) c(${task.cpus}) c(${l1}) c(${l2})' ${piano_script}
     """
 }

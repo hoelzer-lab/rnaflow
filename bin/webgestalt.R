@@ -7,10 +7,11 @@ project_dir <- eval( parse(text=args[1]) )[1]
 gene_file <- eval( parse(text=args[2]) )
 species <- eval( parse(text=args[3]) )
 id_type <- eval( parse(text=args[4]) )
+l1 <- eval( parse(text=args[5]) )
+l2 <- eval( parse(text=args[6]) )
 
 resFold05 <- read.csv(file = gene_file, row.names = 1)
-l1 <- 'test0'
-l2 <- 'test1'
+
 out <- paste(project_dir,'/',sep='') 
 out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
 

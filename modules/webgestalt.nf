@@ -10,13 +10,14 @@ process webgestalt {
     val(species)
     val(id_type)
     path(script_improve_deseq_table)
+    val(l1)
+    val(l2)
 
     output:
-    path("downstream_analysis/piano")
+    path("*vs*/downstream_analysis/piano", glob: True)
     
     script:
-    
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${resFold05}) c(${species}) c(${id_type}) ${webgestalt_script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c(${resFold05}) c(${species}) c(${id_type}) c(${l1}) c(${l2})' ${webgestalt_script}
     """
 }

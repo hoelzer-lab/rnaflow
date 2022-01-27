@@ -11,9 +11,11 @@ gene_file <- eval( parse(text=args[2]) )
 species <- eval( parse(text=args[3]) )
 id_type <- eval( parse(text=args[4]) )
 cpus <- eval( parse(text=args[5]) )
+l1 <- eval( parse(text=args[6]) )
+l2 <- eval( parse(text=args[7]) )
 
 resFold05 <- read.csv(file = gene_file, row.names = 1)
-
+out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
 
 ##########################################
 ## BiomaRt object
@@ -120,12 +122,12 @@ piano <- function(out.dir, resFold, mapGO, cpus) {
 ## Piano
 #####################
 if ( ! is.na(biomart.ensembl) ) {
-  dir.create(file.path('downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
+  dir.create(file.path(out.sub, 'downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
   if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
     results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
     if ( length(row.names(results.gene)) > 0 ) {
       try.piano <- try( 
-        piano(paste('downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+        piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
       )
       if (class(try.piano) == "try-error") {
         print ('SKIPPING: Piano. Some error occurred.')
