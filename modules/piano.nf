@@ -1,5 +1,5 @@
 process piano {
-    label 'piano'
+    label 'deseq2'
 
     errorStrategy 'retry'
     maxRetries 1
