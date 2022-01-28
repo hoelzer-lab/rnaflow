@@ -12,6 +12,8 @@ library("stringr")
 library("WebGestaltR")
 library("snowfall")
 library("openxlsx")
+library("foreach")
+library("doParallel")
 
 
 #####################################################################################
@@ -391,8 +393,14 @@ for (i in 1:length(transformed.counts)) {
 #####################################################################################
 ## PERFORM PAIRWISE COMPARISONS
 #####################################################################################
-for (comparison in comparisons) {
 
+cl <- makeCluster(cpus)
+registerDoParallel(cl)
+
+foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools")) %dopar% {
+
+  .GlobalEnv$col.labels <- col.labels
+  comparison <- comparisons[i]
   l1 <- strsplit(comparison, ':')[[1]][1]
   l2 <- strsplit(comparison, ':')[[1]][2]
 
@@ -578,51 +586,7 @@ for (comparison in comparisons) {
       plot.pca(paste(out.sub, "/plots/PCA/", sep="/"), col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
     }
   }
-
-  ##########################################
-  ## Further analysis
-  ##########################################
-
-  #####################
-  ## MA plots with genes colored by GO terms
-  # go.terms <- eval( c("GO:004563","GO:0011231") )
-  # if ( ! is.na(biomart.ensembl)  && length(go.terms) > 0) {
-  #   results.gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id","name_1006"), filters = "ensembl_gene_id", values = rownames(deseq2.res), mart=biomart.ensembl)
-  #   #   plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
-  # }
-
-
-  #####################
-  ## Webgestalt
-  if ( species == 'hsa' ){
-    organism <- "hsapiens"
-  } else if (species == 'mmu') {
-    organism <- "mmusculus"
-  } else {
-    organism <- NA
-  }
-  if (! is.na(organism)) {
-    dir.create(file.path(out.sub, '/downstream_analysis/WebGestalt'), showWarnings = FALSE, recursive = TRUE)
-    interestGene <- as.data.frame(resFold05)[, 'log2FoldChange', drop=FALSE]
-    interestGene$id <- rownames(interestGene)
-    rownames(interestGene) <- NULL
-    colnames(interestGene) <- NULL
-    interestGene <- interestGene[c(2,1)]
-    webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    if (any(grepl(id_type, listIdType(), fixed=TRUE))) {
-      try.webgestalt <- try(
-        for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-          enrichResult <- WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType=id_type, collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
-        }
-      )
-      if (class(try.webgestalt) == "try-error") {
-        print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
-      }
-    } else {
-      print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
-    }
-  }
-
+  
   ##########################################
   ## Reports
   ##########################################

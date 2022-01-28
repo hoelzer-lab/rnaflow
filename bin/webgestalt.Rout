@@ -1,0 +1,107 @@
+
+R version 4.0.1 (2020-06-06) -- "See Things Now"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-conda_cos6-linux-gnu (64-bit)
+
+R ist freie Software und kommt OHNE JEGLICHE GARANTIE.
+Sie sind eingeladen, es unter bestimmten Bedingungen weiter zu verbreiten.
+Tippen Sie 'license()' or 'licence()' für Details dazu.
+
+R ist ein Gemeinschaftsprojekt mit vielen Beitragenden.
+Tippen Sie 'contributors()' für mehr Information und 'citation()',
+um zu erfahren, wie R oder R packages in Publikationen zitiert werden können.
+
+Tippen Sie 'demo()' für einige Demos, 'help()' für on-line Hilfe, oder
+'help.start()' für eine HTML Browserschnittstelle zur Hilfe.
+Tippen Sie 'q()', um R zu verlassen.
+
+> library("WebGestaltR")
+******************************************
+
+*                                        *
+
+*          Welcome to WebGestaltR !      *
+
+*                                        *
+
+******************************************
+
+Warnmeldung:
+Paket ‘WebGestaltR’ wurde unter R Version 4.0.2 erstellt 
+> 
+> # read arguments and evaluate
+> args <- commandArgs(TRUE)
+> 
+> project_dir <- eval( parse(text=args[1]) )[1] 
+> gene_file <- eval( parse(text=args[2]) )
+> species <- eval( parse(text=args[3]) )
+> id_type <- eval( parse(text=args[4]) )
+> l1 <- eval( parse(text=args[5]) )
+> l2 <- eval( parse(text=args[6]) )
+> 
+> resFold05 <- read.csv(file = gene_file, row.names = 1)
+> 
+> out <- paste(project_dir,'/',sep='') 
+> out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
+> 
+> 
+> #####################
+> ## Webgestalt
+> #####################
+> if ( species == 'hsa' ){
++ organism <- "hsapiens"
++ } else if (species == 'mmu') {
++ organism <- "mmusculus"
++ } else {
++ organism <- NA
++ }
+> if (! is.na(organism)) {
++     dir.create(file.path(out.sub, '/downstream_analysis/WebGestalt'), showWarnings = FALSE, recursive = TRUE)
++     interestGene <- as.data.frame(resFold05)[, 'log2FoldChange', drop=FALSE]
++     interestGene$id <- rownames(interestGene)
++     rownames(interestGene) <- NULL
++     colnames(interestGene) <- NULL
++     interestGene <- interestGene[c(2,1)]
++     webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
++     if (any(grepl(id_type, listIdType(), fixed=TRUE))) {
++         try.webgestalt <- try(
++         for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
++             enrichResult <- WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType=id_type, collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
++         }
++         )
++         if (class(try.webgestalt) == "try-error") {
++         print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
++         }
++     } else {
++         print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
++     }
++ }
+Loading the functional categories...
+Loading the ID list...
+Summarizing the uploaded ID list by GO Slim data...
+Performing the enrichment analysis...
+1000 permutations of score complete...
+Begin affinity propagation...
+End affinity propagation...
+Begin weighted set cover...
+End weighted set cover...
+Generate the final report...
+sh: 1: : Permission denied
+Results can be found in the ./MAQCA_vs_MAQCB//downstream_analysis/WebGestalt/Project_MAQCA_vs_MAQCB!
+Loading the functional categories...
+Loading the ID list...
+Summarizing the uploaded ID list by GO Slim data...
+Performing the enrichment analysis...
+1000 permutations of score complete...
+Begin affinity propagation...
+End affinity propagation...
+Begin weighted set cover...
+Remain is 0, ending weighted set cover
+Generate the final report...
+sh: 1: : Permission denied
+Results can be found in the ./MAQCA_vs_MAQCB//downstream_analysis/WebGestalt/Project_MAQCA_vs_MAQCB!
+Es gab 50 oder mehr Warnungen (Anzeige der ersten 50 mit warnings())
+> 
+> proc.time()
+       User      System verstrichen 
+     38.365       2.943     106.889 
