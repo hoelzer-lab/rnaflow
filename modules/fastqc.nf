@@ -3,10 +3,11 @@
 ************************************************************************/
 process fastqc {
     label 'fastqc'
+    tag "$meta.sample"
     label 'smallTask'
 
     input:
-    tuple val(name), path(reads) 
+    tuple val(meta), path(reads) 
 
     output:
     path("*_fastqc.zip", emit: zip)

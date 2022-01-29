@@ -21,22 +21,23 @@ process minimap2index {
 ************************************************************************/
 process minimap2 {
     label 'minimap2'
+    tag "$meta.sample"
     
     if ( params.softlink_results ) { publishDir "${params.output}/${params.minimap2_dir}", pattern: "*.sorted.bam" }
     else { publishDir "${params.output}/${params.minimap2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
 
     input:
-    tuple val(sample_name), path(reads)
+    tuple val(meta), path(reads)
     tuple path(reference), path(index)
     val(additionalParams)
 
     output:
-    tuple val(sample_name), path("${sample_name}.sorted.bam"), emit: sample_bam 
-    path "${sample_name}_summary.log", emit: log
+    tuple val(meta), path("${meta.sample}.sorted.bam"), emit: sample_bam 
+    path "${meta.sample}_summary.log", emit: log
 
     script:
     """
-    minimap2 -a -t ${task.cpus} ${index} ${reads[0]} 2> ${sample_name}_summary.log | samtools view -bS | samtools sort -o ${sample_name}.sorted.bam -T tmp --threads ${task.cpus}    
+    minimap2 -a -t ${task.cpus} ${index} ${reads[0]} 2> ${meta.sample}_summary.log | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}    
     """
 }
     

@@ -94,6 +94,7 @@ if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
 
 // deprecated stuff
+if ( params.mode ) { println "\033[0;33mWARNING: Parameter --mode is deprecated, read mode will automatically be detected from the sample file.\033[0m\n" }
 if ( ((params.species || params.include_species) && (params.autodownload || params.pathway)) && ! workflow.profile.contains('test') ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
 if ( ( params.species || params.include_species ) && ! workflow.profile.contains('test') ) { 
     println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
@@ -111,63 +112,56 @@ if ( ( params.species || params.include_species ) && ! workflow.profile.contains
 
 if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 
-log.info """\
-    R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
-    = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
-    Output path:          $params.output
-    Mode:                 $params.mode
-    Strandness:           $params.strand
-    TPM threshold:        $params.tpm
-    Comparisons:          $comparison 
-    Nanopore mode:        $params.nanopore
-    """
-    .stripIndent()
-
 /************************** 
 * INPUT CHANNELS 
 **************************/
 
-/*
-* read in sample sheet
-*/
 if (params.reads) { 
-    if (params.mode == 'single') {
     Channel
         .fromPath( params.reads, checkIfExists: true)
         .splitCsv(header: true, sep: ',')
         .map{row ->
-            def sample = row['Sample']
-            def read = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true)
-            def condition = row['Condition']
-            def source = row['Source']
-            return [ sample, read, condition, source ]
+            def paired_end = row['R2'] ? true : false
+            def read1 = row['R'] ? (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R'], checkIfExists: true) : file(row['R'], checkIfExists: true) : (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
+            def read2 = paired_end ? (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2']) : "" 
+            def meta = [:]
+                meta.sample = row['Sample']
+                meta.condition = row['Condition']
+                meta.source = row['Source']
+                meta.paired_end = paired_end
+                meta.strandedness = row['Strandedness'] ? row['Strandedness'] : params.strand
+            return meta.paired_end ? [ meta, [ read1, read2 ] ] : [ meta, [ read1 ] ]
         }
         .tap { annotated_reads }
         .tap { read_input_ch }
-        .map { sample, read, condition, source ->
-            return [ sample, [ read ] ] }
         .set { read_input_ch }
-
-    } else {
-    Channel
-        .fromPath( params.reads, checkIfExists: true)
-        .splitCsv(header: true, sep: ',')
-        .map{row ->
-            def sample = row['Sample']
-            def read1 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R1'], checkIfExists: true) : file(row['R1'], checkIfExists: true)
-            def read2 = (workflow.profile.contains('test')) ? file("$workflow.projectDir/" + row['R2'], checkIfExists: true) : file(row['R2'], checkIfExists: true)
-            def condition = row['Condition']
-            def source = row['Source']
-            return [ sample, read1, read2, condition, source ]
-        }
-        .tap { annotated_reads }
-        .tap { read_input_ch }
-        .map { sample, read1, read2, condition, source ->
-            return [ sample, [ read1, read2 ] ] }
-        .set { read_input_ch }
-    }
+}else{
+    exit 1, "Parameter 'reads' undefined."
 }
 
+param_strand = ""
+param_read_mode = ""
+
+File csvFile = new File(params.reads)
+csvFile.eachLine { line ->
+    def row = line.split(",")
+    param_strand = row[5] ? row[5] : params.strand
+    param_read_mode = row[2] ? "paired-end" : "single-end"
+}
+
+if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
+
+log.info """\
+                R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
+                = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
+                Output path:                    $params.output
+                Strandedness                    $param_strand
+                Read mode:                      $param_read_mode
+                TPM threshold:                  $params.tpm
+                Comparisons:                    $comparison 
+                Nanopore mode:                  $params.nanopore
+                """
+                .stripIndent()  
 /*
 * read in autodownload genome(s)
 */
@@ -215,9 +209,10 @@ if ( params.annotation ) {
 }
 
 sample_conditions = annotated_reads
-    .map{row -> row[-2]}
+    .map{ meta, reads -> meta.condition }
     .toList()
     .toSet()
+    
 
 /*
 * read in comparisons
@@ -295,7 +290,7 @@ regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionRep
 
 if (params.assembly) {
     annotated_reads
-        .map{ row -> row[-2]}
+        .map{ meta, reads -> meta.condition }
         .collect()
         .subscribe onNext: {
             for ( i in it ){
@@ -304,7 +299,7 @@ if (params.assembly) {
         }, onError: { exit 1, 'You need at least one sample to perform an assembly.' }
 } else {
     annotated_reads
-        .map{ row -> row[-2]}
+        .map{ meta, reads -> meta.condition }
         .collect()
         .subscribe onNext: {
             for ( i in it ){
@@ -600,9 +595,10 @@ workflow expression_reference_based {
         // prepare input channels
         tpm_prep_ch = featurecounts.out.counts
             .join( annotated_reads
-                    .map{row -> [row[0], row[-2]]} 
+                    .map{meta, reads -> [meta.sample, meta.condition]} 
             ).toSortedList { entry -> entry[0] } 
             .transpose()
+            
 
         samples = tpm_prep_ch.first() 
         counts = tpm_prep_ch.take(2).last()
@@ -614,7 +610,7 @@ workflow expression_reference_based {
         tpm_filter.out.samples
             .flatMap()
             .join( annotated_reads
-                .map{row -> [row[0], row[-2], row[-1]]}
+                .map{ meta, reads -> [ meta.sample, meta.condition, meta.source ] }
             )
             .multiMap{ it ->
                 col_label: it[0]
@@ -636,7 +632,7 @@ workflow expression_reference_based {
            deseq2_script_improve_deseq_table)
 
         // run MultiQC
-        multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
+        multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
         multiqc(multiqc_config, 
                 multiqc_sample_names.out,
                 fastp_json_report.collect().ifEmpty([]), 
@@ -661,7 +657,7 @@ workflow assembly_denovo {
         busco_db
 
     main:
-        reads_ch = cleaned_reads_ch.map {sample, reads -> tuple reads}.collect()
+        reads_ch = cleaned_reads_ch.map {meta, reads -> tuple reads}.collect()
         reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
  
         // co-assembly LR

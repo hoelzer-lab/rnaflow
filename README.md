@@ -207,31 +207,31 @@ By default, all possible comparisons are performed. Use `--deg` to change this.
 
 #### Read files (required)
 
-Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads:
+Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads (just leave R2 empty):
 
 ```csv
-Sample,R,Condition,Source
-mock_rep1,/path/to/reads/mock1.fastq.gz,mock,
-mock_rep2,/path/to/reads/mock2.fastq.gz,mock,
-mock_rep3,/path/to/reads/mock3.fastq.gz,mock,
-treated_rep1,/path/to/reads/treat1.fastq.gz,treated,
-treated_rep2,/path/to/reads/treat2.fastq.gz,treated,
-treated_rep3,/path/to/reads/treat3.fastq.gz,treated,
+Sample,R1,R2,Condition,Source,Strandedness
+mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,A,0
+mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,B,0
+mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,C,0
+treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,A,0
+treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,B,0
+treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,C,0
 ```
 
 and for paired-end reads, like this:
 
 ```csv
-Sample,R1,R2,Condition,Source
-mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A
-mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B
-mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C
-treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A
-treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B
-treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
+Sample,R1,R2,Condition,Source,Strandedness
+mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A,0
+mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B,0
+mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C,0
+treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A,0
+treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B,0
+treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,0
 ```
 
-The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation.
+The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversly stranded, [default: 0].
 
 #### Genomes and annotation
 
@@ -292,7 +292,6 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Preprocessing
 
 ```bash
---mode                                 # either 'single' (single-end) or 'paired' (paired-end) sequencing [default single]
 --skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
 --fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
 --hisat2_additional_params             # additional parameters for HISAT2
@@ -501,7 +500,7 @@ nextflow run hoelzer-lab/rnaflow --cores 4 --reads input.csv --genome fasta_viru
 Genomes and annotations from --autodownload, --genome and --annotation are concatenated.
 
 Input:
---reads                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+--reads                  A CSV file following the pattern: Sample,R1,R2,Condition,Source,Strandedness - read mode is detected automatically
                                     (check terminal output if correctly assigned)
                                     Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.
 --autodownload           Specifies the species identifier for automated download [default: ]
@@ -524,7 +523,6 @@ Input:
                          supported species in addition to --genome and --annotation [default: false]
 
 Preprocessing options:
---mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: single]
 --fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
 --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
 --hisat2_additional_params         additional parameters for HISAT2 [default: ]
