@@ -22,7 +22,7 @@ process containerGet {
         then
             echo "${tool} singularity image file already exists, skipping."
     else
-        singularity pull --name ${img_file_name}.img --dir "${params.singularityCacheDir}" "docker://${path}"
+        singularity pull --name ${img_file_name}.img "docker://${path}"
     fi
     """
   else if ( workflow.profile.contains('docker') )
