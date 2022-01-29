@@ -930,6 +930,8 @@ def helpMSG() {
     --singularityCacheDir    Location for storing the singularity images [default: $params.singularityCacheDir]
     ${c_dim}--workdir                Working directory for all intermediate results [default: $params.workdir] (DEPRECATED: use `-w your/workdir` instead)${c_reset}
     --softlink_results       Softlink result files instead of copying.
+    --setup                  Download all necessary DB, reference and image files without running the pipeline. [default: $params.setup]
+
 
     ${c_dim}Nextflow options:
     -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).

@@ -348,7 +348,7 @@ nextflow run hoelzer-lab/rnaflow -profile test,local,docker
 nextflow run hoelzer-lab/rnaflow -profile test,slurm,singularity
 ```
 
-As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option. It is also possible to run the pipeline once with `--setup` set. In setup mode all the necessary files (DBs, reference files and images) are being downloaded and set up.
 
 You can customize where `conda` environments are stored using
 
@@ -560,6 +560,7 @@ Caching:
 --singularityCacheDir    Location for storing the singularity images [default: singularity]
 --workdir                Working directory for all intermediate results [default: null] (DEPRECATED: use `-w your/workdir` instead)
 --softlink_results       Softlink result files instead of copying.
+--setup                  Download all necessary DB, reference and image files without running the pipeline. [default: false]
 
 Nextflow options:
 -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).
