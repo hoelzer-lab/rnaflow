@@ -7,6 +7,8 @@ process sortmerna {
     label 'sortmerna'
     tag "$meta.sample"
 
+    if ( params.nanopore ) { errorStrategy 'ignore' }
+
     if ( params.softlink_results ) { publishDir "${params.output}/${params.sortmerna_dir}", pattern: "*.other.fastq.gz" }
     else { publishDir "${params.output}/${params.sortmerna_dir}", mode: 'copy', pattern: "*.other.fastq.gz" }
 
