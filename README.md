@@ -312,7 +312,7 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Transcriptome assembly
 
 ```bash
---assembly                      # switch to transcriptome assemlby
+--assembly                      # switch to transcriptome assembly
 --busco_db                      # BUSCO database ['euarchontoglires' or path to existing DB]
 --dammit_uniref90               # add UniRef90 to dammit databases, takes long [false]
 --rna                           # activate directRNA mode for ONT transcriptome assembly [default: false (cDNA)]
