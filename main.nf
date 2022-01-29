@@ -103,7 +103,7 @@ if ( ( params.species || params.include_species ) && ! workflow.profile.contains
     if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
     if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Supported species are: " + species}
 } else {
-    if ( ! params.autodownload && ! params.genome && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --autodownload " + autodownload + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+    if ( ! params.autodownload && ! params.genome && ! workflow.profile.contains('test') && !params.setup ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --autodownload " + autodownload + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
     // logic stuff
     if ( params.genome && ! params.annotation ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
     if ( ! params.autodownload in autodownload ) { exit 1, "Unsupported species for automatic download. Supported species are: " + autodownload }
@@ -149,7 +149,7 @@ if (params.reads) {
         .tap { read_input_ch }
         .set { read_input_ch }
 }else if ((!params.reads && params.setup) || params.setup) {
-    println "\u001B[32mRunning in setup mode. Only necessary database and reference files will be downloaded."
+    println "\u001B[32mRunning in setup mode. Only necessary database and reference files will be downloaded.\033[0m\n"
     annotated_reads = Channel.empty()
     read_input_ch = Channel.empty()
 }else{
@@ -159,14 +159,16 @@ if (params.reads) {
 param_strand = ""
 param_read_mode = ""
 
-File csvFile = new File(params.reads)
-csvFile.eachLine { line ->
-    def row = line.split(",")
-    param_strand = row[5] ? row[5] : params.strand
-    param_read_mode = row[2] ? "paired-end" : "single-end"
-}
+if (!params.setup) { 
+    File csvFile = new File(params.reads)
+    csvFile.eachLine { line ->
+        def row = line.split(",")
+        param_strand = row[5] ? row[5] : params.strand
+        param_read_mode = row[2] ? "paired-end" : "single-end"
+    }
 
-if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
+    if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
+}
 
 log.info """\
                 R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
