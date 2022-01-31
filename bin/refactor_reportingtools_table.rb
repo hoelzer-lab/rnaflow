@@ -232,22 +232,26 @@ class RefactorReportingtoolsTable
     server='https://rest.ensembl.org'
     path = "/lookup/id/#{ens_id}"
     
-    url = URI.parse(server)
-    http = Net::HTTP.new(url.host, url.port)
-    
-    request = Net::HTTP::Get.new(path, {'Content-Type' => 'application/json'})
-    http.use_ssl = true
-    
-    response = http.request(request)
-    
-    if response.code != "200"
-      puts "Invalid response: #{response.code}"
-      puts response.body
+    begin
+      url = URI.parse(server)
+      http = Net::HTTP.new(url.host, url.port)
+      
+      request = Net::HTTP::Get.new(path, {'Content-Type' => 'application/json'})
+      http.use_ssl = true
+      
+      response = http.request(request)
+      
+      if response.code != "200"
+        puts "Invalid response: #{response.code}"
+        puts response.body
+        return ""
+      end
+      
+      result = JSON.parse(response.body)
+      species_name = result["species"]
+    rescue
       return ""
     end
-    
-    result = JSON.parse(response.body)
-    species_name = result["species"]
 
     # get ensembl prefix for link creation
     species2prefix = Hash.new   #{species_name: link_prefix}
