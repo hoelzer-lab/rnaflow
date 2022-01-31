@@ -5,8 +5,8 @@ process deseq2 {
     label 'deseq2'
     time '3h'
 
-    errorStrategy 'retry'
-    maxRetries 1
+    //errorStrategy 'retry'
+    //maxRetries 1
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.deseq2_dir}", pattern: "*" }
     else { publishDir "${params.output}/${params.deseq2_dir}", mode: 'copy', pattern: "*" }
@@ -27,8 +27,9 @@ process deseq2 {
     path(script_improve_deseq_table)
 
     output:
-    path("*"),
-    path("*_vs_*/results/deseq2_*_filtered_padj_0.05.csv", glob: True), emit: resFold05
+        path("*")
+        path "*_vs_*/results/deseq2_*_filtered_padj_0.05.csv", glob: true , emit: resFold05
+
     
     script:
 

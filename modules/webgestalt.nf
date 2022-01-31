@@ -1,23 +1,24 @@
 process webgestalt {
     label 'deseq2'
+    tag "$comparison"
 
-    errorStrategy 'retry'
-    maxRetries 1
+    publishDir "${params.output}/${params.deseq2_dir}/${comparison}/downstream_analysis", mode: 'copy', pattern: "WebGestalt"
+
+    /* errorStrategy 'retry'
+    maxRetries 1 */
 
     input:
     path(webgestalt_script)
-    path(resFold05)
+    each(resFold05)
     val(species)
     val(id_type)
-    path(script_improve_deseq_table)
-    val(l1)
-    val(l2)
 
     output:
-    path("*vs*/downstream_analysis/piano", glob: True)
+    path("WebGestalt")
     
     script:
+    comparison = resFold05.toString().findAll("[a-zA-Z]*_vs_[a-zA-Z]*")[0]
     """
-    R CMD BATCH --no-save --no-restore '--args c(".") c(${resFold05}) c(${species}) c(${id_type}) c(${l1}) c(${l2})' ${webgestalt_script}
+    R CMD BATCH --no-save --no-restore '--args c(".") c("${resFold05}") c("${species}") c("${id_type}")' ${webgestalt_script}
     """
 }
