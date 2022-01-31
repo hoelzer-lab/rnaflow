@@ -15,7 +15,7 @@ process containerGet {
     path("${img_file_name}.img")
 
   script:
-  img_file_name = path.replace("/", "-")
+  img_file_name = path.replace("/", "-").replace(":","-")
   if ( workflow.profile.contains('singularity') )
     """
     if [ -e ${params.singularityCacheDir}/${img_file_name}.img ] 
