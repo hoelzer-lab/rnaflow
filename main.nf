@@ -648,7 +648,6 @@ workflow expression_reference_based {
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
            deseq2_script_improve_deseq_table)
 
-        deseq2.out.resFold05.view{ "item: $it" }
         // downstream analysis
         piano(piano_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch, deseq2_script_improve_deseq_table)
         webgestalt(webgestalt_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch)
