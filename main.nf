@@ -287,6 +287,8 @@ deseq2_id_type_ch = Channel.value(params.feature_id_type)
 * Downstream analysis
 */
 piano_script = Channel.fromPath( workflow.projectDir + '/bin/piano.R', checkIfExists: true )
+webgestalt_script = Channel.fromPath( workflow.projectDir + '/bin/webgestalt.R', checkIfExists: true )
+
 
 
 /*
@@ -351,6 +353,7 @@ include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
 include {nanoplot as nanoplot} from './modules/nanoplot'
 include {multiqc; multiqc_sample_names} from './modules/multiqc'
 include {piano} from "./modules/piano"
+include {webgestalt} from "./modules/webgestalt.nf"
 
 // assembly & annotation
 include {trinity} from './modules/trinity'
@@ -595,6 +598,8 @@ workflow expression_reference_based {
         deseq2_script_improve_deseq_table
         multiqc_config
         piano_script
+        webgestalt_script
+
 
     main:
         // count with featurecounts
@@ -642,8 +647,11 @@ workflow expression_reference_based {
            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
            deseq2_script_improve_deseq_table)
+
+        deseq2.out.resFold05.view{ "item: $it" }
         // downstream analysis
-        piano(piano_script, deseq2.out.resFold05, species_pathway_ch, deseq2_id_type_ch, deseq2_script_improve_deseq_table)
+        piano(piano_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch, deseq2_script_improve_deseq_table)
+        webgestalt(webgestalt_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch)
 
         // run MultiQC
         multiqc_sample_names(annotated_reads.map{ row -> row[0..-3]}.collect())
@@ -799,7 +807,8 @@ workflow {
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
                                 multiqc_config,
-                                piano_script)
+                                piano_script,
+                                webgestalt_script)
         } else {
         expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
                                 preprocess_nanopore.out.fastp_json_report,
@@ -813,7 +822,8 @@ workflow {
                                 deseq2_script_refactor_reportingtools_table, 
                                 deseq2_script_improve_deseq_table, 
                                 multiqc_config,
-                                piano_script)
+                                piano_script,
+                                webgestalt_script)
         }
     }
 }
