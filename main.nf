@@ -835,7 +835,7 @@ workflow {
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
                                     species2prefix)
-         } else {
+            } else {
             expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
                                     preprocess_nanopore.out.fastp_json_report,
                                     preprocess_nanopore.out.sortmerna_log,
@@ -849,7 +849,8 @@ workflow {
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
                                     species2prefix)
-         }
+            }
+        }
     }
 }
 
