@@ -4,8 +4,8 @@ process piano {
 
     publishDir "${params.output}/${params.deseq2_dir}/${comparison}/downstream_analysis", mode: 'copy', pattern: "piano"
 
-    /* errorStrategy 'retry'
-    maxRetries 1 */
+    errorStrategy 'retry'
+    maxRetries 1 
 
     input:
     path(piano_script)
