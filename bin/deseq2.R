@@ -181,6 +181,7 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
   selected.ids <- selected.ids[1:min(ntop, length(selected.ids))]
   if ( length(selected.ids) > 1 ) {
     file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
+    # pheatmap fails if two values are exactly the same
     pheatmap(assay(trsf_data)[selected.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
             scale = "row", border_color = NA, 
             labels_row = as.character(genes.info[selected.ids,]$gene_type),
@@ -407,7 +408,7 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
   out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
   build.project.structure(out.sub)
 
-  name <- paste("deseq2_",l1,"_",l2,sep="")
+  name <- paste("deseq2_",l1,"_vs_",l2,sep="")
 
   ##########################################
   ## Adjust data, count data, levles and valiables to current pairwise comparison
@@ -578,6 +579,7 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
       plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold01, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-01')
     }
   }
+  
 
   #####################
   ## PCA
