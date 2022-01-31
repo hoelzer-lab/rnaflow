@@ -296,6 +296,7 @@ deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIf
 deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
 deseq2_id_type_ch = Channel.value(params.feature_id_type)
+species2prefix = Channel.fromPath( workflow.projectDir + '/assets/ens_species_mapping.tsv', checkIfExists: true)
 
 /*
 * MultiQC config
@@ -626,6 +627,7 @@ workflow expression_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         multiqc_config
+        species2prefix
 
     main:
         // count with featurecounts
@@ -668,12 +670,12 @@ workflow expression_reference_based {
             .map { "\"${it}\"" }
             .collect()
             .map { it.join(",") }
-
+        
         // run DEseq2
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
-           deseq2_script_improve_deseq_table)
+           deseq2_script_improve_deseq_table, species2prefix)
 
         // run MultiQC
         multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
@@ -831,8 +833,9 @@ workflow {
                                     deseq2_script, 
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
-                                    multiqc_config)
-            } else {
+                                    multiqc_config,
+                                    species2prefix)
+         } else {
             expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
                                     preprocess_nanopore.out.fastp_json_report,
                                     preprocess_nanopore.out.sortmerna_log,
@@ -844,9 +847,9 @@ workflow {
                                     deseq2_script, 
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
-                                    multiqc_config)
-            }
-        }
+                                    multiqc_config,
+                                    species2prefix)
+         }
     }
 }
 
