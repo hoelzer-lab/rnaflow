@@ -6,6 +6,7 @@ process buscoGetDB {
     maxRetries 2
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}", mode: 'copy', pattern: "${params.busco_db}_odb10.tar.gz" }
+
     else { storeDir "${params.permanentCacheDir}/databases/busco/${params.busco_db}" }
 
   output:
