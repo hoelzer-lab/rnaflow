@@ -3,25 +3,26 @@ process stringtie {
 
     if ( params.softlink_results ) {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*_stringtie.gtf"
-      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${sample_name}_stringtie.fna"
+      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", pattern: "${meta.sample}_stringtie.fna"
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", pattern: "*_gene_abundance.txt"
     } else {
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*_stringtie.gtf"
-      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${sample_name}_stringtie.fna"
+      //publishDir "${params.output}/${name}/${params.rnaseq_annotation_dir}/stringtie", mode: 'copy', pattern: "${meta.sample}_stringtie.fna"
       publishDir "${params.output}/${params.rnaseq_annotation_dir}/StringTie2", mode: 'copy', pattern: "*_gene_abundance.txt"
     }
 
   input:
     path genome
     path gtf
-    tuple val(sample_name), file(bam)
+    tuple val(meta), file(bam)
 
   output:
-    path "${sample_name}_stringtie.gtf", emit: gtf
-    path "${sample_name}_gene_abundance.txt", emit: abundance
-    //tuple val(name), file("${sample_name}_stringtie.fna"), emit: transcripts
+    path "${meta.sample}_stringtie.gtf", emit: gtf
+    path "${meta.sample}_gene_abundance.txt", emit: abundance
+    //tuple val(name), file("${meta.sample}_stringtie.fna"), emit: transcripts
 
   script:
+
     if ( params.nanopore )
       """
         stringtie -L -G ${gtf} -p ${task.cpus} -o ${sample_name}_stringtie.gtf -A ${sample_name}_gene_abundance.txt ${bam}
