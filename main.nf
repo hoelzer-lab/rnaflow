@@ -852,7 +852,7 @@ workflow {
                                     multiqc_config,
                                     species2prefix,
                                     piano_script,
-                                    webgestalt_script))
+                                    webgestalt_script)
             } else {
             expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
                                     preprocess_nanopore.out.fastp_json_report,
@@ -868,7 +868,7 @@ workflow {
                                     multiqc_config,
                                     species2prefix,
                                     piano_script,
-                                    webgestalt_script))
+                                    webgestalt_script)
             }
         }
     }
