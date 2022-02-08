@@ -647,7 +647,7 @@ workflow expression_reference_based {
            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
            deseq2_script_improve_deseq_table)
-
+        
         // downstream analysis
         piano(piano_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch, deseq2_script_improve_deseq_table)
         webgestalt(webgestalt_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch)
