@@ -4,12 +4,12 @@ process piano {
 
     publishDir "${params.output}/${params.deseq2_dir}/${comparison}/downstream_analysis", mode: 'copy', pattern: "piano"
 
-    errorStrategy 'retry'
-    maxRetries 1 
+    //errorStrategy 'retry'
+    //maxRetries 1 
 
     input:
     path(piano_script)
-    each(resFold05)
+    each(path(resFold05))
     val(species)
     val(id_type)
     path(script_improve_deseq_table)

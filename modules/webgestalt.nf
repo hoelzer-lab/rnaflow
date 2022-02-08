@@ -4,12 +4,12 @@ process webgestalt {
 
     publishDir "${params.output}/${params.deseq2_dir}/${comparison}/downstream_analysis", mode: 'copy', pattern: "WebGestalt"
 
-    errorStrategy 'retry'
-    maxRetries 1 
+    //errorStrategy 'retry'
+    //maxRetries 1 
 
     input:
     path(webgestalt_script)
-    each(resFold05)
+    each(path(resFold05))
     val(species)
     val(id_type)
 
