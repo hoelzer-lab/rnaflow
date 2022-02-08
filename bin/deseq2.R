@@ -624,6 +624,8 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
   }
 
 }
+stopCluster(cl)
+gc()
 #####################################################################################
 ## END PAIRWISE COMPARISONS
 #####################################################################################
