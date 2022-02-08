@@ -123,6 +123,13 @@ piano <- function(out.dir, resFold, mapGO, cpus) {
 if ( ! is.na(biomart.ensembl) ) {
   dir.create(file.path('piano'), showWarnings = FALSE, recursive = TRUE)
   if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
+    tryCatch(
+    expr = { results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl) },
+    error = function(e){ 
+      print ('SKIPPING: Piano; Oops, getBM() failed! This can happen if your dge results are empty, please check!') 
+      quit(save = "no", status = 0)
+    } )
+
     results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
     if ( length(row.names(results.gene)) > 0 ) {
       try.piano <- try( 
