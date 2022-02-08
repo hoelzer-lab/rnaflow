@@ -211,24 +211,24 @@ Specify your read files in `FASTQ` format with `--reads input.csv`. The file `in
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,
-mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,
-mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,
-treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,
-treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,
-treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,
+mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,,
+mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,,
+mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,,
+treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,,
+treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,,
+treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,,
 ```
 
 and for paired-end reads, like this:
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A
-mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B
-mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C
-treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A
-treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B
-treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C
+mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A,
+mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B,
+mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C,
+treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A,
+treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B,
+treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,
 ```
 
 The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. 
