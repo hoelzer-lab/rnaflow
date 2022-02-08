@@ -1,5 +1,5 @@
-Sample,R,Condition,Source
-MAQCA_rep1,test-data/hsa/SRR3670977_sub.fastq.gz,MAQCA,
-MAQCA_rep2,test-data/hsa/SRR3670978_sub.fastq.gz,MAQCA,
-MAQCB_rep1,test-data/hsa/SRR3670985_sub.fastq.gz,MAQCB,
-MAQCB_rep2,test-data/hsa/SRR3670986_sub.fastq.gz,MAQCB,
+Sample,R1,R2,Condition,Source,Strandedness
+MAQCA_rep1,test-data/hsa/SRR3670977_sub.fastq.gz,,MAQCA,,0
+MAQCA_rep2,test-data/hsa/SRR3670978_sub.fastq.gz,,MAQCA,,0
+MAQCB_rep1,test-data/hsa/SRR3670985_sub.fastq.gz,,MAQCB,,0
+MAQCB_rep2,test-data/hsa/SRR3670986_sub.fastq.gz,,MAQCB,,0

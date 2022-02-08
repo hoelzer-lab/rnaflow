@@ -25,6 +25,7 @@ process deseq2 {
     val(id_type)
     path(script_refactor_reportingtools_table)
     path(script_improve_deseq_table)
+    path(species2prefix_map)
 
     output:
         path("*")
