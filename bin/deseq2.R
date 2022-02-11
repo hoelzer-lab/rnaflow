@@ -681,21 +681,26 @@ for (comparison in comparisons) {
   ## Piano
   if ( ! is.na(biomart.ensembl) ) {
     dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
-    if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
-      results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
-      if ( length(row.names(results.gene)) > 0 ) {
-        try.piano <- try( 
-          piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
-        )
-        if (class(try.piano) == "try-error") {
-          print ('SKIPPING: Piano. Some error occurred.')
+    if (length(rownames(resFold05)) > 0) {
+      if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
+        results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
+        if ( length(row.names(results.gene)) > 0 ) {
+          try.piano <- try(
+            piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
+          )
+          if (class(try.piano) == "try-error") {
+            print ('SKIPPING: Piano. Some error occurred.')
+          }
+        } else {
+          print(paste('SKIPPING: Piano. No matching feature IDs with type', id_type, 'found.'))
         }
       } else {
-        print(paste('SKIPPING: Piano. No matching feature IDs with type', id_type, 'found.'))
+        print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported by biomaRt.'))
       }
     } else {
-      print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported by biomaRt.'))
+      print ('SKIPPING: Piano. No features.')
     }
+
   }
 
   #####################
