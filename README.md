@@ -581,6 +581,7 @@ Executer (choose one):
 
 Engines (choose one):
   conda
+  mamba
   docker
   singularity
 
