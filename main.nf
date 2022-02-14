@@ -704,7 +704,9 @@ workflow expression_reference_based {
                 readqcPre.collect().ifEmpty([]),
                 readqcPost.collect().ifEmpty([]),
                 tpm_filter.out.stats,
-                params.tpm
+                params.tpm,
+                [],
+                []
         )
 } 
 
@@ -722,6 +724,7 @@ workflow assembly_denovo {
         reads_ch = cleaned_reads_ch.map {meta, reads -> tuple reads}.collect()
         reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
  
+
         // co-assembly LR
         if ( params.nanopore ){
             rattle(reads_ch)

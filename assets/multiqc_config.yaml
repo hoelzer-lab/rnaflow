@@ -17,6 +17,8 @@ module_order:
         anchor: 'hisat2'
     - featureCounts:
         anchor: 'featureCounts'
+    - busco:
+        anchor: 'busco'
     - custom_data
     
 report_section_order:
@@ -50,3 +52,5 @@ custom_data:
 sp:
     tpm_filter:
         fn: 'tpm_stats.tsv'
+    busco:
+        fn: 'busco_*_summary*'

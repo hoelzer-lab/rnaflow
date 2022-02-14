@@ -19,6 +19,8 @@ process multiqc {
     path(fastqcPost)
     path(tpm_stats)
     val(tpm_threshold)
+    path(denovo_busco_summary)
+    path(reference_busco_summary)
 
     output:
     path "multiqc_report.html"

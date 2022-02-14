@@ -19,7 +19,8 @@ process busco {
       
 
     output:
-      tuple path("busco_${tool}_summary.txt"), path("busco_${tool}_figure.pdf")
+      path("busco_${tool}_summary.txt"), emit: summary
+      path("busco_${tool}_figure.pdf")
       path "full_table_${tool}_results.tsv"
     
     script:
