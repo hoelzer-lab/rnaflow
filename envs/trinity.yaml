@@ -4,4 +4,4 @@ channels:
   - bioconda
   - anaconda
 dependencies:
-  - trinity=2.12
+  - trinity=2.13.2

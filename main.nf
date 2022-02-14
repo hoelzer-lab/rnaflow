@@ -5,13 +5,13 @@ nextflow.enable.dsl=2
 /*
 * RNA-Seq-based detection of differentially expressed genes
 *
-* Author: martin.hoelzer@uni-jena.de
-* Author: marie.lataretu@uni-jena.de
+* Authors: marie.lataretu@uni-jena.de, fischerd@rki.de, hoelzer.martin@gmail.com
 */
 
 // Parameters sanity checking
 
 Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'skip_read_preprocessing', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -81,7 +81,7 @@ if (params.assembly) {
 }
 
 if (params.nanopore) {
-    println "\u001B[32mPerform processing of reads in Nanopore mode instead default short-read mode. After mapping, the same steps are used as for Illumina."
+    println "\u001B[32mPerform processing of reads in Nanopore mode instead default short-read mode. After mapping, the same steps are used as for Illumina.\033[0m"
 }
 
 
@@ -92,7 +92,7 @@ Set pathway = ['hsa', 'mmu', 'mau']
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 
 // required stuff
-if ( ! params.reads ) { exit 1, "--reads is a required parameter" }
+if ( ! params.reads && ! params.setup ) { exit 1, "--reads is a required parameter" }
 
 // deprecated stuff
 if ( params.mode ) { println "\033[0;33mWARNING: Parameter --mode is deprecated, read mode will automatically be detected from the sample file.\033[0m\n" }
@@ -104,7 +104,7 @@ if ( ( params.species || params.include_species ) && ! workflow.profile.contains
     if ( (params.genome && params.annotation == '') || (params.genome == '' && params.annotation) ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
     if ( (params.include_species && params.species) && ! params.species in species ) { exit 1, "Unsupported species for automatic download. Supported species are: " + species}
 } else {
-    if ( ! params.autodownload && ! params.genome && ! workflow.profile.contains('test') ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --autodownload " + autodownload + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
+    if ( ! params.autodownload && ! params.genome && ! workflow.profile.contains('test') && !params.setup ) { exit 1, "You need to set a genome for mapping and an annotation for counting: with --autodownload " + autodownload + " are provided and automatically downloaded; with --genome and --annotation set csv files for custom input." }
     // logic stuff
     if ( params.genome && ! params.annotation ) { exit 1, "You need to provide genomes AND annotations (--genome and --annotation)." }
     if ( ! params.autodownload in autodownload ) { exit 1, "Unsupported species for automatic download. Supported species are: " + autodownload }
@@ -116,6 +116,19 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 /************************** 
 * INPUT CHANNELS 
 **************************/
+if (params.setup) {
+    Channel.fromPath( './configs/container.config' )
+            .splitCsv(skip: 1, sep: '\t')
+            .map{ row ->
+                    if ( row[1] != null && row[2] != null) {
+                        def tool = row[1]
+                        def path = row[2].split('"')[1]
+                        return [tool, path] 
+                    }
+            }
+            .tap{ container_ch }
+}
+
 
 if (params.reads) { 
     Channel
@@ -136,19 +149,39 @@ if (params.reads) {
         .tap { annotated_reads }
         .tap { read_input_ch }
         .set { read_input_ch }
+}else if ((!params.reads && params.setup) || params.setup) {
+    println "\u001B[32mRunning in setup mode. Only necessary database and reference files will be downloaded.\033[0m\n"
+    annotated_reads = Channel.empty()
+    read_input_ch = Channel.empty()
 }else{
     exit 1, "Parameter 'reads' undefined."
+}
+
+param_strand = ""
+param_read_mode = ""
+
+if (!params.setup) { 
+    File csvFile = new File(params.reads)
+    csvFile.eachLine { line ->
+        def row = line.split(",")
+        param_strand = row[5] ? row[5] : params.strand
+        param_read_mode = row[2] ? "paired-end" : "single-end"
+    }
+
+    if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
 }
 
 log.info """\
                 R N A F L O W : R N A - S E Q  A S S E M B L Y  &  D I F F E R E N T I A L  G E N E  E X P R E S S I O N  A N A L Y S I S
                 = = = = = = =   = = = = = = =  = = = = = = = =  =  = = = = = = = = = = = =  = = = =  = = = = = = = = = =  = = = = = = = =
                 Output path:                    $params.output
+                Strandedness                    $param_strand
+                Read mode:                      $param_read_mode
                 TPM threshold:                  $params.tpm
                 Comparisons:                    $comparison 
                 Nanopore mode:                  $params.nanopore
                 """
-                .stripIndent() 
+                .stripIndent()  
 /*
 * read in autodownload genome(s)
 */
@@ -264,6 +297,7 @@ deseq2_script = Channel.fromPath( workflow.projectDir + '/bin/deseq2.R', checkIf
 deseq2_script_refactor_reportingtools_table = Channel.fromPath( workflow.projectDir + '/bin/refactor_reportingtools_table.rb', checkIfExists: true )
 deseq2_script_improve_deseq_table = Channel.fromPath( workflow.projectDir + '/bin/improve_deseq_table.rb', checkIfExists: true )
 deseq2_id_type_ch = Channel.value(params.feature_id_type)
+species2prefix = Channel.fromPath( workflow.projectDir + '/assets/ens_species_mapping.tsv', checkIfExists: true)
 
 /*
 * MultiQC config
@@ -313,6 +347,7 @@ include {sortmernaGet} from './modules/sortmernaGet'
 include {hisat2index} from './modules/hisat2'
 include {minimap2index} from './modules/minimap2'
 include {dammitGetDB} from './modules/dammitGetDB'
+include {buscoGetDB} from './modules/buscoGetDB'
 
 // analysis
 include {fastp} from './modules/fastp'
@@ -331,9 +366,11 @@ include {trinity} from './modules/trinity'
 include {busco} from './modules/busco'
 include {dammit} from './modules/dammit'
 include {stringtie; stringtie_merge} from './modules/stringtie' 
+include {rattle} from './modules/rattle'
 
 // helpers
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
+include {containerGet} from './modules/containerGet'
 include {extract_tar_bz2} from './modules/utils'
 include {format_read_name} from './modules/format_read_name'
 
@@ -380,6 +417,8 @@ workflow get_test_data {
 }
 
 workflow download_auto_reference {
+    take:
+        setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -398,6 +437,8 @@ workflow download_auto_reference {
 }
 
 workflow download_auto_annotation {
+    take:
+        setup_ch
     main:
         if (params.autodownload || params.include_species){ // deprecated reminder
             // local storage via storeDir
@@ -416,6 +457,8 @@ workflow download_auto_annotation {
 }
 
 workflow download_sortmerna {
+    take:
+        setup_ch
     main:
         // local storage via storeDir
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
@@ -430,19 +473,22 @@ workflow download_sortmerna {
 }
 
 workflow download_busco {
+    take:
+        setup_ch
     main:
-        if (!params.cloudProcess) { preload = false }
-        else if (params.cloudProcess) { 
+        if (!params.cloudProcess) { buscoGetDB(); database_busco = buscoGetDB.out }
+        if (params.cloudProcess) { 
             busco_db_preload = file("${params.permanentCacheDir}/databases/busco/${params.busco_db}.tar.gz")
-            if (busco_db_preload.exists()) { preload = true}
-            else  { preload = false }
+            if (busco_db_preload.exists()) { database_busco = busco_db_preload }
+            else  { buscoGetDB(); database_busco = buscoGetDB.out }
         }
     emit: 
-        preload
+        database_busco
 }
 
 workflow download_dammit {
-    
+    take:
+        setup_ch
     main:
     dammit_db_preload_path = "${params.permanentCacheDir}/databases/dammit/${params.busco_db}/dbs.tar.gz"
     if (params.dammit_uniref90) {
@@ -462,6 +508,21 @@ workflow download_dammit {
 /************************** 
 * SUB WORKFLOWS
 **************************/
+/***************************************
+Set up all databse and reference files for pipeline run without network connection:
+annotation, genome reference, buscoDB, dammitDB, sortmernaDB
+*/
+workflow setup {
+    //take:
+
+    main:
+        containerGet(container_ch)
+        download_auto_annotation(container_ch)
+        download_auto_reference(container_ch)
+        download_busco(container_ch)
+        download_dammit(container_ch)
+        download_sortmerna(container_ch)
+} 
 
 /***************************************
 Preprocess Illumina RNA-Seq reads: qc, trimming, adapters, rRNA-removal, mapping
@@ -582,6 +643,7 @@ workflow expression_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         multiqc_config
+        species2prefix
 
     main:
         // count with featurecounts
@@ -624,12 +686,12 @@ workflow expression_reference_based {
             .map { "\"${it}\"" }
             .collect()
             .map { it.join(",") }
-
+        
         // run DEseq2
         deseq2(regionReport_config, tpm_filter.out.filtered_counts, annotated_sample.condition.collect(), 
            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
-           deseq2_script_improve_deseq_table)
+           deseq2_script_improve_deseq_table, species2prefix)
 
         // run MultiQC
         multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
@@ -654,21 +716,33 @@ workflow assembly_denovo {
     take:
         cleaned_reads_ch
         dammit_db
-        preload
+        busco_db
 
     main:
         reads_ch = cleaned_reads_ch.map {meta, reads -> tuple reads}.collect()
         reads_input_csv = Channel.fromPath( params.reads, checkIfExists: true)
  
-        // co-assembly
-        trinity(cleaned_reads_ch.map{ meta, reads -> meta }.unique{ it.paired_end }, reads_ch, reads_input_csv)
+        // co-assembly LR
+        if ( params.nanopore ){
+            rattle(reads_ch)
 
-        // qc check
-        tool_ch = Channel.value('trinity')
-        busco(trinity.out.assembly, preload, tool_ch)    
+            // qc check
+            tool_ch = Channel.value('rattle')
+            busco(rattle.out.assembly, busco_db, tool_ch)    
 
-        // transcript annotation 
-        dammit(trinity.out.assembly, busco.out.odb10, dammit_db, tool_ch)
+            // transcript annotation 
+            dammit(rattle.out.assembly, busco_db, dammit_db, tool_ch)
+        }else{
+            // co-assembly SR
+            trinity(reads_ch, reads_input_csv)
+
+            // qc check
+            tool_ch = Channel.value('trinity')
+            busco(trinity.out.assembly, busco_db, tool_ch)    
+
+            // transcript annotation 
+            dammit(trinity.out.assembly, busco_db, dammit_db, tool_ch)
+        }
 } 
 
 /*****************************************
@@ -680,7 +754,7 @@ workflow assembly_reference {
         annotation_reference
         bams
         dammit_db
-        preload
+        busco_db
 
     main:
         // StringTie2 GTF-guided transcript prediction
@@ -691,10 +765,10 @@ workflow assembly_reference {
         stringtie_merge(genome_reference, stringtie.out.gtf.collect(), tool_ch)
 
         // qc check
-        busco(stringtie_merge.out.transcripts, preload, tool_ch)    
+        busco(stringtie_merge.out.transcripts, busco_db, tool_ch)    
 
         // transcript annotation 
-        dammit(stringtie_merge.out.transcripts, busco.out.odb10, dammit_db, tool_ch)
+        dammit(stringtie_merge.out.transcripts, busco_db, dammit_db, tool_ch)
 }
 
 
@@ -705,87 +779,93 @@ workflow assembly_reference {
 /* Comment section: */
 
 workflow {
-    if ( workflow.profile.contains('test') ){
-        get_test_data()
-        reference = get_test_data.out.reference_test.collect()
-        annotation = get_test_data.out.annotation_test.collect()
+    if (params.setup) {
+        setup()
     } else {
-        // get the reference genome
-        download_auto_reference()
-        reference_auto = download_auto_reference.out
-
-        // get the annotation
-        download_auto_annotation()
-        annotation_auto = download_auto_annotation.out
-
-        // concatenate genomes and annotations
-        concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
-        reference = concat_genome.out
-        concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
-        annotation = concat_annotation.out
-    }
-
-    // get sortmerna databases
-    if ( ! params.skip_sortmerna ) { 
-        download_sortmerna()
-        sortmerna_db = download_sortmerna.out
-    } else {
-        sortmerna_db = Channel.empty()
-    }
-
-    // preprocess RNA-Seq reads (Illumina or Nanopore)
-    if (!params.nanopore) { 
-        preprocess_illumina(read_input_ch, reference, sortmerna_db) 
-    } else { 
-        preprocess_nanopore(read_input_ch, reference, sortmerna_db) 
-    }
-
-    // perform assembly & annotation
-    if (params.assembly) {
-        // dbs
-        busco_preload = download_busco()
-        dammit_db = download_dammit()
-        // de novo
-        if (!params.nanopore) {
-            // de novo
-            assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, dammit_db, busco_preload)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, dammit_db, busco_preload)
+        if ( workflow.profile.contains('test') ){
+            get_test_data()
+            reference = get_test_data.out.reference_test.collect()
+            annotation = get_test_data.out.annotation_test.collect()
         } else {
-            // de novo
-            assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, dammit_db, busco_preload)
-            // reference-based
-            assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_preload)
+            // get the reference genome
+            download_auto_reference([])
+            reference_auto = download_auto_reference.out
+
+            // get the annotation
+            download_auto_annotation([])
+            annotation_auto = download_auto_annotation.out
+
+            // concatenate genomes and annotations
+            concat_genome(reference_custom_ch.collect().mix(reference_auto).collect())
+            reference = concat_genome.out
+            concat_annotation(annotation_custom_ch.collect().mix(annotation_auto).collect())
+            annotation = concat_annotation.out
         }
-    } else {
-    // perform expression analysis
-        // start reference-based differential gene expression analysis
-        if (!params.nanopore) { 
-        expression_reference_based(preprocess_illumina.out.sample_bam_ch,
-                                preprocess_illumina.out.fastp_json_report,
-                                preprocess_illumina.out.sortmerna_log,
-                                preprocess_illumina.out.mapping_log,
-                                preprocess_illumina.out.readqcPre,
-                                preprocess_illumina.out.readqcPost,
-                                annotation,
-                                deg_comparisons_input_ch, 
-                                deseq2_script, 
-                                deseq2_script_refactor_reportingtools_table, 
-                                deseq2_script_improve_deseq_table, 
-                                multiqc_config)
+
+        // get sortmerna databases
+        if ( ! params.skip_sortmerna ) { 
+            download_sortmerna([])
+            sortmerna_db = download_sortmerna.out
         } else {
-        expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
-                                preprocess_nanopore.out.fastp_json_report,
-                                preprocess_nanopore.out.sortmerna_log,
-                                preprocess_nanopore.out.mapping_log,
-                                preprocess_nanopore.out.readqcPre,
-                                preprocess_nanopore.out.readqcPost,
-                                annotation,
-                                deg_comparisons_input_ch, 
-                                deseq2_script, 
-                                deseq2_script_refactor_reportingtools_table, 
-                                deseq2_script_improve_deseq_table, 
-                                multiqc_config)
+            sortmerna_db = Channel.empty()
+        }
+        
+        // preprocess RNA-Seq reads (Illumina or Nanopore)
+        if (!params.nanopore) { 
+            preprocess_illumina(read_input_ch, reference, sortmerna_db) 
+        } else { 
+            preprocess_nanopore(read_input_ch, reference, sortmerna_db) 
+        }
+
+        // perform assembly & annotation
+        if (params.assembly) {
+            // dbs
+            busco_db = download_busco([])
+            dammit_db = download_dammit([])
+            // de novo
+            if (!params.nanopore) {
+                // de novo
+                assembly_denovo(preprocess_illumina.out.cleaned_reads_ch, dammit_db, busco_db)
+                // reference-based
+                assembly_reference(reference, annotation, preprocess_illumina.out.sample_bam_ch, dammit_db, busco_db)
+            } else {
+                // de novo
+                assembly_denovo(preprocess_nanopore.out.cleaned_reads_ch, dammit_db, busco_db)
+                // reference-based
+                assembly_reference(reference, annotation, preprocess_nanopore.out.sample_bam_ch, dammit_db, busco_db)
+            }
+        } else {
+        // perform expression analysis
+            // start reference-based differential gene expression analysis
+            if (!params.nanopore) { 
+            expression_reference_based(preprocess_illumina.out.sample_bam_ch,
+                                    preprocess_illumina.out.fastp_json_report,
+                                    preprocess_illumina.out.sortmerna_log,
+                                    preprocess_illumina.out.mapping_log,
+                                    preprocess_illumina.out.readqcPre,
+                                    preprocess_illumina.out.readqcPost,
+                                    annotation,
+                                    deg_comparisons_input_ch, 
+                                    deseq2_script, 
+                                    deseq2_script_refactor_reportingtools_table, 
+                                    deseq2_script_improve_deseq_table, 
+                                    multiqc_config,
+                                    species2prefix)
+            } else {
+            expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
+                                    preprocess_nanopore.out.fastp_json_report,
+                                    preprocess_nanopore.out.sortmerna_log,
+                                    preprocess_nanopore.out.mapping_log,
+                                    preprocess_nanopore.out.readqcPre,
+                                    preprocess_nanopore.out.readqcPost,
+                                    annotation,
+                                    deg_comparisons_input_ch, 
+                                    deseq2_script, 
+                                    deseq2_script_refactor_reportingtools_table, 
+                                    deseq2_script_improve_deseq_table, 
+                                    multiqc_config,
+                                    species2prefix)
+            }
         }
     }
 }
@@ -856,8 +936,10 @@ def helpMSG() {
     ${c_yellow}Transcriptome assembly options:${c_reset}
     --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: $params.assembly]
     --busco_db               The database used with BUSCO [default: $params.busco_db]
-                             ${c_dim}Full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html ${c_reset}
+                             ${c_dim}Full list of available data sets at https://busco-data.ezlab.org/v5/data/lineages/ ${c_reset}
     --dammit_uniref90        Add UniRef90 to the dammit databases (time consuming!) [default: $params.dammit_uniref90]
+    --rna                    Activate directRNA mode for ONT transcriptome assembly [default: $params.rna (cDNA)]
+
 
     ${c_yellow}Computing options:${c_reset}
     --cores                  Max cores per process for local use [default: $params.cores]
@@ -871,6 +953,8 @@ def helpMSG() {
     --singularityCacheDir    Location for storing the singularity images [default: $params.singularityCacheDir]
     ${c_dim}--workdir                Working directory for all intermediate results [default: $params.workdir] (DEPRECATED: use `-w your/workdir` instead)${c_reset}
     --softlink_results       Softlink result files instead of copying.
+    --setup                  Download all necessary DB, reference and image files without running the pipeline. [default: $params.setup]
+
 
     ${c_dim}Nextflow options:
     -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).
