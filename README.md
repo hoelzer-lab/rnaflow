@@ -211,27 +211,27 @@ Specify your read files in `FASTQ` format with `--reads input.csv`. The file `in
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,,
-mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,,
-mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,,
-treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,,
-treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,,
-treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,,
+mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,A,0
+mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,B,0
+mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,C,0
+treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,A,0
+treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,B,0
+treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,C,0
 ```
 
 and for paired-end reads, like this:
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A,
-mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B,
-mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C,
-treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A,
-treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B,
-treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,
+mock_rep1,/path/to/reads/mock1_1.fastq,/path/to/reads/mock1_2.fastq,mock,A,0
+mock_rep2,/path/to/reads/mock2_1.fastq,/path/to/reads/mock2_2.fastq,mock,B,0
+mock_rep3,/path/to/reads/mock3_1.fastq,/path/to/reads/mock3_2.fastq,mock,C,0
+treated_rep1,/path/to/reads/treat1_1.fastq,/path/to/reads/treat1_2.fastq,treated,A,0
+treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated,B,0
+treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,0
 ```
 
-The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. 
+The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversly stranded, [default: 0].
 
 #### Genomes and annotation
 
@@ -293,6 +293,7 @@ Nextflow will need access to the working directory where temporary calculations 
 
 ```bash
 --skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
+--skip_read_preprocessing              # skip preprocessing with fastp [default: false]
 --fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
 --hisat2_additional_params             # additional parameters for HISAT2
 --featurecounts_additional_params      # additional parameters for FeatureCounts [default: -t gene -g gene_id]
@@ -311,9 +312,10 @@ Nextflow will need access to the working directory where temporary calculations 
 ### Transcriptome assembly
 
 ```bash
---assemly                       # switch to transcriptome assemly
+--assembly                      # switch to transcriptome assembly
 --busco_db                      # BUSCO database ['euarchontoglires' or path to existing DB]
 --dammit_uniref90               # add UniRef90 to dammit databases, takes long [false]
+--rna                           # activate directRNA mode for ONT transcriptome assembly [default: false (cDNA)]
 ```
 
 ## Profiles/configuration options
@@ -348,7 +350,7 @@ nextflow run hoelzer-lab/rnaflow -profile test,local,docker
 nextflow run hoelzer-lab/rnaflow -profile test,slurm,singularity
 ```
 
-As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option.
+As a __best practice__ for a local execution, we recommend to run the pipeline with `--cores 1 --max_cores 1` the first time you use `Singularity`, because we experienced issues when generating the `Singularity` images in parallel the first time the pipeline is executed with this engine option. It is also possible to run the pipeline once with `--setup` set. In setup mode all the necessary files (DBs, reference files and images) are being downloaded and set up.
 
 You can customize where `conda` environments are stored using
 
@@ -524,7 +526,8 @@ Input:
 
 Preprocessing options:
 --fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
---skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
+--skip_sortmerna                   skip rRNA removal via SortMeRNA [default: false] 
+--skip_read_preprocessing          skip preprocessing with fastp [default: false]
 --hisat2_additional_params         additional parameters for HISAT2 [default: ]
 --featurecounts_additional_params  additional parameters for FeatureCounts [default: -t gene -g gene_id]
 
@@ -545,8 +548,9 @@ DEG analysis options:
 Transcriptome assembly options:
 --assembly               Perform de novo and reference-based transcriptome assembly instead of DEG analysis [default: false]
 --busco_db               The database used with BUSCO [default: euarchontoglires_odb9]
-                         Full list of available data sets at https://busco.ezlab.org/v2/frame_wget.html 
+                         Full list of available data sets at https://busco-data.ezlab.org/v5/data/lineages/ 
 --dammit_uniref90        Add UniRef90 to the dammit databases (time consuming!) [default: false]
+--rna                    Activate directRNA mode for ONT transcriptome assembly [default: false (cDNA)]
 
 Computing options:
 --cores                  Max cores per process for local use [default: 1]
@@ -560,6 +564,7 @@ Caching:
 --singularityCacheDir    Location for storing the singularity images [default: singularity]
 --workdir                Working directory for all intermediate results [default: null] (DEPRECATED: use `-w your/workdir` instead)
 --softlink_results       Softlink result files instead of copying.
+--setup                  Download all necessary DB, reference and image files without running the pipeline. [default: false]
 
 Nextflow options:
 -with-tower              Activate monitoring via Nextflow Tower (needs TOWER_ACCESS_TOKEN set).
@@ -574,6 +579,7 @@ Executer (choose one):
   local
   slurm
   lsf
+  latency
 
 Engines (choose one):
   conda
@@ -640,6 +646,32 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 
 - Skip `SortMeRNA` with `--skip_sortmerna`
 - Reads can be cleand beforhand e.g. with [CLEAN](https://github.com/hoelzer/clean)
+
+### Latency problems on HPCs, issue ([#79](https://github.com/hoelzer-lab/rnaflow/issues/79))
+
+#### Description
+
+Latency related problems with `Nextflow` might occur when running on HPC systems, where `Nextflow` expects files to be available before they are fully written to the file system. In these cases `Nextflow` might get stuck or report missing output or input files to some processes:
+ 
+
+```
+ERROR ~ Error executing process > 'some_process'
+
+Caused by:
+ Missing output file(s) `some_process.out` expected by process `some_process`
+
+```
+
+
+- Often encountered when running on HPC systems
+
+
+#### Workaround
+Please try running the pipeline with the `latency` profile activated, just add it to the profiles you already defined:
+
+```
+-profile slurm,conda,latency
+```
 
 ## Citation 
 

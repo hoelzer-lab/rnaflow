@@ -19,6 +19,9 @@ process trinity {
       TYPE='other'
       if (${params.skip_sortmerna} == 'true'); then
         TYPE='trimmed'
+        if (${params.skip_read_preprocessing} == 'true'); then
+          TYPE='raw';
+        fi
       fi
 
       # Update the original CSV file to match quality controlled reads and Trinity input
@@ -37,6 +40,9 @@ process trinity {
       TYPE='other'
       if (${params.skip_sortmerna} == 'true'); then
         TYPE='trimmed'
+        if (${params.skip_read_preprocessing} == 'true'); then
+          TYPE='raw';
+        fi
       fi
 
       # Update the original CSV file to match quality controlled reads and Trinity input
