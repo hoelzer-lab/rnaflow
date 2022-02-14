@@ -10,7 +10,8 @@ nextflow.enable.dsl=2
 
 // Parameters sanity checking
 
-Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process', 'rna', 'setup'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+Set valid_params = ['max_cores', 'cores', 'memory', 'profile', 'help', 'reads', 'genome', 'nanopore', 'minimap2_additional_params', 'minimap2_dir',  'annotation', 'deg', 'autodownload', 'pathway', 'species', 'include_species', 'strand', 'mode', 'tpm', 'fastp_additional_params', 'hisat2_additional_params', 'featurecounts_additional_params', 'feature_id_type', 'busco_db', 'dammit_uniref90', 'skip_sortmerna', 'skip_read_preprocessing', 'assembly', 'output', 'fastp_dir', 'sortmerna_dir', 'hisat2_dir', 'featurecounts_dir', 'tpm_filter_dir', 'annotation_dir', 'deseq2_dir', 'assembly_dir', 'rnaseq_annotation_dir', 'uniref90_dir', 'readqc_dir', 'multiqc_dir', 'nf_runinfo_dir', 'permanentCacheDir', 'condaCacheDir', 'singularityCacheDir', 'softlink_results', 'cloudProcess', 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process', 'setup', 'rna'] // don't ask me why there is 'permanent-cache-dir', 'conda-cache-dir', 'singularity-cache-dir', 'cloud-process'
+
 def parameter_diff = params.keySet() - valid_params
 if (parameter_diff.size() != 0){
     exit 1, "ERROR: Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
@@ -371,6 +372,7 @@ include {rattle} from './modules/rattle'
 include {format_annotation; format_annotation_gene_rows} from './modules/prepare_annotation'
 include {containerGet} from './modules/containerGet'
 include {extract_tar_bz2} from './modules/utils'
+include {format_read_name} from './modules/format_read_name'
 
 /************************** 
 * DATABASES
@@ -535,18 +537,32 @@ workflow preprocess_illumina {
         // initial QC of raw reads
         fastqcPre(read_input_ch)
 
-        // trim with fastp
-        fastp(read_input_ch)
+        if ( params.skip_read_preprocessing ) {
+            // skip fastp, set dependent ch to empty
+            smr_in = read_input_ch
+            fastp_json_report = Channel.empty()
+            readqcPost = Channel.empty()
+        } else {
+            // trim with fastp
+            fastp(read_input_ch)
+            smr_in = fastp.out.sample_trimmed
+            fastp_json_report = fastp.out.json_report
+            // QC after fastp
+            fastqcPost(fastp.out.sample_trimmed)
+            fastqcPost = fastqcPost.out.zip
+        }
 
-        // QC after fastp
-        fastqcPost(fastp.out.sample_trimmed)
-
-        if ( params.skip_sortmerna ) {
+        if ( params.skip_sortmerna && !params.skip_read_preprocessing ) {
+            // skip SMR but not fastp
             sortmerna_no_rna_fastq = fastp.out.sample_trimmed
+            sortmerna_log = Channel.empty()
+        } else if ( params.skip_sortmerna && params.skip_read_preprocessing ) {
+            // skip SMR and fastp
+            sortmerna_no_rna_fastq = format_read_name(read_input_ch)
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(fastp.out.sample_trimmed, extract_tar_bz2(sortmerna_db))
+            sortmerna(smr_in, extract_tar_bz2(sortmerna_db))
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
@@ -560,11 +576,11 @@ workflow preprocess_illumina {
 
     emit:
         sample_bam_ch = hisat2.out.sample_bam
-        fastp_json_report = fastp.out.json_report
+        fastp_json_report 
         sortmerna_log
         mapping_log = hisat2.out.log  
         readqcPre = fastqcPre.out.zip  
-        readqcPost = fastqcPost.out.zip
+        readqcPost 
         cleaned_reads_ch = sortmerna_no_rna_fastq
 } 
 
@@ -793,12 +809,12 @@ workflow {
         } else {
             sortmerna_db = Channel.empty()
         }
-
+        
         // preprocess RNA-Seq reads (Illumina or Nanopore)
-        if (!params.nanopore) {
-            preprocess_illumina(read_input_ch, reference, sortmerna_db)
-        } else {
-            preprocess_nanopore(read_input_ch, reference, sortmerna_db)
+        if (!params.nanopore) { 
+            preprocess_illumina(read_input_ch, reference, sortmerna_db) 
+        } else { 
+            preprocess_nanopore(read_input_ch, reference, sortmerna_db) 
         }
 
         // perform assembly & annotation
@@ -897,6 +913,7 @@ def helpMSG() {
     --mode                             Either 'single' (single-end) or 'paired' (paired-end) sequencing [default: $params.mode]
     --fastp_additional_params          Additional parameters for fastp [default: $params.fastp_additional_params]
     --skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: $params.skip_sortmerna] 
+    --skip_read_preprocessing          Skip preprocessing with fastp [default: $params.skip_read_preprocessing]
     --hisat2_additional_params         Additional parameters for HISAT2 [default: $params.hisat2_additional_params]
     --minimap2_additional_params       Additional parameters for minimap2 (Nanopore input) [default: $params.minimap2_additional_params]
     --featurecounts_additional_params  Additional parameters for FeatureCounts [default: $params.featurecounts_additional_params]

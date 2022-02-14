@@ -293,6 +293,7 @@ Nextflow will need access to the working directory where temporary calculations 
 
 ```bash
 --skip_sortmerna                       # skip rRNA removal via SortMeRNA [default false]
+--skip_read_preprocessing              # skip preprocessing with fastp [default: false]
 --fastp_additional_params              # additional parameters for fastp [default '-5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6']
 --hisat2_additional_params             # additional parameters for HISAT2
 --featurecounts_additional_params      # additional parameters for FeatureCounts [default: -t gene -g gene_id]
@@ -525,7 +526,8 @@ Input:
 
 Preprocessing options:
 --fastp_additional_params          additional parameters for fastp [default: -5 -3 -W 4 -M 20 -l 15 -x -n 5 -z 6]
---skip_sortmerna                   Skip rRNA removal via SortMeRNA [default: false] 
+--skip_sortmerna                   skip rRNA removal via SortMeRNA [default: false] 
+--skip_read_preprocessing          skip preprocessing with fastp [default: false]
 --hisat2_additional_params         additional parameters for HISAT2 [default: ]
 --featurecounts_additional_params  additional parameters for FeatureCounts [default: -t gene -g gene_id]
 
