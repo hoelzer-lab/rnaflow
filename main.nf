@@ -549,7 +549,7 @@ workflow preprocess_illumina {
             fastp_json_report = fastp.out.json_report
             // QC after fastp
             fastqcPost(fastp.out.sample_trimmed)
-            fastqcPost = fastqcPost.out.zip
+            readqcPost = fastqcPost.out.zip
         }
 
         if ( params.skip_sortmerna && !params.skip_read_preprocessing ) {
