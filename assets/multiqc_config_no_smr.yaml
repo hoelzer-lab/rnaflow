@@ -10,13 +10,13 @@ module_order:
         name: 'FastQC (trimmed)'
         anchor: 'fastqc_trimmed'
         path_filters:
-            - '*.trimmed_fastqc.zip'   
-    - sortmerna:
-        anchor: 'sortmerna'
+            - '*.trimmed_fastqc.zip'
     - hisat2:
         anchor: 'hisat2'
     - featureCounts:
         anchor: 'featureCounts'
+    - busco:
+        anchor: 'busco'
     - custom_data
     
 report_section_order:
@@ -26,10 +26,8 @@ report_section_order:
         after: fastqc_raw
     fastqc_trimmed:
         after: fastp
-    sortmerna:
-        after: fastqc_trimmed
     hisat2:
-        after: sortmerna
+        after: fastqc_trimmed
     featureCounts:
         after: hisat2
     tpm_filter:
@@ -50,3 +48,5 @@ custom_data:
 sp:
     tpm_filter:
         fn: 'tpm_stats.tsv'
+    busco:
+        fn: 'busco_*_summary*'
