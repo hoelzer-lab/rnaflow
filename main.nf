@@ -115,19 +115,20 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 /************************** 
 * INPUT CHANNELS 
 **************************/
-if (params.setup) {
-    Channel.fromPath( './configs/container.config' )
+import nextflow.util.CacheHelper
+if ( params.setup ) {
+    Channel.fromPath( workflow.profile.contains('conda') ? './configs/conda.config' : './configs/container.config' )
             .splitCsv(skip: 1, sep: '\t')
             .map{ row ->
                     if ( row[1] != null && row[2] != null) {
                         def tool = row[1]
                         def path = row[2].split('"')[1]
-                        return [tool, path] 
+                        def conda_env_suffix = ( !tool.contains('rattle') && workflow.profile.contains('conda') ) ? CacheHelper.hasher( new File('./envs/' + tool + '.yaml').text).hash().toString() : 'dummy'
+                        return [tool, path, conda_env_suffix]
                     }
             }
             .tap{ container_ch }
 }
-
 
 if (params.reads) { 
     Channel
