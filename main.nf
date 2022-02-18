@@ -977,6 +977,7 @@ def helpMSG() {
     
     ${c_blue}Engines${c_reset} (choose one):
       conda
+      mamba
       docker
       singularity
     
