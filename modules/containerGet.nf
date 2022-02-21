@@ -12,23 +12,23 @@ process containerGet {
     tuple val(tool), val(path), val(conda_env_suffix)
 
   output:
-    path("${img_file_name}.img")
+    path("${img_file_name}")
 
   script:
-  img_file_name = path.replace("/", "-").replace(":","-")
+  img_file_name = path.replace("/", "-").replace(":","-") + '.img'
 
   if (workflow.profile.contains('conda') && !tool.contains('rattle')){
     conda_env_file = path.replace('$baseDir','')
-    img_file_name = path.replace('$baseDir','').replace('/','_')
+    img_file_name = tool + '-' + conda_env_suffix
   }
 
   if ( workflow.profile.contains('singularity') || (workflow.profile.contains('conda') && tool.contains('rattle')))
     """
-    if [ -e ${params.singularityCacheDir}/${img_file_name}.img ] 
+    if [ -e ${params.singularityCacheDir}/${img_file_name} ] 
         then
             echo "${tool} singularity image file already exists, skipping."
     else
-        singularity pull --name ${img_file_name}.img "docker://${path}"
+        singularity pull --name ${img_file_name} "docker://${path}"
     fi
     """
   else if ( workflow.profile.contains('docker') || (workflow.profile.contains('conda') && tool.contains('rattle')) )
@@ -48,9 +48,8 @@ process containerGet {
         then
             echo "${tool} conda environment file already exists, skipping."
     else
-        conda env create -f ${projectDir}${conda_env_file} -p ${params.condaCacheDir}/${tool}-${conda_env_suffix}
+        conda env create -f ${projectDir}${conda_env_file} -p ${img_file_name}
     fi
-    touch ${img_file_name}.img
     """
   else 
     """
