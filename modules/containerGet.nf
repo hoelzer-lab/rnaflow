@@ -2,8 +2,8 @@ process containerGet {
     label 'smallTask'
     tag "$tool"
 
-    //errorStrategy 'retry'
-    //maxRetries 10
+    errorStrategy 'retry'
+    maxRetries 10
 
     if ( workflow.profile.contains('singularity') ) { storeDir "${params.singularityCacheDir}" }
     else if ( workflow.profile.contains('conda') ) { storeDir "${params.condaCacheDir}" }
