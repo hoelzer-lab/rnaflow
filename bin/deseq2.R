@@ -192,6 +192,15 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
   }
 }
 
+plot.upset <- function(df, xlab, ylab, n_sets, n_intersects = NA,){
+
+  upset(df, nsets = 20, nintersects = 40, sets = names(df),
+    mainbar.y.label = ylab, sets.x.label = xlab, 
+    order.by = "freq", sets.bar.color = "#56B4E9", keep.order = T, 
+    text.scale = 1.4, point.size = 2.6, line.size = 0.8,
+    set_size.show = TRUE, empty.intersections = "off")
+}
+
 
 ##################### TODO
 # plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
@@ -397,7 +406,7 @@ for (i in 1:length(transformed.counts)) {
 cl <- makeCluster(cpus)
 registerDoParallel(cl)
 
-foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools")) %dopar% {
+worker_array <- foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools")) %dopar% {
 
   .GlobalEnv$col.labels <- col.labels
   comparison <- comparisons[i]
@@ -622,6 +631,9 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
     reportingTools.html(out.sub, dds, deseq2.res, 0.01, l2, l1, annotation_genes, make.plots=FALSE)
   }
 
+  export <- row.names(resFold05)
+  colnames(export)[1] <- paste(l1, "vs", l2, sep="_")
+  export
 }
 stopCluster(cl)
 gc()
@@ -629,3 +641,16 @@ gc()
 ## END PAIRWISE COMPARISONS
 #####################################################################################
 
+#for(i in 1:length(worker_array)){ 
+#  if(is.data.frame(worker_array[[i]])){
+#    logFC_by_cond <- merge(logFC_by_cond, worker_array[i], by = "feature", all = TRUE)
+#  }
+#}
+
+svg(filename=paste(out.sub, "plots", "UpSet.svg" sep="/"), width=14, height=12, pointsize=12)
+
+plot.upset(worker_array, "No. of differentially expressed, significant features per contrast", 
+               "No. of common differentially expressed, significant features throughout contrasts",
+               ncol(df),
+               )
+dev.off()
