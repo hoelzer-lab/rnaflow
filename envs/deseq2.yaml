@@ -10,7 +10,7 @@ dependencies:
   - bioconductor-enhancedvolcano=1.12.0 
   - bioconductor-piano=2.10.0
   - bioconductor-biomart=2.50.0
-  - bioconductor-regionreport
+  - bioconductor-regionreport=1.27.1
   - r-pheatmap=1.0.12
   - r-rcolorbrewer=1.1_2
   - r-ggplot2=3.3.5
@@ -23,5 +23,5 @@ dependencies:
   - r-foreach=1.5.2
   - r-webgestaltr=0.4.4
   - r-upsetr=1.4.0
-  - r-sessioninfo
-  - r-knitcitations
+  - r-sessioninfo=1.2.2
+  - r-knitcitations=1.0.12
