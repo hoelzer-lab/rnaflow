@@ -11,6 +11,7 @@ dependencies:
   - bioconductor-piano=2.10.0
   - bioconductor-biomart=2.50.0
   - bioconductor-regionreport=1.27.1
+  - r-base
   - r-pheatmap=1.0.12
   - r-rcolorbrewer=1.1_2
   - r-ggplot2=3.3.5
@@ -25,3 +26,4 @@ dependencies:
   - r-upsetr=1.4.0
   - r-sessioninfo=1.2.2
   - r-knitcitations=1.0.12
+  - ruby=3.1.1
