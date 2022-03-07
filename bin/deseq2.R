@@ -643,5 +643,5 @@ if(length(worker_array) < 2){
   quit(save = "no", status = 0)
 }
 svg(filename=paste(out, "plots", "UpSet.svg", sep="/"), width=14, height=12, pointsize=12)
-upset(fromList(worker_array), order.by = "freq",  nsets = ncol(worker_array), nintersects = 40, mainbar.y.label = "No. of common differentially expressed, significant features throughout contrasts", sets.x.label = "No. of differentially expressed, significant features per contrast", keep.order = T, text.scale = 1.4, point.size = 2.6, line.size = 0.8, set_size.show = TRUE)
+upset(fromList(worker_array), order.by = "freq",  nsets = ncol(worker_array), nintersects = 40, mainbar.y.label = "No. of common differentially expressed, significant between contrasts", sets.x.label = "No. of diff. expressed features per contrast", keep.order = T, text.scale = 1.4, point.size = 2.6, line.size = 0.8, set_size.show = TRUE)
 dev.off()
