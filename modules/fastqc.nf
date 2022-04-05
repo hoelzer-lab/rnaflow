@@ -3,7 +3,7 @@
 ************************************************************************/
 process fastqc {
     label 'fastqc'
-    if (!params.workflow.contains('node')) { label 'smallTask' }
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
     tag "$meta.sample"
  
     input:
