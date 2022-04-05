@@ -3,7 +3,7 @@
 ********************************************/
 process sortmernaGet {
     label 'sortmerna'
-    //if (!params.cloudProcess) { label 'smallTask' }
+    if (!params.workflow.contains('node')) { label 'smallTask' }
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/databases/sortmerna/", mode: 'copy', pattern: "rRNA_databases.tar.gz" }
     else { storeDir "${params.permanentCacheDir}/databases/sortmerna/" }  

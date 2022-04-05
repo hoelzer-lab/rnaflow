@@ -1,6 +1,6 @@
 process dammitGetDB {
     label 'basic_tools'
-    //if (!params.cloudProcess) { label 'smallTask' }
+    if (!params.workflow.contains('node')) { label 'smallTask' }
 
     errorStrategy 'retry'
     maxRetries 2

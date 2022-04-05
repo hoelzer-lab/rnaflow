@@ -3,7 +3,7 @@
 ***************************************************/
 process tpm_filter {
     label 'python3'
-    //if (!params.cloudProcess) { label 'smallTask' }
+    if (!params.workflow.contains('node')) { label 'smallTask' }
 
     if ( params.softlink_results ) { 
         publishDir "${params.output}/${params.tpm_filter_dir}", pattern: "**.counts.filtered.formated.tsv"
