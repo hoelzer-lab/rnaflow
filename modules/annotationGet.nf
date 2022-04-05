@@ -44,7 +44,8 @@ process annotationGet {
 }
 
 process concat_annotation {
-  label 'smallTask'
+   label 'basic_tools'
+   label 'smallTask'
 
   input:
   path annotation

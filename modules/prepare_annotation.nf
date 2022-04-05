@@ -60,6 +60,7 @@ process format_annotation {
 * PREPARE ANNOTATION FOR LATER INPUT AND USAGE
 ***************************************************/
 process format_annotation_gene_rows {
+    label 'basic_tools'
     label 'smallTask'
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.gtf" }

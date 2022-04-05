@@ -44,6 +44,7 @@ process referenceGet {
 }
 
 process concat_genome {
+  label 'basic_tools'
   label 'smallTask'
   
   input:

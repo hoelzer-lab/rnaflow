@@ -27,6 +27,7 @@ process get_reduced_genome_test {
 }
 
 process reduce_genome_test{
+    label 'basic_tools'
     label 'smallTask'
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
@@ -75,6 +76,7 @@ process get_reduced_annotation_test {
 }
 
 process reduce_annotation_test{
+    label 'basic_tools'
     label 'smallTask'
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
