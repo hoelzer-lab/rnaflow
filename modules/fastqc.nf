@@ -3,7 +3,7 @@
 ************************************************************************/
 process fastqc {
     label 'fastqc'
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
     tag "$meta.sample"
  
     input:

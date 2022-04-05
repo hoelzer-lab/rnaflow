@@ -1,7 +1,7 @@
 process format_read_name {
     label 'basic_tools'
     tag "$meta.sample"
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
 
     input:
     tuple val(meta), path(reads) 

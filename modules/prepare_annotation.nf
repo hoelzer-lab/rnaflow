@@ -3,7 +3,7 @@
 ***************************************************/
 process format_annotation {
     label 'python3'
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.id2details" }
     else { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.id2details" }
@@ -61,7 +61,7 @@ process format_annotation {
 ***************************************************/
 process format_annotation_gene_rows {
     label 'basic_tools'
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.annotation_dir}", pattern: "*.gtf" }
     else { publishDir "${params.output}/${params.annotation_dir}", mode: 'copy', pattern: "*.gtf" }

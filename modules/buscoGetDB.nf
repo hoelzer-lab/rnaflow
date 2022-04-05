@@ -1,6 +1,6 @@
 process buscoGetDB {
     label 'basic_tools'
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
 
     errorStrategy 'retry'
     maxRetries 2

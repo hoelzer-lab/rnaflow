@@ -1,5 +1,5 @@
 process containerGet {
-    if (!params.cloudProcess) { label 'smallTask' }
+    //if (!params.cloudProcess) { label 'smallTask' }
     tag "$tool"
 
     errorStrategy 'retry'
