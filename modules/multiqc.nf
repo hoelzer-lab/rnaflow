@@ -3,7 +3,7 @@
 ************************************************************************/
 process multiqc {
     label 'multiqc'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.multiqc_dir}", pattern: 'multiqc_report.html' }
     else { publishDir "${params.output}/${params.multiqc_dir}", mode: 'copy', pattern: 'multiqc_report.html' }
@@ -34,7 +34,7 @@ process multiqc {
 
 process multiqc_sample_names {
     label 'basic_tools'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     input:
     val(meta)
