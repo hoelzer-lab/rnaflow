@@ -1,6 +1,6 @@
 process dammitGetDB {
     label 'basic_tools'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     errorStrategy 'retry'
     maxRetries 2
