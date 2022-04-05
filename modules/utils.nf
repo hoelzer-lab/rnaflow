@@ -1,6 +1,6 @@
 process extract_tar_bz2 {
     label 'basic_tools'
-    if (!workflow.profile.contains('node')) { label 'smallTask' }
+    if (!params.cloudProcess) { label 'smallTask' }
 
     input:
     path(tar_bz2)
