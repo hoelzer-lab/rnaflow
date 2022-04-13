@@ -50,6 +50,9 @@ ____
   - [Problems with `SortMeRNA`/ `HISAT2` error (#141, [#116](https://github.com/hoelzer-lab/rnaflow/issues/116))](#problems-with-sortmerna-hisat2-error-141-116)
     - [Description](#description)
     - [Workaround](#workaround)
+  - [Latency problems on HPCs, issue (#79)](#latency-problems-on-hpcs-issue-79)
+    - [Description](#description-1)
+    - [Workaround](#workaround-1)
 - [Citation](#citation)
 
 </details>
@@ -231,7 +234,7 @@ treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated
 treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,0
 ```
 
-The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversly stranded, [default: 0].
+The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversely stranded, [default: 0].
 
 #### Genomes and annotation
 
