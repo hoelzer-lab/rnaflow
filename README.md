@@ -214,12 +214,12 @@ Specify your read files in `FASTQ` format with `--reads input.csv`. The file `in
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,A,0
-mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,B,0
-mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,C,0
-treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,A,0
-treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,B,0
-treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,C,0
+mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,,0
+mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,,0
+mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,,0
+treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,,0
+treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,,0
+treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,,0
 ```
 
 and for paired-end reads, like this:
