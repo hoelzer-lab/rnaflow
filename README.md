@@ -469,7 +469,7 @@ Downstream analysis (`--pathway xxx`) are currently provided for some species: G
 
 In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaflow/issues/102) for manual download and copying of external recourses:
 
-- Genomes and annotation can also be specified via `--genome` and `--annotaion`, see [here](#genomes-and-annotation).
+- Genomes and annotation can also be specified via `--genome` and `--annotation`, see [here](#genomes-and-annotation).
 - For `BUSCO` it is a simple download, see [here](modules/buscoGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` as default.
 - For `SortMeRNA` and `dammit` the tools must be installed. Version specifications can be found [here](envs/sortmerna.yaml) and [there](envs/dammit.yaml), the code to create the databases [here](modules/sortmernaGet.nf) and [there](modules/dammitGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` `dammit_uniref90 = false` as default.
 - Downstream analysis with `piano` and `WebGestalt` currently need an internet connection in any case. If no connection is available `piano` and `WebGestalt` are skipped.
