@@ -267,6 +267,11 @@ We provide a small set of build-in species for which the genome and annotation f
 
 <sup>*</sup> Downstream pathway analysis availible via `--pathway xxx`.
 
+#### Multiple-mapped reads
+To adjust the handling of multiple-mapped reads during the feature counting process you can use:
+`--featurecounts_additional_params '-t exon -g gene_id -M'`
+The default handling is to only count uniquely mapped reads via `featureCounts`. With the above flag set `featureCounts` will also count multi-mapped reads.
+
 #### Comparisons for DEG analysis
 
 Per default, all possible pairwise comparisons _in one direction_ are performed. Thus, when _A_ is compared against _B_ the pipeline will not automatically compare _B_ vs. _A_ which will anyway only change the direction of the finally resulting fold changes. To change this, please define the needed comparison with `--deg comparisons.csv`, where each line contains a pairwise comparison:
