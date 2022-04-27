@@ -143,7 +143,8 @@ if (params.reads) {
                 meta.condition = row['Condition']
                 meta.source = row['Source']
                 meta.paired_end = paired_end
-                meta.strandedness = row['Strandedness'] ? row['Strandedness'] : params.strand
+                // set strand in order of definition: CSV, CL, default ( = 0 )
+                meta.strandedness = params.strand ? params.strand : ( row['Strandedness'] ? row['Strandedness'] : '0' )
             return meta.paired_end ? [ meta, [ read1, read2 ] ] : [ meta, [ read1 ] ]
         }
         .tap { annotated_reads }
@@ -159,15 +160,18 @@ if (params.reads) {
 
 param_strand = ""
 param_read_mode = ""
+strand_csv = ""
 
 if (!params.setup) { 
     File csvFile = new File(params.reads)
     csvFile.eachLine { line ->
         def row = line.split(",")
-        param_strand = row[5] ? row[5] : params.strand
+        param_strand = params.strand ? params.strand.toString() : ( row.size() > 4 ? row[5] : '0' )//row[5] ? row[5] : params.strand
         param_read_mode = row[2] ? "paired-end" : "single-end"
+        strand_csv = row.size() > 4 ? row[5] : ''
     }
-
+    // print warning if strand def in CSV differs from CL definition
+    if ( strand_csv && params.strand && strand_csv != params.strand ) { println "\033[0;33mWARNING: Strandedness definition in input CSV (" + strand_csv + ") differs from definition via --strand (" + params.strand + "). Using definition from --strand parameter.\033[0m\n" }
     if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
 }
 
