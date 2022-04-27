@@ -517,11 +517,11 @@ workflow setup {
 
     main:
         containerGet(container_ch)
-        //download_auto_annotation(container_ch)
-        //download_auto_reference(container_ch)
-        //download_busco(container_ch)
-        //download_dammit(container_ch)
-        //download_sortmerna(container_ch)
+        download_auto_annotation(container_ch)
+        download_auto_reference(container_ch)
+        download_busco(container_ch)
+        download_dammit(container_ch)
+        download_sortmerna(container_ch)
 } 
 
 /***************************************
