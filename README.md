@@ -234,7 +234,7 @@ treated_rep2,/path/to/reads/treat2_1.fastq,/path/to/reads/treat2_2.fastq,treated
 treated_rep3,/path/to/reads/treat3_1.fastq,/path/to/reads/treat3_2.fastq,treated,C,0
 ```
 
-The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversely stranded, [default: 0].
+The first line is a required header. Read files can be compressed (`.gz`). You need at least two replicates for each condition to run the pipeline. Source labels are optional - the header is still required, the value can be empty as in the single-end example above. Source labels can be used to define the corresponding experiment even more precisely for improved differential expression testing, e.g. if RNA-Seq samples come from different `Condition`s (e.g. tissues) but the same `Source`s (e.g. patients). Still, the comparison will be performed between the `Condition`s but the `Source` information is additionally used in designing the DESeq2 experiment. Source labels also extend the heatmap sample annotation. Strandedness for the samples can optionally be defined directly in the csv or via the commandline parameter `--strand`. Where the strandedness column can be any value from: 0 = unstranded, 1 = stranded, 2 = reversely stranded, [default: 0]. Note that if strandedness is provided via the input CSV and the commandline parameter, the value from the command line will be used for the run.
 
 #### Genomes and annotation
 
@@ -536,6 +536,7 @@ Preprocessing options:
 
 DEG analysis options:
 --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: 0]
+                         This will overwrite the optional strandedness defined in the input CSV file.
 --tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
                          corresponding samples in this condition is below the threshold. [default: 1]
 --deg                    A CSV file following the pattern: conditionX,conditionY

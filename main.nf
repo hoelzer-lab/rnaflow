@@ -928,6 +928,7 @@ def helpMSG() {
 
     ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
+                             This will overwrite the optional strandedness defined in the input CSV file.
     --tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
                              corresponding samples in this condition is below the threshold. [default: $params.tpm]
     --deg                    A CSV file following the pattern: conditionX,conditionY
