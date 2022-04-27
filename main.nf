@@ -95,6 +95,7 @@ if ( ! params.reads && ! params.setup ) { exit 1, "--reads is a required paramet
 
 // deprecated stuff
 if ( params.mode ) { println "\033[0;33mWARNING: Parameter --mode is deprecated, read mode will automatically be detected from the sample file.\033[0m\n" }
+if ( params.assembly && params.nanopore && !( workflow.profile.contains('mamba') || workflow.profile.contains('conda') || workflow.profile.contains('singularity') || workflow.profile.contains('docker') )) { exit 1, "Container profile does not support nanopore assembly using RATTLE. Please use a supported profile. [docker, singularity]" }
 if ( ((params.species || params.include_species) && (params.autodownload || params.pathway)) && ! workflow.profile.contains('test') ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
 if ( ( params.species || params.include_species ) && ! workflow.profile.contains('test') ) { 
     println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
@@ -120,7 +121,7 @@ if ( params.setup ) {
     Channel.fromPath(( workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ? workflow.projectDir + '/configs/conda.config' : workflow.projectDir + '/configs/container.config' )
             .splitCsv(skip: 1, sep: '\t')
             .map{ row ->
-                    if ( row[1] != null && row[2] != null) {
+                    if ( row[1] != null && row[2] != null && !( row[1].contains('rattle') && ( workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ) ) {
                         def tool = row[1]
                         def path = row[2].split('"')[1]
                         def conda_env_suffix = ( !tool.contains('rattle') && (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ) ? CacheHelper.hasher( new File('./envs/' + tool + '.yaml').text).hash().toString() : 'dummy'
@@ -516,11 +517,11 @@ workflow setup {
 
     main:
         containerGet(container_ch)
-        download_auto_annotation(container_ch)
-        download_auto_reference(container_ch)
-        download_busco(container_ch)
-        download_dammit(container_ch)
-        download_sortmerna(container_ch)
+        //download_auto_annotation(container_ch)
+        //download_auto_reference(container_ch)
+        //download_busco(container_ch)
+        //download_dammit(container_ch)
+        //download_sortmerna(container_ch)
 } 
 
 /***************************************
