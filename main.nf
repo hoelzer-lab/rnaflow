@@ -650,8 +650,8 @@ workflow expression_reference_based {
         featurecounts(sample_bam_ch, annotation, params.featurecounts_additional_params)
 
         // prepare annotation for R input
-        format_annotation_gene_rows(annotation, gtf_feature_type_of_attr_type_ch)
-        format_annotation(annotation, gtf_attr_type_ch, gtf_feature_type_of_attr_type_ch)
+        format_annotation_gene_rows(annotation, gtf_feature_type_ch)
+        format_annotation(annotation, gtf_attr_type_ch, gtf_feature_type_ch)
 
         // filter by TPM value
         // prepare input channels
