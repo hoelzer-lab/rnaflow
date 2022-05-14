@@ -287,7 +287,7 @@ if ( params.featurecounts_additional_params.contains('-g ') ){
     }
 } else {
     gtf_attr_type_ch = Channel.value('gene_id')
-    gtf_feature_type_of_attr_type_ch = Channel.value('gene')
+    gtf_feature_type_of_attr_type_ch = Channel.value('gene') //where is this actually needed ? we never filter after attr type feature type
 }
 
 /*
