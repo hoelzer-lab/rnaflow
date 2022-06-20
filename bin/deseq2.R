@@ -263,7 +263,7 @@ id_type <- eval( parse(text=args[13]) )
 
 #####################
 ## Read in ensembl ids, gene names and biotypes from a tab seperated table
-df.gene.anno <- as.data.frame( read.table(id2name, header=FALSE, sep="\t") )
+df.gene.anno <- as.data.frame( read.table(id2name, header=FALSE, sep="\t", quote = "\"") )
 rownames(df.gene.anno) <- df.gene.anno$V1
 df.gene.anno$V1 <- NULL
 colnames(df.gene.anno) <- c('gene_symbol', 'biotype')
@@ -538,6 +538,7 @@ worker_array <- foreach(i = 1:length(comparisons), .combine = cbind, .packages =
   #####################
   ## Volcano plot
   deseq2.res.anno <- merge(as.data.frame(deseq2.res), df.gene.anno, by=0)
+
   rownames(deseq2.res.anno) <- deseq2.res.anno$Row.names
   volcano = EnhancedVolcano(deseq2.res.anno, lab = deseq2.res.anno$gene_symbol, x = 'log2FoldChange', y = 'padj', 
     legendLabels = c('NS', expression(Log[2]~FC), "adj. p-value", expression(adj.~p-value~and~log[2]~FC)))
