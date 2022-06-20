@@ -214,12 +214,12 @@ Specify your read files in `FASTQ` format with `--reads input.csv`. The file `in
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
-mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,A,0
-mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,B,0
-mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,C,0
-treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,A,0
-treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,B,0
-treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,C,0
+mock_rep1,/path/to/reads/mock1.fastq.gz,,mock,,0
+mock_rep2,/path/to/reads/mock2.fastq.gz,,mock,,0
+mock_rep3,/path/to/reads/mock3.fastq.gz,,mock,,0
+treated_rep1,/path/to/reads/treat1.fastq.gz,,treated,,0
+treated_rep2,/path/to/reads/treat2.fastq.gz,,treated,,0
+treated_rep3,/path/to/reads/treat3.fastq.gz,,treated,,0
 ```
 
 and for paired-end reads, like this:
@@ -266,6 +266,11 @@ We provide a small set of build-in species for which the genome and annotation f
 | Escherichia coli | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
 
 <sup>*</sup> Downstream pathway analysis availible via `--pathway xxx`.
+
+#### Multiple-mapped reads
+To adjust the handling of multiple-mapped reads during the feature counting process you can use:
+`--featurecounts_additional_params '-t exon -g gene_id -M'`
+The default handling is to only count uniquely mapped reads via `featureCounts`. With the above flag set `featureCounts` will also count multi-mapped reads.
 
 #### Comparisons for DEG analysis
 
@@ -469,7 +474,7 @@ Downstream analysis (`--pathway xxx`) are currently provided for some species: G
 
 In case you don't have an internet connection, here is a workaround to [this issue](https://github.com/hoelzer-lab/rnaflow/issues/102) for manual download and copying of external recourses:
 
-- Genomes and annotation can also be specified via `--genome` and `--annotaion`, see [here](#genomes-and-annotation).
+- Genomes and annotation can also be specified via `--genome` and `--annotation`, see [here](#genomes-and-annotation).
 - For `BUSCO` it is a simple download, see [here](modules/buscoGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` as default.
 - For `SortMeRNA` and `dammit` the tools must be installed. Version specifications can be found [here](envs/sortmerna.yaml) and [there](envs/dammit.yaml), the code to create the databases [here](modules/sortmernaGet.nf) and [there](modules/dammitGetDB.nf) with `busco_db = 'euarchontoglires_odb9'` `dammit_uniref90 = false` as default.
 - Downstream analysis with `piano` and `WebGestalt` currently need an internet connection in any case. If no connection is available `piano` and `WebGestalt` are skipped.
