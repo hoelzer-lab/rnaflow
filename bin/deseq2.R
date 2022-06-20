@@ -4,16 +4,15 @@ library("gplots")
 library("ggplot2")
 library("ReportingTools")
 library("pheatmap")
-library("biomaRt")
 library("svglite")
-library("piano")
 library("apeglm")
 library("EnhancedVolcano")
 library("regionReport")
 library("stringr")
-library("WebGestaltR")
 library("snowfall")
 library("openxlsx")
+library("foreach")
+library("doParallel")
 
 
 #####################################################################################
@@ -181,6 +180,7 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
   selected.ids <- selected.ids[1:min(ntop, length(selected.ids))]
   if ( length(selected.ids) > 1 ) {
     file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
+    # pheatmap fails if two values are exactly the same
     pheatmap(assay(trsf_data)[selected.ids,], cluster_cols = FALSE, cluster_rows = TRUE, 
             scale = "row", border_color = NA, 
             labels_row = as.character(genes.info[selected.ids,]$gene_type),
@@ -192,70 +192,6 @@ plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pc
   }
 }
 
-piano <- function(out.dir, resFold, mapGO, cpus) {
-  mapGO <- mapGO[mapGO[,2]!="",]
-  write.table.to.file(mapGO, out.dir, "ENSG_GOterm", row.names = FALSE)
-
-  myGsc <- loadGSC(mapGO)
-
-  myPval <- resFold$padj
-  names(myPval) <- rownames(resFold)
-  myFC <- resFold$log2FoldChange
-  names(myFC) <- rownames(resFold)
-  
-  if (cpus >= 10) {
-    piano_cpus = 10
-  } else {
-    piano_cpus = 1
-  }
-
-  gene.set.min <- 20
-  gene.set.max <- 'inf' # 9999999999999
-  gsaRes1 <- runGSA(myFC, geneSetStat="maxmean", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes2 <- runGSA(myFC, geneSetStat="gsea", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes3 <- runGSA(myFC, geneSetStat="fgsea", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes4 <- runGSA(myFC, geneSetStat="page", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes5 <- runGSA(myPval, myFC, geneSetStat="fisher", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes6 <- runGSA(myPval, myFC, geneSetStat="stouffer", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes7 <- runGSA(myPval, myFC, geneSetStat="reporter", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-  gsaRes8 <- runGSA(myPval, myFC, geneSetStat="tailStrength", gsc=myGsc,
-                  gsSizeLim=c(gene.set.min,gene.set.max), ncpus=piano_cpus)
-
-  resList <- list(gsaRes1,gsaRes2,gsaRes3,gsaRes4,gsaRes5,gsaRes6,gsaRes7,gsaRes8)
-  names(resList) <- c("maxmean", "gsea", "fgsea", "page", "fisher", "stouffer", "reporter", "tailStrength")
-
-  try.piano <- try( {
-    pdf(paste(out.dir,"/consensus_heatmap.pdf",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore or nGenes
-    dev.off()
-    svg(paste(out.dir,"/consensus_heatmap.svg",sep=""), width = 10, height = 10)
-    ch <- consensusHeatmap(resList,cutoff=10,method="mean",colorkey=FALSE,cellnote="consensusScore",ncharLabel = 120) ## medianPvalue or consensusScore
-    dev.off()
-
-    downregulated_paths <- as.data.frame(ch$pMat[,1][ch$pMat[,1] < 0.05])
-    upregulated_paths <- as.data.frame(ch$pMat[,5][ch$pMat[,5] < 0.05])
-
-    write.table.to.file(downregulated_paths, out.dir, "paths_sigdown", col.names=FALSE)
-    write.table.to.file(upregulated_paths, out.dir, "paths_sigup", col.names=FALSE)
-    }
-  )
-  if (class(try.piano) == "try-error") {
-    print('SKIPPING: piano consensusHeatmap.')
-  }
-
-  # for (i in 1:length(resList)){
-  #   svg(paste(out.dir, paste0(names(resList)[i], '.svg'), sep='/'), width = 10, height = 10)
-  #   networkPlot(resList[[i]], class="non")
-  #   dev.off()
-  # }
-}
 
 ##################### TODO
 # plot.ma.go <- function(out, deseq2.res, ma.size, results.gene, go.terms, trsf_data, trsf_type) {
@@ -454,38 +390,24 @@ for (i in 1:length(transformed.counts)) {
   }
 }
 
-##########################################
-## BiomaRt object
-##########################################
-try.biomart <- try(
-  if (species == 'mmu'){
-    biomart.ensembl <- useMart('ensembl', dataset='mmusculus_gene_ensembl')
-  } else if (species == 'hsa') {
-    biomart.ensembl <- useMart('ensembl', dataset='hsapiens_gene_ensembl')
-  } else if (species == 'mau') {
-    biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
-  } else {
-    biomart.ensembl <- NA
-    print('SKIPPING: BiomaRt. Species not accasible with BiomaRt.')
-  }
-)
-if (class(try.biomart) == "try-error") {
-  biomart.ensembl <- NA
-  print('SKIPPING: BiomaRt. BiomaRt is not accessible.')
-}
-
 #####################################################################################
 ## PERFORM PAIRWISE COMPARISONS
 #####################################################################################
-for (comparison in comparisons) {
 
+cl <- makeCluster(cpus)
+registerDoParallel(cl)
+
+foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools")) %dopar% {
+
+  .GlobalEnv$col.labels <- col.labels
+  comparison <- comparisons[i]
   l1 <- strsplit(comparison, ':')[[1]][1]
   l2 <- strsplit(comparison, ':')[[1]][2]
 
   out.sub <- paste(out, l1, '_vs_', l2, '/', sep='')
   build.project.structure(out.sub)
 
-  name <- paste("deseq2_",l1,"_",l2,sep="")
+  name <- paste("deseq2_",l1,"_vs_",l2,sep="")
 
   ##########################################
   ## Adjust data, count data, levles and valiables to current pairwise comparison
@@ -656,6 +578,7 @@ for (comparison in comparisons) {
       plot.heatmap.top_fc(paste(out.sub, "plots/heatmaps/", sep="/"), resFold01, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop, 'pcutoff0-01')
     }
   }
+  
 
   #####################
   ## PCA
@@ -664,71 +587,7 @@ for (comparison in comparisons) {
       plot.pca(paste(out.sub, "/plots/PCA/", sep="/"), col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
     }
   }
-
-  ##########################################
-  ## Further analysis
-  ##########################################
-
-  #####################
-  ## MA plots with genes colored by GO terms
-  # go.terms <- eval( c("GO:004563","GO:0011231") )
-  # if ( ! is.na(biomart.ensembl)  && length(go.terms) > 0) {
-  #   results.gene <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "go_id","name_1006"), filters = "ensembl_gene_id", values = rownames(deseq2.res), mart=biomart.ensembl)
-  #   #   plot.ma.go(out.sub, deseq2.res, ma.size, results.gene, go.terms, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]])
-  # }
-
-  #####################
-  ## Piano
-  if ( ! is.na(biomart.ensembl) ) {
-    dir.create(file.path(out.sub, '/downstream_analysis/piano'), showWarnings = FALSE, recursive = TRUE)
-    if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
-      results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
-      if ( length(row.names(results.gene)) > 0 ) {
-        try.piano <- try( 
-          piano(paste(out.sub, 'downstream_analysis', 'piano', sep='/'), resFold05, results.gene, cpus)
-        )
-        if (class(try.piano) == "try-error") {
-          print ('SKIPPING: Piano. Some error occurred.')
-        }
-      } else {
-        print(paste('SKIPPING: Piano. No matching feature IDs with type', id_type, 'found.'))
-      }
-    } else {
-      print(paste('SKIPPING: Piano. Feature ID type', id_type, 'not supported by biomaRt.'))
-    }
-  }
-
-  #####################
-  ## Webgestalt
-  if ( species == 'hsa' ){
-    organism <- "hsapiens"
-  } else if (species == 'mmu') {
-    organism <- "mmusculus"
-  } else {
-    organism <- NA
-  }
-  if (! is.na(organism)) {
-    dir.create(file.path(out.sub, '/downstream_analysis/WebGestalt'), showWarnings = FALSE, recursive = TRUE)
-    interestGene <- as.data.frame(resFold05)[, 'log2FoldChange', drop=FALSE]
-    interestGene$id <- rownames(interestGene)
-    rownames(interestGene) <- NULL
-    colnames(interestGene) <- NULL
-    interestGene <- interestGene[c(2,1)]
-    webgestalt.out.dir <- paste(out.sub, "downstream_analysis", "WebGestalt", sep='/')
-    if (any(grepl(id_type, listIdType(), fixed=TRUE))) {
-      try.webgestalt <- try(
-        for (enrDB in c("geneontology_Biological_Process_noRedundant", "pathway_KEGG")){
-          enrichResult <- WebGestaltR(enrichMethod="GSEA", organism=organism, enrichDatabase=enrDB, interestGene=interestGene, interestGeneType=id_type, collapseMethod="mean", minNum=10, maxNum=500, fdrMethod="BH", sigMethod="fdr", fdrThr=0.01, topThr=10, perNum=1000, isOutput=TRUE, outputDirectory=webgestalt.out.dir, projectName=paste0(l1, '_vs_', l2))
-        }
-      )
-      if (class(try.webgestalt) == "try-error") {
-        print('SKIPPING: WebGestaltR. The number of annotated IDs for all functional categories are not from 10 to 500 for the GSEA enrichment method.')
-      }
-    } else {
-      print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
-    }
-  }
-
+  
   ##########################################
   ## Reports
   ##########################################
@@ -764,6 +623,8 @@ for (comparison in comparisons) {
   }
 
 }
+stopCluster(cl)
+gc()
 #####################################################################################
 ## END PAIRWISE COMPARISONS
 #####################################################################################
