@@ -310,7 +310,7 @@ webgestalt_script = Channel.fromPath( workflow.projectDir + '/bin/webgestalt.R',
 /*
 * MultiQC config
 */
-multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
+multiqc_config = params.skip_sortmerna ? Channel.fromPath( workflow.projectDir + '/assets/multiqc_config_no_smr.yaml', checkIfExists: true ) : Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
 regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionReport_DESeq2Exploration_custom.Rmd', checkIfExists: true )
 
 /*
