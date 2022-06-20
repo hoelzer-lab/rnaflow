@@ -16,6 +16,8 @@ out.sub <- ""
 
 resFold05 <- read.csv(file = gene_file, row.names = 1)
 
+biomartCacheClear()
+
 ##########################################
 ## BiomaRt object
 ##########################################
@@ -120,9 +122,10 @@ piano <- function(out.dir, resFold, mapGO, cpus) {
 #####################
 ## Piano
 #####################
+dir.create(file.path('piano'), showWarnings = FALSE, recursive = TRUE)
 if ( ! is.na(biomart.ensembl) ) {
-  dir.create(file.path('piano'), showWarnings = FALSE, recursive = TRUE)
   if (any(grepl(id_type, listAttributes(biomart.ensembl)$name, fixed=TRUE))){
+    biomartCacheClear()
     tryCatch(
     expr = { results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl) },
     error = function(e){ 
@@ -130,6 +133,7 @@ if ( ! is.na(biomart.ensembl) ) {
       quit(save = "no", status = 0)
     } )
 
+    biomartCacheClear()
     results.gene <- getBM(attributes =  c(id_type, "name_1006"), filters = id_type, values = rownames(resFold05), mart=biomart.ensembl)
     if ( length(row.names(results.gene)) > 0 ) {
       try.piano <- try( 

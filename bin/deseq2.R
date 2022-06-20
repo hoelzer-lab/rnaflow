@@ -13,6 +13,9 @@ library("snowfall")
 library("openxlsx")
 library("foreach")
 library("doParallel")
+library("knitcitations")
+library("UpSetR")
+
 
 
 #####################################################################################
@@ -131,14 +134,15 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
 
   d <- data.frame(PC1=pca$x[,1], PC2=pca$x[,2], group=group, intgroup.df, name=col.labels)
 
-  ggplot(data=d, aes_string(x="PC1", y="PC2", colour="condition")) +
+  ggplot(data=d, aes(x="PC1", y="PC2", colour="condition")) +
     geom_point(size=3) + 
     xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
     ylab(paste0("PC2: ",round(percentVar[2] * 100),"% variance")) +
     ggtitle(paste("PC1 vs PC2: top ", ntop, " variable genes")) +
-    coord_fixed() +
-    ggsave(paste(out.dir, paste0("PCA_simple_", trsf_type, "_top", ntop, ".pdf"), sep="/"))
-    ggsave(paste(out.dir, paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), sep="/"))
+    coord_fixed()
+
+  ggsave(file = paste0("PCA_simple_", trsf_type, "_top", ntop, ".pdf"), device = "pdf", path = out.dir)
+  ggsave(file = paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), device = "svg", path = out.dir)
 }
 
 plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
@@ -370,7 +374,7 @@ for (i in 1:length(transformed.counts)) {
 ## PCA
 for (i in 1:length(transformed.counts)) { 
   for (ntop in c(500, 100, 50)){
-    plot.pca(paste(out, "plots/PCA/", sep="/"), col.labels, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
+    plot.pca(paste(out, "plots/PCA", sep="/"), col.labels, transformed.counts[[i]], names(transformed.counts)[[i]], ntop)
   }
 }
 
@@ -397,7 +401,7 @@ for (i in 1:length(transformed.counts)) {
 cl <- makeCluster(cpus)
 registerDoParallel(cl)
 
-foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools")) %dopar% {
+worker_array <- foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","DESeq2", "EnhancedVolcano", "pheatmap", "RColorBrewer", "regionReport", "ReportingTools", "knitcitations")) %dopar% {
 
   .GlobalEnv$col.labels <- col.labels
   comparison <- comparisons[i]
@@ -537,9 +541,9 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
   rownames(deseq2.res.anno) <- deseq2.res.anno$Row.names
   volcano = EnhancedVolcano(deseq2.res.anno, lab = deseq2.res.anno$gene_symbol, x = 'log2FoldChange', y = 'padj', 
     legendLabels = c('NS', expression(Log[2]~FC), "adj. p-value", expression(adj.~p-value~and~log[2]~FC)))
-  volcano + 
-    ggsave(paste(out.sub,"/plots/volcano/volcano.svg", sep='/')) +
-    ggsave(paste(out.sub,"/plots/volcano/volcano.pdf", sep='/'))
+
+  ggsave(filename = "volcano.svg", plot = volcano, device = "svg", path = paste(out.sub,"plots/volcano/", sep='/'))
+  ggsave(filename = "volcano.pdf", plot = volcano, device = "pdf", path = paste(out.sub,"plots/volcano/", sep='/'))
 
   #####################
   ## MA plots
@@ -584,7 +588,7 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
   ## PCA
   for (i in 1:length(transformed.counts.sub)) {
     for (ntop in c(500, 100, 50)) {
-      plot.pca(paste(out.sub, "/plots/PCA/", sep="/"), col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
+      plot.pca(paste(out.sub, "plots/PCA", sep="/"), col.labels.sub, transformed.counts.sub[[i]], names(transformed.counts.sub)[[i]], ntop)
     }
   }
   
@@ -622,6 +626,9 @@ foreach(i = 1:length(comparisons), .combine = cbind, .packages = c("openxlsx","D
     reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes, make.plots=FALSE)
   }
 
+  export <- as.data.frame(row.names(resFold05))
+  colnames(export)[1] <- paste(l1, "vs", l2, sep="_")
+  export
 }
 stopCluster(cl)
 gc()
@@ -629,3 +636,12 @@ gc()
 ## END PAIRWISE COMPARISONS
 #####################################################################################
 
+##UpSetR plots
+#NOTE: UpSetR will not plot to svg device from inside try or if blocks, the output will always be blank so we have to check if theres more than 1 contrast like this
+if(length(worker_array) < 2){
+  write("Oops, looks like theres only one contrast! Nothing to compare here with UpSetR..", stderr())
+  quit(save = "no", status = 0)
+}
+svg(filename=paste(out, "plots", "UpSet.svg", sep="/"), width=14, height=12, pointsize=12)
+upset(fromList(worker_array), order.by = "freq",  nsets = ncol(worker_array), nintersects = 40, mainbar.y.label = "No. of common differentially expressed, significant between contrasts", sets.x.label = "No. of diff. expressed features per contrast", keep.order = T, text.scale = 1.4, point.size = 2.6, line.size = 0.8, set_size.show = TRUE)
+dev.off()

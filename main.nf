@@ -871,9 +871,9 @@ workflow {
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
-                                    species2prefix,
                                     piano_script,
-                                    webgestalt_script)
+                                    webgestalt_script,
+                                    species2prefix)
             } else {
             expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
                                     preprocess_nanopore.out.fastp_json_report,
@@ -887,9 +887,9 @@ workflow {
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
-                                    species2prefix,
                                     piano_script,
-                                    webgestalt_script)
+                                    webgestalt_script,
+                                    species2prefix)
             }
         }
     }
