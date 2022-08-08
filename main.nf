@@ -655,9 +655,9 @@ workflow expression_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         multiqc_config
-        species2prefix
         piano_script
         webgestalt_script
+        species2prefix
 
     main:
         // count with featurecounts
