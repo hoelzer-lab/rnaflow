@@ -96,6 +96,7 @@ if ( ! params.reads && ! params.setup ) { exit 1, "--reads is a required paramet
 
 // deprecated stuff
 if ( params.mode ) { println "\033[0;33mWARNING: Parameter --mode is deprecated, read mode will automatically be detected from the sample file.\033[0m\n" }
+if ( params.assembly && params.nanopore && !( workflow.profile.contains('singularity') || workflow.profile.contains('docker') )) { exit 1, "Container profile does not support nanopore assembly using RATTLE. Please use a supported profile. [docker, singularity]" }
 if ( ((params.species || params.include_species) && (params.autodownload || params.pathway)) && ! workflow.profile.contains('test') ) {  exit 1, "Please use '--autodownload " + autodownload + " --pathway " + pathway + "' OR '--species " + species + " --include_species' (deprecated)." }
 if ( ( params.species || params.include_species ) && ! workflow.profile.contains('test') ) { 
     println "\033[0;33mWARNING: --species " + species + " and --include_species are deprecated parameters. Please use --autodownload " + autodownload + " (corresponds to '--species " + species + " --include_species') and --pathway " + pathway + " (corresponds to '--species " + species + "') in the future.\033[0m\n" 
@@ -116,19 +117,20 @@ if ( params.deg ) { comparison = params.deg } else { comparison = 'all' }
 /************************** 
 * INPUT CHANNELS 
 **************************/
-if (params.setup) {
-    Channel.fromPath( './configs/container.config' )
+import nextflow.util.CacheHelper
+if ( params.setup ) {
+    Channel.fromPath(( workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ? workflow.projectDir + '/configs/conda.config' : workflow.projectDir + '/configs/container.config' )
             .splitCsv(skip: 1, sep: '\t')
             .map{ row ->
-                    if ( row[1] != null && row[2] != null) {
+                    if ( row[1] != null && row[2] != null && !( row[1].contains('rattle') && ( workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ) ) {
                         def tool = row[1]
                         def path = row[2].split('"')[1]
-                        return [tool, path] 
+                        def conda_env_suffix = ( !tool.contains('rattle') && (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) ) ? CacheHelper.hasher( new File('./envs/' + tool + '.yaml').text).hash().toString() : 'dummy'
+                        return [tool, path, conda_env_suffix]
                     }
             }
             .tap{ container_ch }
 }
-
 
 if (params.reads) { 
     Channel
@@ -143,7 +145,8 @@ if (params.reads) {
                 meta.condition = row['Condition']
                 meta.source = row['Source']
                 meta.paired_end = paired_end
-                meta.strandedness = row['Strandedness'] ? row['Strandedness'] : params.strand
+                // set strand in order of definition: CSV, CL, default ( = 0 )
+                meta.strandedness = params.strand ? params.strand : ( row['Strandedness'] ? row['Strandedness'] : '0' )
             return meta.paired_end ? [ meta, [ read1, read2 ] ] : [ meta, [ read1 ] ]
         }
         .tap { annotated_reads }
@@ -159,15 +162,18 @@ if (params.reads) {
 
 param_strand = ""
 param_read_mode = ""
+strand_csv = ""
 
 if (!params.setup) { 
     File csvFile = new File(params.reads)
     csvFile.eachLine { line ->
         def row = line.split(",")
-        param_strand = row[5] ? row[5] : params.strand
+        param_strand = params.strand ? params.strand.toString() : ( row.size() > 4 ? row[5] : '0' )//row[5] ? row[5] : params.strand
         param_read_mode = row[2] ? "paired-end" : "single-end"
+        strand_csv = row.size() > 4 ? row[5] : ''
     }
-
+    // print warning if strand def in CSV differs from CL definition
+    if ( strand_csv && params.strand && strand_csv != params.strand ) { println "\033[0;33mWARNING: Strandedness definition in input CSV (" + strand_csv + ") differs from definition via --strand (" + params.strand + "). Using definition from --strand parameter.\033[0m\n" }
     if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
 }
 
@@ -300,9 +306,17 @@ deseq2_id_type_ch = Channel.value(params.feature_id_type)
 species2prefix = Channel.fromPath( workflow.projectDir + '/assets/ens_species_mapping.tsv', checkIfExists: true)
 
 /*
+* Downstream analysis
+*/
+piano_script = Channel.fromPath( workflow.projectDir + '/bin/piano.R', checkIfExists: true )
+webgestalt_script = Channel.fromPath( workflow.projectDir + '/bin/webgestalt.R', checkIfExists: true )
+
+
+
+/*
 * MultiQC config
 */
-multiqc_config = Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
+multiqc_config = params.skip_sortmerna ? Channel.fromPath( workflow.projectDir + '/assets/multiqc_config_no_smr.yaml', checkIfExists: true ) : Channel.fromPath( workflow.projectDir + '/assets/multiqc_config.yaml', checkIfExists: true )
 regionReport_config = Channel.fromPath( workflow.projectDir + '/assets/regionReport_DESeq2Exploration_custom.Rmd', checkIfExists: true )
 
 /*
@@ -360,6 +374,8 @@ include {deseq2} from './modules/deseq2'
 include {fastqc as fastqcPre; fastqc as fastqcPost} from './modules/fastqc'
 include {nanoplot as nanoplot} from './modules/nanoplot'
 include {multiqc; multiqc_sample_names} from './modules/multiqc'
+include {piano} from "./modules/piano"
+include {webgestalt} from "./modules/webgestalt.nf"
 
 // assembly & annotation
 include {trinity} from './modules/trinity'
@@ -643,6 +659,8 @@ workflow expression_reference_based {
         deseq2_script_refactor_reportingtools_table
         deseq2_script_improve_deseq_table
         multiqc_config
+        piano_script
+        webgestalt_script
         species2prefix
 
     main:
@@ -692,6 +710,10 @@ workflow expression_reference_based {
            annotated_sample.col_label.collect(), deseq2_comparisons, format_annotation.out, format_annotation_gene_rows.out, 
            annotated_sample.source.collect(), species_pathway_ch, deseq2_script, deseq2_id_type_ch, deseq2_script_refactor_reportingtools_table, 
            deseq2_script_improve_deseq_table, species2prefix)
+        
+        // downstream analysis
+        piano(piano_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch, deseq2_script_improve_deseq_table)
+        webgestalt(webgestalt_script, deseq2.out.resFold05.flatten(), species_pathway_ch, deseq2_id_type_ch)
 
         // run MultiQC
         multiqc_sample_names( annotated_reads.map{ meta, reads -> meta }.unique{ it.paired_end }, annotated_reads.map{ meta, reads -> [ meta.sample, reads ].flatten() }.collect() )
@@ -853,6 +875,8 @@ workflow {
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
+                                    piano_script,
+                                    webgestalt_script,
                                     species2prefix)
             } else {
             expression_reference_based(preprocess_nanopore.out.sample_bam_ch,
@@ -867,6 +891,8 @@ workflow {
                                     deseq2_script_refactor_reportingtools_table, 
                                     deseq2_script_improve_deseq_table, 
                                     multiqc_config,
+                                    piano_script,
+                                    webgestalt_script,
                                     species2prefix)
             }
         }
@@ -924,6 +950,7 @@ def helpMSG() {
 
     ${c_yellow}DEG analysis options:${c_reset}
     --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
+                             This will overwrite the optional strandedness defined in the input CSV file.
     --tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
                              corresponding samples in this condition is below the threshold. [default: $params.tpm]
     --deg                    A CSV file following the pattern: conditionX,conditionY

@@ -22,17 +22,17 @@ process featurecounts {
     if ( !meta.paired ) {
         if (params.nanopore == true) {
         """
-        featureCounts -L -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${meta.sample}.counts.tsv ${additionalParams} ${bam}
+        featureCounts -L -T ${task.cpus} -s ${meta.strandedness} -a ${annotation} -o ${meta.sample}.counts.tsv ${additionalParams} ${bam}
         """
         } else {
             """
-            featureCounts -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${meta.sample}.counts.tsv  ${additionalParams} ${bam}
+            featureCounts -T ${task.cpus} -s ${meta.strandedness} -a ${annotation} -o ${meta.sample}.counts.tsv  ${additionalParams} ${bam}
             """
         }
     }
     else {
     """
-    featureCounts -pBP -T ${task.cpus} -s ${params.strand} -a ${annotation} -o ${meta.sample}.counts.tsv ${additionalParams} ${bam}
+    featureCounts -pBP -T ${task.cpus} -s ${meta.strandedness} -a ${annotation} -o ${meta.sample}.counts.tsv ${additionalParams} ${bam}
     """
     }
 }
