@@ -293,7 +293,7 @@ if ( params.featurecounts_additional_params.contains('-g ') ){
     }
 } else {
     gtf_attr_type_ch = Channel.value('gene_id')
-    gtf_feature_type_of_attr_type_ch = Channel.value('gene')
+    gtf_feature_type_of_attr_type_ch = Channel.value('gene') //where is this actually needed ? we never filter after attr type feature type
 }
 
 /*
@@ -668,8 +668,8 @@ workflow expression_reference_based {
         featurecounts(sample_bam_ch, annotation, params.featurecounts_additional_params)
 
         // prepare annotation for R input
-        format_annotation_gene_rows(annotation, gtf_feature_type_of_attr_type_ch)
-        format_annotation(annotation, gtf_attr_type_ch, gtf_feature_type_of_attr_type_ch)
+        format_annotation_gene_rows(annotation, gtf_feature_type_ch)
+        format_annotation(annotation, gtf_attr_type_ch, gtf_feature_type_ch)
 
         // filter by TPM value
         // prepare input channels
