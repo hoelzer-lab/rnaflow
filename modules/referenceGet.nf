@@ -3,7 +3,7 @@
 ********************************************/
 process referenceGet {
     label 'basic_tools'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
     else { storeDir "${params.permanentCacheDir}/genomes/" }  
@@ -44,7 +44,8 @@ process referenceGet {
 }
 
 process concat_genome {
-  label 'smallTask'
+  label 'basic_tools'
+  if (!workflow.profile.contains('node')) { label 'smallTask' }
   
   input:
   path fasta

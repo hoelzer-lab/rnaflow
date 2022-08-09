@@ -1,6 +1,6 @@
 process get_reduced_genome_test {
     label 'basic_tools'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
     
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
     else { storeDir "${params.permanentCacheDir}/genomes/" }  
@@ -27,7 +27,8 @@ process get_reduced_genome_test {
 }
 
 process reduce_genome_test{
-    label 'smallTask'
+    label 'basic_tools'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/genomes/", mode: 'copy', pattern: "*.fa" }
     else { storeDir "${params.permanentCacheDir}/genomes/" }  
@@ -48,7 +49,7 @@ process reduce_genome_test{
 
 process get_reduced_annotation_test {
     label 'basic_tools'
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
     else { storeDir "${params.permanentCacheDir}/annotations/" }  
@@ -75,7 +76,8 @@ process get_reduced_annotation_test {
 }
 
 process reduce_annotation_test{
-    label 'smallTask'
+    label 'basic_tools'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     if (params.cloudProcess) { publishDir "${params.permanentCacheDir}/annotations/", mode: 'copy', pattern: "*.gtf" }
     else { storeDir "${params.permanentCacheDir}/annotations/" }  

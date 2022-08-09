@@ -1,5 +1,5 @@
 process containerGet {
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
     tag "$tool"
 
     errorStrategy 'retry'

@@ -3,9 +3,9 @@
 ************************************************************************/
 process fastqc {
     label 'fastqc'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
     tag "$meta.sample"
-    label 'smallTask'
-
+ 
     input:
     tuple val(meta), path(reads) 
 

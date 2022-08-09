@@ -1,7 +1,7 @@
 process format_read_name {
-    label 'format_read_name'
+    label 'basic_tools'
     tag "$meta.sample"
-    label 'smallTask'
+    if (!workflow.profile.contains('node')) { label 'smallTask' }
 
     input:
     tuple val(meta), path(reads) 
