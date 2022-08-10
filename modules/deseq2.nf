@@ -29,7 +29,7 @@ process deseq2 {
 
     output:
         path("*")
-        path "*_vs_*/results/deseq2_*_filtered_padj_0.05.csv", glob: true , emit: resFold05
+        path ("*_vs_*/results/deseq2_*_filtered_padj_0.05.csv"), glob: true , emit: resFold05
 
     
     script:
