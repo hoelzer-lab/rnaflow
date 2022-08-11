@@ -14,7 +14,7 @@ process webgestalt {
     val(id_type)
 
     output:
-    path("WebGestalt")
+    path("WebGestalt") optional true
     
     script:
     comparison = resFold05.toString().findAll("[a-zA-Z]*_vs_[a-zA-Z]*")[0]
