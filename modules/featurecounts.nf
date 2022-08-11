@@ -19,7 +19,7 @@ process featurecounts {
     path "${meta.sample}.counts.tsv.summary", emit: log
 
     script:
-    if ( !meta.paired ) {
+    if ( !meta.paired_end ) {
         if (params.nanopore == true) {
         """
         featureCounts -L -T ${task.cpus} -s ${meta.strandedness} -a ${annotation} -o ${meta.sample}.counts.tsv ${additionalParams} ${bam}
