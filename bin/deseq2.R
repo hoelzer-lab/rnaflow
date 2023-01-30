@@ -32,13 +32,13 @@ build.project.structure <- function(out.dir) {
   }
 }
 
-write.table.to.file <- function(as.data.frame.object, output.path, output.name, id2name, row.names=TRUE, col.names=TRUE) {
+write.table.to.file <- function(as.data.frame.object, output.path, output.name, id2name, row_names=TRUE, col_names=TRUE) {
   output.file.basename <- paste0(output.path, "/", output.name)
-  write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row.names, col.names=col.names)
-  if( is.na(col.names) ){
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=TRUE, asTable=TRUE)
+  write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row_names, col.names=col_names)
+  if( is.na(col_names) ){
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row_names, col.names=TRUE, asTable=TRUE)
   } else {
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names, asTable=TRUE)
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row_names, col.names=col_names, asTable=TRUE)
   }
 
   if ( !missing(id2name)) {
@@ -96,7 +96,7 @@ reportingTools.html <- function(out.dir, dds, deseq2.result, pvalueCutoff, condi
     }
   }
   des2Report <- HTMLReport(shortName=shortName, title=title, basePath=out.dir, reportDirectory="reports/")
-  publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor=colData(dds)$condition, reportDir=out.dir, n=length(row.names(deseq2.result)), contrast=c("condition",condition1,condition2), make.plots=make.plots)
+  publish(dds, des2Report, pvalueCutoff=pvalueCutoff, annotation.db=NULL, factor=colData(dds)$condition, reportDir=out.dir, n=length(rownames(deseq2.result)), contrast=c("condition",condition1,condition2), make.plots=make.plots)
   finish(des2Report)
   system(paste('./refactor_reportingtools_table.rb', paste0(out.dir, '/reports/', shortName,'.html'), annotation_genes, 'add_plots', pvalueCutoff, sep=" "))
 }
@@ -148,7 +148,7 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
 plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
   select <- order(rowVars(counts(dds,normalized=TRUE)),decreasing=TRUE)
   select <- select[1:min(ntop, length(select))][1:min(ntop, length(select))]
-  selected.ids <- row.names(trsf_data[select,])
+  selected.ids <- rownames(trsf_data[select,])
   if ( length(selected.ids) > 1 ) {
     file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_mostVar", ntop, "_row-scaled.pdf"), sep="/")
     pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
@@ -165,7 +165,7 @@ plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samp
 plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
   select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)
   select <- select[1:min(ntop, length(select))]
-  selected.ids <- row.names(counts(dds,normalized=TRUE)[select,])
+  selected.ids <- rownames(counts(dds,normalized=TRUE)[select,])
   if ( length(selected.ids) > 1 ) {
     file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "Counts_row-scaled.pdf"), sep="/")
     pheatmap(assay(trsf_data)[select,], cluster_cols = FALSE, cluster_rows = TRUE,
@@ -180,7 +180,7 @@ plot.heatmap.top_counts <- function(out.dir, dds, trsf_data, trsf_type, ntop, sa
 }
 
 plot.heatmap.top_fc <- function(out.dir, resFold, trsf_data, trsf_type, ntop, pcutoff='', samples.info=df.samples.info, genes.info=df.gene.anno) {
-  selected.ids <- row.names(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])
+  selected.ids <- rownames(resFold[order(resFold$log2FoldChange, decreasing=TRUE), ])
   selected.ids <- selected.ids[1:min(ntop, length(selected.ids))]
   if ( length(selected.ids) > 1 ) {
     file <- paste(out.dir, paste0("heatmap_count_matrix_", trsf_type, "_top", ntop, "log2FC", pcutoff, "_row-scaled.pdf"), sep="/")
@@ -313,7 +313,7 @@ if (length(sources) > 0) {
 }
 rownames(df.samples.info) <- df.samples.info$samples
 df.samples.info$samples <- NULL
-write.table.to.file(df.samples.info, paste0(out, "/data/input"), "input", col.names=NA)
+write.table.to.file(df.samples.info, paste0(out, "/data/input"), "input", col_names=NA)
 
 ## DESeq2 input
 input.summary <- paste(out, "/data/input/", "DESeq2_input_summary.txt", sep="/") 
@@ -340,8 +340,8 @@ norm.counts <- counts(dds, normalized=T)
 
 #####################
 ## write normalized counts and size factors
-write.table.to.file(as.data.frame(norm.counts), paste0(out, "/data/counts"), "normalized_counts", col.names=NA)
-write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), "sizeFactors", col.names=NA)
+write.table.to.file(as.data.frame(norm.counts), paste0(out, "/data/counts"), "normalized_counts", col_names=NA)
+write.table.to.file(as.data.frame(dds$sizeFactor), paste0(out, "/data/counts"), "sizeFactors", col_names=NA)
 
 #####################
 ## transform counts
@@ -363,7 +363,7 @@ transformed.counts[[1]] <- vsd; transformed.counts[[2]] <- rld; transformed.coun
 #####################
 ## write transformed counts 
 for (i in 1:length(transformed.counts)) {
-  write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]), col.names=NA)
+  write.table.to.file(as.data.frame(assay(transformed.counts[[i]])), paste0(out, "/data/counts"), paste0("transformed_counts_", names(transformed.counts)[[i]]), col_names=NA)
 }
 
 ##########################################
@@ -504,16 +504,16 @@ worker_array <- foreach(i = 1:length(comparisons), .combine = cbind, .packages =
   #####################
   ## input
   df.samples.info.sub <- df.samples.info[samples.sub,]
-  write.table.to.file(df.samples.info.sub,  paste0(out.sub, "/input"), "input", col.names=NA)
+  write.table.to.file(df.samples.info.sub,  paste0(out.sub, "/input"), "input", col_names=NA)
 
   #####################
   ## DESeq2 results
   out.sub.output.dir <- paste0(out.sub, "/results/")
 
-  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), id2name, col.names=NA)
-  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), id2name, col.names=NA)
-  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), id2name, col.names=NA)
-  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), id2name, col.names=NA)
+  write.table.to.file(as.data.frame(resOrdered), out.sub.output.dir, paste(name, "full", sep="_"), id2name, col_names=NA)
+  write.table.to.file(as.data.frame(resFold), out.sub.output.dir, paste(name, "filtered_NA", sep="_"), id2name, col_names=NA)
+  write.table.to.file(as.data.frame(resFold05), out.sub.output.dir, paste(name, "filtered_padj_0.05", sep="_"), id2name, col_names=NA)
+  write.table.to.file(as.data.frame(resFold01), out.sub.output.dir, paste(name, "filtered_padj_0.01", sep="_"), id2name, col_names=NA)
 
   #####################
   ## DESeq2 results summary
@@ -627,7 +627,7 @@ worker_array <- foreach(i = 1:length(comparisons), .combine = cbind, .packages =
     reportingTools.html(out.sub, dds, deseq2.res, 0.01, l1, l2, annotation_genes, make.plots=FALSE)
   }
 
-  export <- as.data.frame(row.names(resFold05))
+  export <- as.data.frame(rownames(resFold05))
   colnames(export)[1] <- paste(l1, "vs", l2, sep="_")
   export
 }
