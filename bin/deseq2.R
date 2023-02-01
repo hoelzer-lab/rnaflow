@@ -36,9 +36,9 @@ write.table.to.file <- function(as.data.frame.object, output.path, output.name, 
   output.file.basename <- paste0(output.path, "/", output.name)
   write.table(as.data.frame.object, file=paste0(output.file.basename, ".csv"), sep = ",", row.names=row.names, col.names=col.names)
   if( is.na(col.names) ){
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=TRUE, asTable=TRUE)
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), rowNames=row.names, colNames=TRUE, asTable=TRUE)
   } else {
-    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), row.names=row.names, col.names=col.names, asTable=TRUE)
+    write.xlsx(as.data.frame.object, file=paste0(output.file.basename, ".xlsx"), rowNames=row.names, colNames=col.names, asTable=TRUE)
   }
 
   if ( !missing(id2name)) {
