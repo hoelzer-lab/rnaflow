@@ -133,8 +133,9 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
   }
 
   d <- data.frame(PC1=pca$x[,1], PC2=pca$x[,2], group=group, intgroup.df, name=col.labels)
-
-  ggplot(data=d, aes(x="PC1", y="PC2", colour="condition")) +
+  print("pca df is:")
+  print(d)
+  ggplot(data=d, aes(x=PC1, y=PC2, colour=condition)) +
     geom_point(size=3) + 
     xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
     ylab(paste0("PC2: ",round(percentVar[2] * 100),"% variance")) +
@@ -143,6 +144,7 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
 
   ggsave(file = paste0("PCA_simple_", trsf_type, "_top", ntop, ".pdf"), device = "pdf", path = out.dir)
   ggsave(file = paste0("PCA_simple_", trsf_type, "_top", ntop, ".svg"), device = "svg", path = out.dir)
+  print(paste0("PCA_simple_", trsf_type, "_top", ntop, ".pdf"))
 }
 
 plot.heatmap.most_var <- function(out.dir, dds, trsf_data, trsf_type, ntop, samples.info=df.samples.info, genes.info=df.gene.anno) {
