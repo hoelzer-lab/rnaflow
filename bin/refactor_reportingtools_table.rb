@@ -160,8 +160,6 @@ class RefactorReportingtoolsTable
           feature_id = feature_id.gsub('"','')
           feature_name = $id2name[feature_id]
           gene_biotype = $id2biotype[feature_id]
-          puts feature_id          
-          puts id2pos[feature_id][0]       
           pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
             if $exon_id_2_gene_id[feature_id]
