@@ -99,6 +99,8 @@ class RefactorReportingtoolsTable
       refactor_deseq_html_table(html_path)
     end
   end
+
+  puts $id2pos
   
   def add_plot_html_code(html_path, pvalue)
 
@@ -158,7 +160,8 @@ class RefactorReportingtoolsTable
           feature_id = feature_id.gsub('"','')
           feature_name = $id2name[feature_id]
           gene_biotype = $id2biotype[feature_id]
-          #puts feature_id          
+          puts feature_id          
+          puts id2pos[feature_id][0]       
           pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
             if $exon_id_2_gene_id[feature_id]
@@ -224,7 +227,9 @@ class RefactorReportingtoolsTable
     end
     f.close
 
-    if ens_id == "na"
+    # check if id is a valid ensembl id
+    if (ens_id == "na") || !(ens_id.include? "ENS")
+      puts "Stopping ensembl stable ID lookup because #{ens_id} is not a valid ensembl ID. Continuing without lookup."
       return ""
     end
 
@@ -242,7 +247,7 @@ class RefactorReportingtoolsTable
       response = http.request(request)
       
       if response.code != "200"
-        puts "Invalid response: #{response.code}"
+        puts "Invalid response from ensembl REST API: #{response.code}"
         puts response.body
         return ""
       end

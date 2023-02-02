@@ -133,8 +133,7 @@ plot.pca <- function(out.dir, col.labels, trsf_data, trsf_type, ntop) {
   }
 
   d <- data.frame(PC1=pca$x[,1], PC2=pca$x[,2], group=group, intgroup.df, name=col.labels)
-  print("pca df is:")
-  print(d)
+
   ggplot(data=d, aes(x=PC1, y=PC2, colour=condition)) +
     geom_point(size=3) + 
     xlab(paste0("PC1: ",round(percentVar[1] * 100),"% variance")) +
