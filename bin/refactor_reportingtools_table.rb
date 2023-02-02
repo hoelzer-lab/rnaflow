@@ -45,6 +45,8 @@ class RefactorReportingtoolsTable
 		$id2name = {}
     $id2biotype = {}
     $id2pos = {}
+    $gene_id2feature_id = {}
+
     gtf = File.open(anno,'r')
     gtf.each do |line|
       
@@ -59,7 +61,9 @@ class RefactorReportingtoolsTable
         feature_name = s[8].split('transcript_name')[1].split(';')[0].gsub('"','').strip
       end
 
-      feature_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+      gene_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+      feature_id = gene_id
+
       if feature_type == 'transcript' && line.include?('transcript_id')
         # update feature id to transcript_id
         feature_id = s[8].split('transcript_id')[1].split(';')[0].gsub('"','').strip
@@ -86,6 +90,8 @@ class RefactorReportingtoolsTable
       $id2name[feature_id] = feature_name
       $id2biotype[feature_id] = feature_biotype
       $id2pos[feature_id] = [chr, start, stop, strand]
+      $gene_id2feature_id[gene_id] = feature_id
+
     end
     gtf.close
     puts "read in #{$id2name.keys.size} genes."
@@ -152,13 +158,25 @@ class RefactorReportingtoolsTable
           if $scan_feature_id_pattern
             feature_id = row_splitted[0].scan(/#{$scan_feature_id_pattern}/)[0]
           else
+            # we dont have a feature id pattern, most likely we dont deal with ENS ids
             feature_id = row_splitted[0].split('"">')[1]
+
+            # try if id from the html report exists in our hashes (was in formatted gtf file)
+            if $id2name.key?(feature_id) and $id2biotype.key?(feature_id) and $id2pos.key?(feature_id)
+              next
+            # try to map the id from the html report (hopefully a gene id) to the actualy feature id
+            else
+              feature_id = $gene_id2feature_id[feature_id]
+            end
+
           end
+          
           next unless feature_id
           feature_id = feature_id.gsub('"','')
           feature_name = $id2name[feature_id]
           gene_biotype = $id2biotype[feature_id]
-          pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
+
+          pos_part = "<td class=\"\">#{$id2pos[feature_id][1]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
             if $exon_id_2_gene_id[feature_id]
               # in this case we write the exon gene ID but want to point to the ENSEMBL gene URL
