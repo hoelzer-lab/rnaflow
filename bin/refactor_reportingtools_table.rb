@@ -100,8 +100,6 @@ class RefactorReportingtoolsTable
     end
   end
 
-  puts $id2pos
-  
   def add_plot_html_code(html_path, pvalue)
 
     pvalue_label = 'full'
