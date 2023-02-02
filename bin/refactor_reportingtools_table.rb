@@ -170,13 +170,13 @@ class RefactorReportingtoolsTable
             end
 
           end
-          
+
           next unless feature_id
           feature_id = feature_id.gsub('"','')
           feature_name = $id2name[feature_id]
           gene_biotype = $id2biotype[feature_id]
 
-          pos_part = "<td class=\"\">#{$id2pos[feature_id][1]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
+          pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
             if $exon_id_2_gene_id[feature_id]
               # in this case we write the exon gene ID but want to point to the ENSEMBL gene URL
