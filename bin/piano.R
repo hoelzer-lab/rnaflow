@@ -30,7 +30,7 @@ try.biomart <- try(
     biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
   } else {
     biomart.ensembl <- NA
-    print('SKIPPING: BiomaRt. Species not accasible with BiomaRt.')
+    print('SKIPPING: BiomaRt. Species not accessible with BiomaRt.')
   }
 )
 if (class(try.biomart) == "try-error") {
