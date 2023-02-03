@@ -18,7 +18,7 @@ process piano {
     path("piano")
     
     script:
-    comparison = resFold05.toString().findAll("[a-zA-Z]*_vs_[a-zA-Z]*")[0]
+    comparison = resFold05.toString().split("deseq2_")[1].split("_filtered")[0]
 
     """
     R CMD BATCH --no-save --no-restore '--args c(".") c("${resFold05}") c("${species}") c("${id_type}") c("${task.cpus}")' ${piano_script}
