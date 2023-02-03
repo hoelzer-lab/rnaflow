@@ -45,6 +45,8 @@ class RefactorReportingtoolsTable
 		$id2name = {}
     $id2biotype = {}
     $id2pos = {}
+    $gene_id2feature_id = {}
+
     gtf = File.open(anno,'r')
     gtf.each do |line|
       
@@ -59,7 +61,9 @@ class RefactorReportingtoolsTable
         feature_name = s[8].split('transcript_name')[1].split(';')[0].gsub('"','').strip
       end
 
-      feature_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+      gene_id = s[8].split('gene_id')[1].split(';')[0].gsub('"','').strip
+      feature_id = gene_id
+
       if feature_type == 'transcript' && line.include?('transcript_id')
         # update feature id to transcript_id
         feature_id = s[8].split('transcript_id')[1].split(';')[0].gsub('"','').strip
@@ -86,6 +90,8 @@ class RefactorReportingtoolsTable
       $id2name[feature_id] = feature_name
       $id2biotype[feature_id] = feature_biotype
       $id2pos[feature_id] = [chr, start, stop, strand]
+      $gene_id2feature_id[gene_id] = feature_id
+
     end
     gtf.close
     puts "read in #{$id2name.keys.size} genes."
@@ -99,7 +105,7 @@ class RefactorReportingtoolsTable
       refactor_deseq_html_table(html_path)
     end
   end
-  
+
   def add_plot_html_code(html_path, pvalue)
 
     pvalue_label = 'full'
@@ -152,13 +158,24 @@ class RefactorReportingtoolsTable
           if $scan_feature_id_pattern
             feature_id = row_splitted[0].scan(/#{$scan_feature_id_pattern}/)[0]
           else
+            # we dont have a feature id pattern, most likely we dont deal with ENS ids
             feature_id = row_splitted[0].split('"">')[1]
+
+            # try if id from the html report exists in our hashes (was in formatted gtf file)
+            if $id2name.key?(feature_id) and $id2biotype.key?(feature_id) and $id2pos.key?(feature_id)
+              next
+            # try to map the id from the html report (hopefully a gene id) to the actualy feature id
+            else
+              feature_id = $gene_id2feature_id[feature_id]
+            end
+
           end
+
           next unless feature_id
           feature_id = feature_id.gsub('"','')
           feature_name = $id2name[feature_id]
           gene_biotype = $id2biotype[feature_id]
-          #puts feature_id          
+
           pos_part = "<td class=\"\">#{$id2pos[feature_id][0]}:#{$id2pos[feature_id][1]}-#{$id2pos[feature_id][2]} (#{$id2pos[feature_id][3]})"
           if $ensembl_url
             if $exon_id_2_gene_id[feature_id]
@@ -224,7 +241,9 @@ class RefactorReportingtoolsTable
     end
     f.close
 
-    if ens_id == "na"
+    # check if id is a valid ensembl id
+    if (ens_id == "na") || !(ens_id.include? "ENS")
+      puts "Stopping ensembl stable ID lookup because #{ens_id} is not a valid ensembl ID. Continuing without lookup."
       return ""
     end
 
@@ -242,7 +261,7 @@ class RefactorReportingtoolsTable
       response = http.request(request)
       
       if response.code != "200"
-        puts "Invalid response: #{response.code}"
+        puts "Invalid response from ensembl REST API: #{response.code}"
         puts response.body
         return ""
       end

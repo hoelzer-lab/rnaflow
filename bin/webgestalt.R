@@ -41,4 +41,6 @@ if (! is.na(organism)) {
     } else {
         print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
     }
+} else {
+    print("Unknown organism, only organisms 'hsapiens' and 'mmusculus' are supported by default. Exiting.")
 }
