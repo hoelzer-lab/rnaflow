@@ -480,7 +480,7 @@ workflow download_sortmerna {
         if (!params.cloudProcess) { sortmernaGet(); sortmerna = sortmernaGet.out }
         // cloud storage file.exists()?
         if (params.cloudProcess) {
-            sortmerna_preload = file("${params.permanentCacheDir}/databases/sortmerna/data/rRNA_databases")
+            sortmerna_preload = file("${params.permanentCacheDir}/databases/sortmerna/rRNA_databases.tar.gz")
             if (sortmerna_preload.exists()) { sortmerna = sortmerna_preload }
             else { sortmernaGet(); sortmerna = sortmernaGet.out } 
         }
