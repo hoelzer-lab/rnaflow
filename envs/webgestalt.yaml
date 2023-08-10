@@ -1,0 +1,8 @@
+name: webgestalt
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-webgestaltr=0.4.6

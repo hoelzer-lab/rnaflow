@@ -1,5 +1,5 @@
 process webgestalt {
-    label 'deseq2'
+    label 'webgestalt'
     tag "$comparison"
 
     publishDir "${params.output}/${params.deseq2_dir}/${comparison}/downstream_analysis", mode: 'copy', pattern: "WebGestalt"
