@@ -44,6 +44,3 @@ if (! is.na(organism)) {
 } else {
     print("Unknown organism, only organisms 'hsapiens' and 'mmusculus' are supported by default. Exiting.")
 }
-
-sessionInfo()
-print(Sys.getenv(c("R_ZIPCMD")))
