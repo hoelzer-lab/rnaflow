@@ -6,3 +6,4 @@ channels:
 dependencies:
   - r-base
   - r-webgestaltr=0.4.6
+  - zip==3.0
