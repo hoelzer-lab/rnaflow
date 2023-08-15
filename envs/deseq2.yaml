@@ -22,7 +22,6 @@ dependencies:
   - r-openxlsx=4.2.5
   - r-doparallel=1.0.17
   - r-foreach=1.5.2
-  - r-webgestaltr=0.4.4
   - r-upsetr=1.4.0
   - r-sessioninfo=1.2.2
   - r-knitcitations=1.0.12
