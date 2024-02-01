@@ -27,6 +27,16 @@ process referenceGet {
       gunzip -f Mus_musculus.GRCm38.dna.primary_assembly.fa.gz
       mv Mus_musculus.GRCm38.dna.primary_assembly.fa ${species}.fa
       """
+    else if (species == 'ssc')
+      """
+      # Primary assembly contains all toplevel sequence regions excluding haplotypes and patches. 
+      # This file is best used for performing sequence similarity searches where patch and haplotype 
+      # sequences would confuse analysis. If the primary assembly file is not present, that 
+      # indicates that there are no haplotype/patch regions, and the 'toplevel' file is equivalent.
+      wget ftp://ftp.ensembl.org/pub/release-111/fasta/sus_scrofa/dna/Sus_scrofa.Sscrofa11.1.dna.toplevel.fa.gz
+      gunzip -f Sus_scrofa.Sscrofa11.1.dna.toplevel.fa.gz
+      mv Sus_scrofa.Sscrofa11.1.dna.toplevel.fa ${species}.fa
+      """
     else if (species == 'eco')
       """
       wget ftp://ftp.ensemblgenomes.org/pub/release-45/bacteria//fasta/bacteria_90_collection/escherichia_coli_k_12/dna/Escherichia_coli_k_12.ASM80076v1.dna.toplevel.fa.gz

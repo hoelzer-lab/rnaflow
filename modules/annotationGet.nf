@@ -27,6 +27,12 @@ process annotationGet {
       gunzip -f Mus_musculus.GRCm38.99.gtf.gz
       mv Mus_musculus.GRCm38.99.gtf ${species}.gtf
       """
+    else if (species == 'ssc')
+      """
+      wget ftp://ftp.ensembl.org/pub/release-111/gtf/sus_scrofa/Sus_scrofa.Sscrofa11.1.111.gtf.gz
+      gunzip -f Sus_scrofa.Sscrofa11.1.111.gtf.gz
+      mv Sus_scrofa.Sscrofa11.1.111.gtf.gz ${species}.gtf
+      """
     else if (species == 'eco')
       """
       wget ftp://ftp.ensemblgenomes.org/pub/release-45/bacteria//gtf/bacteria_90_collection/escherichia_coli_k_12/Escherichia_coli_k_12.ASM80076v1.45.gtf.gz

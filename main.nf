@@ -85,8 +85,8 @@ if (params.nanopore) {
 }
 
 
-Set species = ['hsa', 'eco', 'mmu', 'mau']
-Set autodownload = ['hsa', 'eco', 'mmu', 'mau']
+Set species = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
+Set autodownload = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
 Set pathway = ['hsa', 'mmu', 'mau']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
@@ -924,6 +924,7 @@ def helpMSG() {
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                         - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                        - ssc [Ensembl: Sus_scrofa.Sscrofa11.1.dna.toplevel | Sus_scrofa.Sscrofa11.1.111 ]
                                         - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]${c_reset}
     ${c_dim}--species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
                              If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: $params.species]

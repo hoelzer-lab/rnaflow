@@ -194,7 +194,7 @@ nextflow pull hoelzer-lab/rnaflow -r <RELEASE>
 nextflow run hoelzer-lab/rnaflow --reads input.csv --autodownload hsa --pathway hsa --max_cores 6 --cores 2
 ```
 
-with `--autodownload <hsa|mmu|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
+with `--autodownload <hsa|mmu|ssc|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run hoelzer-lab/rnaflow --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
@@ -258,10 +258,11 @@ You can add a [build-in species](#build-in-species) to your defined genomes and 
 
 We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--autodownload xxx`. Please let us know, we can easily add other species.
 
-| Species      | three-letter shortcut | Genome                              | Annotation                                    |
+| Species      | three-letter shortcut | Annotation                              | Genome                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
 | Homo sapiens | `hsa` <sup>*</sup>               | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
 | Mus musculus | `mmu` <sup>*</sup>               | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
+| Sus scrofa   | `ssc` <sup>*</sup>               | Sus_scrofa.Sscrofa11.1.111              | Sus_scrofa.Sscrofa11.1.dna.toplevel      |
 | Mesocricetus auratus | `mau` <sup>*</sup>               | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
 | Escherichia coli | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
 
@@ -518,6 +519,7 @@ Input:
                                     - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                     - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                     - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                    - ssc [Ensembl: Sus_scrofa.Sscrofa11.1.dna.toplevel | Sus_scrofa.Sscrofa11.1.111 ]
                                     - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
 --species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
                          If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: ]
