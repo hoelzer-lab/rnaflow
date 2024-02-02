@@ -31,7 +31,7 @@ process annotationGet {
       """
       wget ftp://ftp.ensembl.org/pub/release-111/gtf/sus_scrofa/Sus_scrofa.Sscrofa11.1.111.gtf.gz
       gunzip -f Sus_scrofa.Sscrofa11.1.111.gtf.gz
-      mv Sus_scrofa.Sscrofa11.1.111.gtf.gz ${species}.gtf
+      mv Sus_scrofa.Sscrofa11.1.111.gtf ${species}.gtf
       """
     else if (species == 'eco')
       """
