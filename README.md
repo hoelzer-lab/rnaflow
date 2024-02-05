@@ -204,7 +204,7 @@ Genomes and annotations from `--autodownload`, `--genome` and `--annotation` are
 
 By default, all possible comparisons are performed. Use `--deg` to change this.
 
-`--pathway <hsa|mmu|mau|ssc>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa` and `mmu`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu`, `mau`, and `ssc`.
+`--pathway <hsa|mmu|mau|ssc>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, `mmu` and `ssc`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu`, `mau`, and `ssc`.
 
 ### Input files
 
@@ -469,7 +469,7 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g., the log2FoldChange describes the change of a gene A under condition Y with respect to the gene under condition X. For example, a log2FoldChange of +2 for gene A would tell you that this gene is 2-fold upregulated when we compare condition X vs. condition Y. The gene A is higher expressed in samples belonging to condition X.
 
-Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`), *Mesocricetus auratus* (`mau`), and *Sus scofa* (`ssc`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`), *Mesocricetus auratus* (`mau`), and *Sus scofa* (`ssc`); and `WebGestalt` GSEA for *Homo sapiens*, *Mus musculus*, and *Sus scrofa*.
 
 ## Working offline
 
