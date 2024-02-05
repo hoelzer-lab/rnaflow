@@ -18,6 +18,8 @@ if ( species == 'hsa' ){
 organism <- "hsapiens"
 } else if (species == 'mmu') {
 organism <- "mmusculus"
+} else if (species == 'ssc') {
+organism <- "sscrofa"
 } else {
 organism <- NA
 }

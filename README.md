@@ -204,7 +204,7 @@ Genomes and annotations from `--autodownload`, `--genome` and `--annotation` are
 
 By default, all possible comparisons are performed. Use `--deg` to change this.
 
-`--pathway <hsa|mmu|mau>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
+`--pathway <hsa|mmu|mau|ssc>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa` and `mmu`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu`, `mau`, and `ssc`.
 
 ### Input files
 
@@ -314,7 +314,7 @@ Nextflow will need access to the working directory where temporary calculations 
 --strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
 --tpm                           # threshold for TPM (transcripts per million) filter [default 1]
 --deg                           # a CSV file following the pattern: conditionX,conditionY
---pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau
+--pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau|ssc
 --feature_id_type               # ID type for downstream analysis [default: ensembl_gene_id]
 ```
 
@@ -469,7 +469,7 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g., the log2FoldChange describes the change of a gene A under condition Y with respect to the gene under condition X. For example, a log2FoldChange of +2 for gene A would tell you that this gene is 2-fold upregulated when we compare condition X vs. condition Y. The gene A is higher expressed in samples belonging to condition X.
 
-Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`) and *Mesocricetus auratus* (`mau`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`), *Mesocricetus auratus* (`mau`), and *Sus scofa* (`ssc`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
 
 ## Working offline
 
@@ -554,6 +554,7 @@ DEG analysis options:
                              - hsa | Homo sapiens
                              - mmu | Mus musculus
                              - mau | Mesocricetus auratus
+                             - ssc | Sus scrofa
 --feature_id_type        ID type for downstream analysis [default: ensembl_gene_id]                            
 
 Transcriptome assembly options:

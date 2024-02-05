@@ -87,7 +87,7 @@ if (params.nanopore) {
 
 Set species = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
 Set autodownload = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
-Set pathway = ['hsa', 'mmu', 'mau']
+Set pathway = ['hsa', 'mmu', 'mau', 'ssc']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 
@@ -961,6 +961,7 @@ def helpMSG() {
                              ${c_dim}Currently supported are:
                                  - hsa | Homo sapiens
                                  - mmu | Mus musculus
+                                 - ssc | Sus scrofa
                                  - mau | Mesocricetus auratus${c_reset}
     --feature_id_type        ID type for downstream analysis [default: $params.feature_id_type]
 
