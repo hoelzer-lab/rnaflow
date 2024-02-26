@@ -26,6 +26,8 @@ try.biomart <- try(
     biomart.ensembl <- useMart('ensembl', dataset='mmusculus_gene_ensembl')
   } else if (species == 'hsa') {
     biomart.ensembl <- useMart('ensembl', dataset='hsapiens_gene_ensembl')
+  } else if (species == 'ssc') {
+    biomart.ensembl <- useMart('ensembl', dataset='sscrofa_gene_ensembl')
   } else if (species == 'mau') {
     biomart.ensembl <- useMart('ensembl', dataset='mauratus_gene_ensembl')
   } else {

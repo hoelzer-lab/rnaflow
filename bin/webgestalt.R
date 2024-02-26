@@ -18,6 +18,8 @@ if ( species == 'hsa' ){
 organism <- "hsapiens"
 } else if (species == 'mmu') {
 organism <- "mmusculus"
+} else if (species == 'ssc') {
+organism <- "sscrofa"
 } else {
 organism <- NA
 }
@@ -42,5 +44,5 @@ if (! is.na(organism)) {
         print(paste('SKIPPING: WebGestaltR. Feature ID', id_type, 'not supported.'))
     }
 } else {
-    print("Unknown organism, only organisms 'hsapiens' and 'mmusculus' are supported by default. Exiting.")
+    print("Unknown organism, only organisms 'hsapiens', 'mmusculus', and 'sscrofa' are supported by default. Exiting.")
 }

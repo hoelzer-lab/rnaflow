@@ -85,9 +85,9 @@ if (params.nanopore) {
 }
 
 
-Set species = ['hsa', 'eco', 'mmu', 'mau']
-Set autodownload = ['hsa', 'eco', 'mmu', 'mau']
-Set pathway = ['hsa', 'mmu', 'mau']
+Set species = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
+Set autodownload = ['hsa', 'eco', 'mmu', 'mau', 'ssc']
+Set pathway = ['hsa', 'mmu', 'mau', 'ssc']
 
 if ( params.profile ) { exit 1, "--profile is WRONG use -profile" }
 
@@ -916,7 +916,7 @@ def helpMSG() {
     ${c_dim}Genomes and annotations from --autodownload, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
-    ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+    ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R1,R2,Condition,Source,Strandedness (for single-end leave 'R2' column empty)
                                         ${c_dim}(check terminal output if correctly assigned)
                                         Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.${c_reset}
     ${c_green}--autodownload${c_reset}           Specifies the species identifier for automated download [default: $params.autodownload]
@@ -924,6 +924,7 @@ def helpMSG() {
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                         - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                         - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                        - ssc [Ensembl: Sus_scrofa.Sscrofa11.1.dna.toplevel | Sus_scrofa.Sscrofa11.1.111 ]
                                         - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]${c_reset}
     ${c_dim}--species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
                              If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: $params.species]
@@ -960,6 +961,7 @@ def helpMSG() {
                              ${c_dim}Currently supported are:
                                  - hsa | Homo sapiens
                                  - mmu | Mus musculus
+                                 - ssc | Sus scrofa
                                  - mau | Mesocricetus auratus${c_reset}
     --feature_id_type        ID type for downstream analysis [default: $params.feature_id_type]
 

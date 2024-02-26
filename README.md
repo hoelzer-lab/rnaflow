@@ -194,7 +194,7 @@ nextflow pull hoelzer-lab/rnaflow -r <RELEASE>
 nextflow run hoelzer-lab/rnaflow --reads input.csv --autodownload hsa --pathway hsa --max_cores 6 --cores 2
 ```
 
-with `--autodownload <hsa|mmu|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
+with `--autodownload <hsa|mmu|ssc|mau|eco>` [build-in species](#build-in-species), or define your own genome reference and annotation files in CSV files:
 
 ```bash
 nextflow run hoelzer-lab/rnaflow --reads input.csv --genome fastas.csv --annotation gtfs.csv --max_cores 6 --cores 2
@@ -204,13 +204,13 @@ Genomes and annotations from `--autodownload`, `--genome` and `--annotation` are
 
 By default, all possible comparisons are performed. Use `--deg` to change this.
 
-`--pathway <hsa|mmu|mau>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu` and `mau`.
+`--pathway <hsa|mmu|mau|ssc>` performs downstream pathway analysis. Available are WebGestalt set enrichment analysis (GSEA) for `hsa`, `mmu` and `ssc`, piano GSEA with different settings and consensus scoring for `hsa`, `mmu`, `mau`, and `ssc`.
 
 ### Input files
 
 #### Read files (required)
 
-Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads (just leave R2 empty):
+Specify your read files in `FASTQ` format with `--reads input.csv`. The file `input.csv` has to look like this for single-end reads:
 
 ```csv
 Sample,R1,R2,Condition,Source,Strandedness
@@ -258,10 +258,11 @@ You can add a [build-in species](#build-in-species) to your defined genomes and 
 
 We provide a small set of build-in species for which the genome and annotation files are automatically downloaded from [Ensembl](https://www.ensembl.org/index.html) with `--autodownload xxx`. Please let us know, we can easily add other species.
 
-| Species      | three-letter shortcut | Genome                              | Annotation                                    |
+| Species      | three-letter shortcut | Annotation                              | Genome                                    |
 | ------------ | --------------------- | ----------------------------------- | --------------------------------------------- |
 | Homo sapiens | `hsa` <sup>*</sup>               | Homo_sapiens.GRCh38.98              | Homo_sapiens.GRCh38.dna.primary_assembly      |
 | Mus musculus | `mmu` <sup>*</sup>               | Mus_musculus.GRCm38.99              | Mus_musculus.GRCm38.dna.primary_assembly      |
+| Sus scrofa   | `ssc` <sup>*</sup>               | Sus_scrofa.Sscrofa11.1.111              | Sus_scrofa.Sscrofa11.1.dna.toplevel      |
 | Mesocricetus auratus | `mau` <sup>*</sup>               | Mesocricetus_auratus.MesAur1.0.100  | Mesocricetus_auratus.MesAur1.0.dna.toplevel   |
 | Escherichia coli | `eco`                 | Escherichia_coli_k_12.ASM80076v1.45 | Escherichia_coli_k_12.ASM80076v1.dna.toplevel |
 
@@ -313,7 +314,7 @@ Nextflow will need access to the working directory where temporary calculations 
 --strand                        # strandness for counting with featureCounts: 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default 0]
 --tpm                           # threshold for TPM (transcripts per million) filter [default 1]
 --deg                           # a CSV file following the pattern: conditionX,conditionY
---pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau
+--pathway                       # perform different downstream pathway analysis for the species hsa|mmu|mau|ssc
 --feature_id_type               # ID type for downstream analysis [default: ensembl_gene_id]
 ```
 
@@ -468,7 +469,7 @@ We provide `DESeq2` normalized, regularized log (rlog), variance stabilized (vsd
 
 For each comparison (specified with `--deg` or, per default, all possible pairwise comparisons in one direction), a new folder `X_vs_Y` is created. This also describes the direction of the comparison, e.g., the log2FoldChange describes the change of a gene A under condition Y with respect to the gene under condition X. For example, a log2FoldChange of +2 for gene A would tell you that this gene is 2-fold upregulated when we compare condition X vs. condition Y. The gene A is higher expressed in samples belonging to condition X.
 
-Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`) and *Mesocricetus auratus* (`mau`); and `WebGestalt` GSEA for *Homo sapiens* and *Mus musculus*.
+Downstream analysis (`--pathway xxx`) are currently provided for some species: GSEA consensus scoring with `piano` for *Homo sapiens* (`hsa`), *Mus musculus* (`mmu`), *Mesocricetus auratus* (`mau`), and *Sus scofa* (`ssc`); and `WebGestalt` GSEA for *Homo sapiens*, *Mus musculus*, and *Sus scrofa*.
 
 ## Working offline
 
@@ -518,6 +519,7 @@ Input:
                                     - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
                                     - eco [Ensembl: Escherichia_coli_k_12.ASM80076v1.dna.toplevel | Escherichia_coli_k_12.ASM80076v1.45]
                                     - mmu [Ensembl: Mus_musculus.GRCm38.dna.primary_assembly | Mus_musculus.GRCm38.99.gtf]
+                                    - ssc [Ensembl: Sus_scrofa.Sscrofa11.1.dna.toplevel | Sus_scrofa.Sscrofa11.1.111 ]
                                     - mau [Ensembl: Mesocricetus_auratus.MesAur1.0.dna.toplevel | Mesocricetus_auratus.MesAur1.0.100]
 --species                Specifies the species identifier for downstream path analysis. (DEPRECATED)
                          If `--include_species` is set, reference genome and annotation are added and automatically downloaded. [default: ]
@@ -552,6 +554,7 @@ DEG analysis options:
                              - hsa | Homo sapiens
                              - mmu | Mus musculus
                              - mau | Mesocricetus auratus
+                             - ssc | Sus scrofa
 --feature_id_type        ID type for downstream analysis [default: ensembl_gene_id]                            
 
 Transcriptome assembly options:
