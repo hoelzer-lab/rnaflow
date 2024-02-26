@@ -916,7 +916,7 @@ def helpMSG() {
     ${c_dim}Genomes and annotations from --autodownload, --genome and --annotation are concatenated.${c_reset}
 
     ${c_yellow}Input:${c_reset}
-    ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R,Condition,Source for single-end or Sample,R1,R2,Condition,Source for paired-end
+    ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R1,R2,Condition,Source,Strandedness (for single-end leave 'R2' column empty)
                                         ${c_dim}(check terminal output if correctly assigned)
                                         Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.${c_reset}
     ${c_green}--autodownload${c_reset}           Specifies the species identifier for automated download [default: $params.autodownload]
