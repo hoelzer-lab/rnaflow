@@ -660,6 +660,47 @@ Tip: when you have fixed the problem you can continue the execution adding the o
 - Skip `SortMeRNA` with `--skip_sortmerna`
 - Reads can be cleand beforhand e.g. with [CLEAN](https://github.com/hoelzer/clean)
 
+#### Description
+
+The pipeline fails with something like 
+ 
+<details><summary>this</summary>
+
+```
+ERROR ~ Error executing process > 'preprocess_illumina:hisat2 (mock_rep3)'
+
+Caused by:
+  Missing output file(s) `mock_rep3_summary.log` expected by process `preprocess_illumina:hisat2 (mock_rep3)`
+
+
+Command executed:
+
+  hisat2 -x reference -U mock_rep3.other.fastq.gz -p 24 --new-summary --summary-file mock_rep3_summary.log  | samtools view -bS | samtools sort -o mock_rep3.sorted.bam -T tmp --threads 24
+
+Command exit status:
+  0
+
+Command output:
+  (empty)
+
+Command error:
+  (ERR): mkfifo(/tmp/42.unp) failed.
+  Exiting now ...
+```
+</details>
+
+* this is very likely because of `HISAT2` creating tmp directories with the same name (https://github.com/DaehwanKimLab/hisat2/issues/438)
+* causing trouble when executing `HISAT2` processes in parallel
+* to avoid this, a `--temp-directory` parameter was added to `HISAT2` but only in a non-release version of the tool
+* we might fix this in future versions of the pipeline by using an `HISAT2` container without a proper release number but a git tag or so
+* however, then this will still be a potential problem when using the conda profile where we rely on released tool versions on bioconda
+
+#### Workaround
+
+* if you encounter that problem, try running the pipeline **without** parallel executions
+* use the `local` profile instead of a cluster profile such as `slurm`
+* specify something like `--max_cores 24 --cores 24` to prevent parallel executions
+
 ### Latency problems on HPCs, issue ([#79](https://github.com/hoelzer-lab/rnaflow/issues/79))
 
 #### Description
