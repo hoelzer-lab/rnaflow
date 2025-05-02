@@ -40,9 +40,7 @@ process hisat2 {
     """
     export TMPDIR=tmp-hisat2
     mkdir -p \$TMPDIR 
-    #hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
-    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} -S tmp.sam
-    samtools view -bS tmp.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
     rm -rf \$TMPDIR
     """
     }
