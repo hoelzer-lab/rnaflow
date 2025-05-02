@@ -23,8 +23,6 @@ process hisat2 {
     label 'hisat2'
     tag "$meta.sample"
 
-    scratch true
-
     if ( params.softlink_results ) { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
     else { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
 
@@ -42,7 +40,9 @@ process hisat2 {
     """
     export TMPDIR=tmp-hisat2
     mkdir -p \$TMPDIR 
-    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+    #hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+    hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} -S tmp.sam
+    samtools view -bS tmp.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
     rm -rf \$TMPDIR
     """
     }
