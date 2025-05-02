@@ -39,18 +39,12 @@ process hisat2 {
     script:
     if ( !meta.paired_end ) {
     """
-    export TMPDIR=tmp-hisat2
-    mkdir -p \$TMPDIR 
     hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
-    rm -rf \$TMPDIR
     """
     }
     else {
     """
-    export TMPDIR=tmp-hisat2
-    mkdir -p \$TMPDIR 
     hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} | samtools view -bS | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
-    rm -rf \$TMPDIR
     """
     } 
 }
