@@ -24,7 +24,7 @@ process hisat2 {
     tag "$meta.sample"
 
 	if (workflow.profile.contains('slurm')) {
-	    clusterOptions = '--gres=local:100'
+	    clusterOptions = '--gres=local:500'
 	}
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
