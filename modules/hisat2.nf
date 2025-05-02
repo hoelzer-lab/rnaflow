@@ -23,9 +23,9 @@ process hisat2 {
     label 'hisat2'
     tag "$meta.sample"
 
-	if (workflow.profile.contains('slurm')) {
-	    clusterOptions = '--gres=local:500'
-	}
+    // might fail on SLURM bc HISAT2 uses the same names for /tmp directories
+    // https://github.com/DaehwanKimLab/hisat2/issues/438
+    // can be changed via a new --temp-directory parameter but which is only in the master branch and not in a release... -.-
 
     if ( params.softlink_results ) { publishDir "${params.output}/${params.hisat2_dir}", pattern: "*.sorted.bam" }
     else { publishDir "${params.output}/${params.hisat2_dir}", mode: 'copy', pattern: "*.sorted.bam" }
