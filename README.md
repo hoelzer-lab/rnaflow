@@ -693,6 +693,7 @@ Command error:
 * causing trouble when executing `HISAT2` processes in parallel
 * to avoid this, a `--temp-directory` parameter was added to `HISAT2` but only in a non-release version of the tool
 * we might fix this in future versions of the pipeline by using an `HISAT2` container without a proper release number but a git tag or so
+* however, then this will still be a potential problem when using the conda profile where we rely on released tool versions on bioconda
 
 #### Workaround
 
