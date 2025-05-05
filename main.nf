@@ -146,7 +146,7 @@ if (params.reads) {
                 meta.source = row['Source']
                 meta.paired_end = paired_end
                 // set strand in order of definition: CSV, CL, default ( = 0 )
-                meta.strandedness = params.strand ? params.strand : ( row['Strandedness'] ? row['Strandedness'] : '0' )
+                meta.strandedness = params.strand.toString().length() > 0 ? params.strand : ( row['Strandedness'].length() > 0 ? row['Strandedness'] : '0' )
             return meta.paired_end ? [ meta, [ read1, read2 ] ] : [ meta, [ read1 ] ]
         }
         .tap { annotated_reads }
@@ -168,13 +168,19 @@ if (!params.setup) {
     File csvFile = new File(params.reads)
     csvFile.eachLine { line ->
         def row = line.split(",")
-        param_strand = params.strand ? params.strand.toString() : ( row.size() > 4 ? row[5] : '0' )//row[5] ? row[5] : params.strand
+        param_strand = params.strand.toString().length() > 0 ? params.strand.toString() : ( row.size() > 4 ? row[5] : '0' ) // row[5] ? row[5] : params.strand
+        param_strand = param_strand.toString()
         param_read_mode = row[2] ? "paired-end" : "single-end"
         strand_csv = row.size() > 4 ? row[5] : ''
     }
     // print warning if strand def in CSV differs from CL definition
-    if ( strand_csv && params.strand && strand_csv != params.strand ) { println "\033[0;33mWARNING: Strandedness definition in input CSV (" + strand_csv + ") differs from definition via --strand (" + params.strand + "). Using definition from --strand parameter.\033[0m\n" }
-    if ( param_strand == "0" ) { param_strand = "unstranded" }else if ( param_strand == "1" ) { param_strand = "stranded" }else if( param_strand == "2" ){ param_strand = "reversly stranded" }else{exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
+    if ( strand_csv.toString() && params.strand.toString() && strand_csv.toString() != params.strand.toString() ) { 
+        println "\033[0;33mWARNING: Strandedness definition in input CSV (" + strand_csv + ") differs from definition via --strand (" + params.strand + "). Using definition from --strand parameter.\033[0m\n"
+    }
+    if ( param_strand == "0" ) { param_strand = "unstranded" }
+    else if ( param_strand == "1" ) { param_strand = "stranded" }
+    else if( param_strand == "2" ){ param_strand = "reversly stranded" }
+    else {exit 1, "Could not detect strandedness of input file. Invalid strandedness parameter ${param_strand}."}
 }
 
 log.info """\
@@ -918,7 +924,8 @@ def helpMSG() {
     ${c_yellow}Input:${c_reset}
     ${c_green}--reads${c_reset}                  A CSV file following the pattern: Sample,R1,R2,Condition,Source,Strandedness (for single-end leave 'R2' column empty)
                                         ${c_dim}(check terminal output if correctly assigned)
-                                        Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.${c_reset}
+                                        Per default, all possible comparisons of conditions in one direction are made. Use --deg to change.
+                                        The Strandedness information is overwritten when the --strand parameter (see below) is used.${c_reset}
     ${c_green}--autodownload${c_reset}           Specifies the species identifier for automated download [default: $params.autodownload]
                                         ${c_dim}Currently supported are:
                                         - hsa [Ensembl: Homo_sapiens.GRCh38.dna.primary_assembly | Homo_sapiens.GRCh38.98]
@@ -950,7 +957,7 @@ def helpMSG() {
     --nanopore                         Activate Nanopore long-read mode (default is Illumina data) [default: $params.nanopore]  
 
     ${c_yellow}DEG analysis options:${c_reset}
-    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: $params.strand]
+    --strand                 0 (unstranded), 1 (stranded) and 2 (reversely stranded) [default: 0]
                              This will overwrite the optional strandedness defined in the input CSV file.
     --tpm                    Threshold for TPM (transcripts per million) filter. A feature is discared, if for all conditions the mean TPM value of all 
                              corresponding samples in this condition is below the threshold. [default: $params.tpm]
@@ -985,7 +992,7 @@ def helpMSG() {
     --singularityCacheDir    Location for storing the singularity images [default: $params.singularityCacheDir]
     ${c_dim}--workdir                Working directory for all intermediate results [default: $params.workdir] (DEPRECATED: use `-w your/workdir` instead)${c_reset}
     --softlink_results       Softlink result files instead of copying.
-    --setup                  Download all necessary DB, reference and image files without running the pipeline. [default: $params.setup]
+    --setup                  Download all necessary DBs, reference files, and image files without running the pipeline. [default: $params.setup]
 
 
     ${c_dim}Nextflow options:
