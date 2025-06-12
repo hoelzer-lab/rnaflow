@@ -9,16 +9,15 @@ process sortmernaGet {
     else { storeDir "${params.permanentCacheDir}/databases/sortmerna/" }  
 
     output:
-    path("rRNA_databases.tar.gz")
+    path("database.tar.gz")
 
     script:
     """
-    git clone https://github.com/biocore/sortmerna.git
-    indexdb_rna --ref ./sortmerna/data/rRNA_databases/silva-bac-16s-id90.fasta,./sortmerna/data/rRNA_databases/silva-bac-16s-id90:./sortmerna/data/rRNA_databases/silva-bac-23s-id98.fasta,./sortmerna/data/rRNA_databases/silva-bac-23s-id98:./sortmerna/data/rRNA_databases/silva-arc-16s-id95.fasta,./sortmerna/data/rRNA_databases/silva-arc-16s-id95:./sortmerna/data/rRNA_databases/silva-arc-23s-id98.fasta,./sortmerna/data/rRNA_databases/silva-arc-23s-id98:./sortmerna/data/rRNA_databases/silva-euk-18s-id95.fasta,./sortmerna/data/rRNA_databases/silva-euk-18s-id95:./sortmerna/data/rRNA_databases/silva-euk-28s-id98.fasta,./sortmerna/data/rRNA_databases/silva-euk-28s-id98:./sortmerna/data/rRNA_databases/rfam-5s-database-id98.fasta,./sortmerna/data/rRNA_databases/rfam-5s-database-id98:./sortmerna/data/rRNA_databases/rfam-5.8s-database-id98.fasta,./sortmerna/data/rRNA_databases/rfam-5.8s-database-id98 -v
-    mv sortmerna/data/rRNA_databases . 
-    tar zcvf rRNA_databases.tar.gz rRNA_databases
-    rm -r rRNA_databases
-    rm -r sortmerna
+	# Database Files (sorted by type and how fast they are)
+	# smr_v4.3_fast_db.fasta / smr_v4.3_default_db.fasta
+	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
+
+        wget https://github.com/biocore/sortmerna/releases/download/v4.3.4/database.tar.gz
     """
     }
 
