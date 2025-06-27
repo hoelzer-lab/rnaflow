@@ -25,15 +25,27 @@ process sortmerna {
     assert "$reads".split('.gz').size() == 1 : "suffix should be .gz"
     uncompr_reads = "$reads".split('.gz')[0]
     """
-    unpigz -f -p ${task.cpus} ${reads[0]}
-    sortmerna --ref ./rRNA_databases/silva-bac-16s-id90.fasta,./rRNA_databases/silva-bac-16s-id90:./rRNA_databases/silva-bac-23s-id98.fasta,./rRNA_databases/silva-bac-23s-id98:./rRNA_databases/silva-arc-16s-id95.fasta,./rRNA_databases/silva-arc-16s-id95:./rRNA_databases/silva-arc-23s-id98.fasta,./rRNA_databases/silva-arc-23s-id98:./rRNA_databases/silva-euk-18s-id95.fasta,./rRNA_databases/silva-euk-18s-id95:./rRNA_databases/silva-euk-28s-id98.fasta,./rRNA_databases/silva-euk-28s-id98:./rRNA_databases/rfam-5s-database-id98.fasta,./rRNA_databases/rfam-5s-database-id98:./rRNA_databases/rfam-5.8s-database-id98.fasta,./rRNA_databases/rfam-5.8s-database-id98 \
-    --reads ${uncompr_reads} \
-    --aligned ${meta.sample}.aligned \
-    --other ${meta.sample}.other \
-    --fastx --log --num_alignments 1 -v \
-    -a ${task.cpus}
-    pigz -p ${task.cpus} ${meta.sample}.other.fastq
-    rm ${meta.sample}.aligned.fastq ${uncompr_reads}
+	unpigz -f -p ${task.cpus} ${reads[0]}
+	tar -zxvf ${db}
+
+	# Database Options (sorted by type and how fast they are)
+	# smr_v4.3_fast_db.fasta / smr_v4.3_default_db.fasta
+	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
+	
+	sortmerna --ref smr_v4.3_default_db.fasta \
+	    --reads ${uncompr_reads} \
+	    --aligned ${meta.sample}.aligned --other ${meta.sample}.other \
+	    --fastx \
+            --num_alignments 1 \
+	    -threads ${task.cpus}
+
+	pigz -p ${task.cpus} ${meta.sample}.other.fq
+
+	# Name aligment to a previous schema
+	mv ${meta.sample}.other.fq.gz ${meta.sample}.other.fastq.gz
+
+	# Cleanup
+	rm ${meta.sample}.aligned.fq ${uncompr_reads} *fasta #dbs
     """
     }
     else {
@@ -44,19 +56,30 @@ process sortmerna {
     uncompr_reads_R1 = split_R1[0]
     uncompr_reads_R2 = split_R2[0]
     """
-    unpigz -f -p ${task.cpus} ${reads[0]}
-    unpigz -f -p ${task.cpus} ${reads[1]}
-    merge-paired-reads.sh ${uncompr_reads_R1} ${uncompr_reads_R2} ${meta.sample}.merged.fastq
-    sortmerna --ref ./rRNA_databases/silva-bac-16s-id90.fasta,./rRNA_databases/silva-bac-16s-id90:./rRNA_databases/silva-bac-23s-id98.fasta,./rRNA_databases/silva-bac-23s-id98:./rRNA_databases/silva-arc-16s-id95.fasta,./rRNA_databases/silva-arc-16s-id95:./rRNA_databases/silva-arc-23s-id98.fasta,./rRNA_databases/silva-arc-23s-id98:./rRNA_databases/silva-euk-18s-id95.fasta,./rRNA_databases/silva-euk-18s-id95:./rRNA_databases/silva-euk-28s-id98.fasta,./rRNA_databases/silva-euk-28s-id98:./rRNA_databases/rfam-5s-database-id98.fasta,./rRNA_databases/rfam-5s-database-id98:./rRNA_databases/rfam-5.8s-database-id98.fasta,./rRNA_databases/rfam-5.8s-database-id98 \
-    --reads ${meta.sample}.merged.fastq \
-    --paired_in --aligned ${meta.sample}.aligned \
-    --other ${meta.sample}.other_merged \
-    --fastx --log --num_alignments 1 -v \
-    -a ${task.cpus}
-    unmerge-paired-reads.sh ${meta.sample}.other_merged.fastq ${meta.sample}.R1.other.fastq ${meta.sample}.R2.other.fastq
-    pigz -p ${task.cpus} ${meta.sample}.R1.other.fastq
-    pigz -p ${task.cpus} ${meta.sample}.R2.other.fastq
-    rm ${meta.sample}.merged.fastq ${meta.sample}.aligned.fastq ${meta.sample}.other_merged.fastq ${uncompr_reads_R1} ${uncompr_reads_R2}
+	unpigz -f -p ${task.cpus} ${reads[0]}
+	unpigz -f -p ${task.cpus} ${reads[1]}
+	tar -zxvf ${db}
+
+	# Database Options (sorted by type and how fast they are)
+	# smr_v4.3_fast_db.fasta / smr_v4.3_default_db.fasta
+	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
+
+	sortmerna --ref smr_v4.3_default_db.fasta \
+	    --reads ${uncompr_reads_R1} --reads ${uncompr_reads_R2} \
+	    --paired_in --out2 --aligned ${meta.sample}.aligned --other ${meta.sample}.other_merged \
+	    --fastx \
+	    --num_alignments 1 \
+	    -threads ${task.cpus}
+	
+	pigz -p ${task.cpus} ${meta.sample}.other_merged_fwd.fq
+	pigz -p ${task.cpus} ${meta.sample}.other_merged_rev.fq
+
+	# Name aligment to a previous schema
+	mv ${meta.sample}.other_merged_fwd.fq.gz ${meta.sample}.R1.other.fastq.gz
+	mv ${meta.sample}.other_merged_rev.fq.gz ${meta.sample}.R2.other.fastq.gz
+
+	# Cleanup
+	rm ${meta.sample}.aligned_fwd.fq ${meta.sample}.aligned_rev.fq ${uncompr_reads_R1} ${uncompr_reads_R2} *fasta #dbs
     """
     }
 }

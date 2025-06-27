@@ -584,7 +584,7 @@ workflow preprocess_illumina {
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(smr_in, extract_tar_bz2(sortmerna_db))
+            sortmerna(smr_in, sortmerna_db)
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
@@ -624,7 +624,7 @@ workflow preprocess_nanopore {
             sortmerna_log = Channel.empty()
         } else {
             // remove rRNA with SortmeRNA
-            sortmerna(read_input_ch, extract_tar_bz2(sortmerna_db))
+            sortmerna(read_input_ch, sortmerna_db)
             sortmerna_no_rna_fastq = sortmerna.out.no_rna_fastq
             sortmerna_log = sortmerna.out.log
         }
