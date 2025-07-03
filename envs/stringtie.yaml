@@ -1,6 +1,8 @@
 name: stringtie
 channels:
   - bioconda
+  - conda-forge
+  - defaults
 dependencies:
   - stringtie=2.1.7
   - gffread=0.12.7

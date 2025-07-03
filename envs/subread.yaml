@@ -1,5 +1,7 @@
 name: subread
 channels:
   - bioconda
+  - conda-forge
+  - defaults
 dependencies:
   - subread=2.0.1
