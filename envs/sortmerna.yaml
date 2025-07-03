@@ -4,6 +4,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - sortmerna=2.1b
-  - pigz=2.3.4
+  - sortmerna=4.3.4
+  - pigz=2.4
   - git

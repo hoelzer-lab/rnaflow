@@ -31,7 +31,8 @@ process sortmerna {
 	# Database Options (sorted by type and how fast they are)
 	# smr_v4.3_fast_db.fasta / smr_v4.3_default_db.fasta
 	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
-	
+    # See for details: https://github.com/sortmerna/sortmerna?tab=readme-ov-file#databases
+
 	sortmerna --ref smr_v4.3_default_db.fasta \
 	    --reads ${uncompr_reads} \
 	    --aligned ${meta.sample}.aligned --other ${meta.sample}.other \
