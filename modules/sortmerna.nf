@@ -33,7 +33,7 @@ process sortmerna {
 	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
     # See for details: https://github.com/sortmerna/sortmerna?tab=readme-ov-file#databases
 
-	sortmerna -workdir ./ --ref smr_v4.3_default_db.fasta \
+	sortmerna --workdir ./ --ref smr_v4.3_default_db.fasta \
 	    --reads ${uncompr_reads} \
 	    --aligned ${meta.sample}.aligned --other ${meta.sample}.other \
 	    --fastx \
@@ -65,7 +65,7 @@ process sortmerna {
 	# smr_v4.3_fast_db.fasta / smr_v4.3_default_db.fasta
 	# smr_v4.3_sensitive_db_rfam_seeds.fasta / smr_v4.3_sensitive_db.fasta 
 
-	sortmerna -workdir ./ --ref smr_v4.3_default_db.fasta \
+	sortmerna --workdir ./ --ref smr_v4.3_default_db.fasta \
 	    --reads ${uncompr_reads_R1} --reads ${uncompr_reads_R2} \
 	    --paired_in --out2 --aligned ${meta.sample}.aligned --other ${meta.sample}.other_merged \
 	    --fastx \
