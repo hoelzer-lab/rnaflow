@@ -38,36 +38,68 @@ process hisat2 {
     script:
     if ( !meta.paired_end ) {
         if (task.exitStatus == 137) {  // ram kill to much threads consuming ram
-            """
-            mkdir tmp-hisat2-${meta.sample}
-            hisat2 -x ${reference.baseName} -U ${reads[0]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
-            samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
-            rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
-            """
+            if (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) {
+                """
+                hisat2 -x ${reference.baseName} -U ${reads[0]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
+                rm -r ${meta.sample}.sam
+                """
+            } else {
+                """
+                mkdir -p tmp-hisat2-${meta.sample}
+                hisat2 -x ${reference.baseName} -U ${reads[0]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
+                rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
+                """
+             }
         } else {
-            """
-            mkdir tmp-hisat2-${meta.sample}
-            hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams}  -S ${meta.sample}.sam
-            samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
-            rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
-            """
+            if (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) {
+                """
+                hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams}  -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+                rm -r ${meta.sample}.sam
+                """
+            } else {
+                """
+                mkdir tmp-hisat2-${meta.sample}
+                hisat2 -x ${reference.baseName} -U ${reads[0]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams}  -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+                rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
+                """
+            }
         }
     }
     else {
         if (task.exitStatus == 137) {  // ram kill to much threads consuming ram
-            """
-            mkdir tmp-hisat2-${meta.sample}
-            hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
-            samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
-            rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
-            """
+            if (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) {
+                """
+                hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
+                rm -r ${meta.sample}.sam
+                """
+            } else {
+                """
+                mkdir tmp-hisat2-${meta.sample}
+                hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p \$(echo \$(( ${task.cpus} / 2 ))) --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads \$(echo \$(( ${task.cpus} / 2 )))
+                rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
+                """
+            }
         } else {
-            """
-            mkdir tmp-hisat2-${meta.sample}
-            hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
-            samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
-            rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
-            """
+            if (workflow.profile.contains('conda') || workflow.profile.contains('mamba')) {
+                """
+                hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+                rm -r ${meta.sample}.sam
+                """
+            } else {
+                """
+                mkdir tmp-hisat2-${meta.sample}
+                hisat2 -x ${reference.baseName} -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} --new-summary --summary-file ${meta.sample}_summary.log --temp-directory tmp-hisat2-${meta.sample} ${additionalParams} -S ${meta.sample}.sam
+                samtools view -bS ${meta.sample}.sam | samtools sort -o ${meta.sample}.sorted.bam -T tmp --threads ${task.cpus}
+                rm -r tmp-hisat2-${meta.sample} ${meta.sample}.sam
+                """
+            }
         }
     } 
 }
