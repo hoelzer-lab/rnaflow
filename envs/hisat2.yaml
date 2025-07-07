@@ -1,6 +1,8 @@
 name: hisat2
 channels:
   - bioconda
+  - conda-forge
+  - defaults
 dependencies:
   - hisat2=2.2.1
   - samtools=1.21
